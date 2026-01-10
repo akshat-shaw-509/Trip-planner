@@ -1,0 +1,388 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 60px 0;
+}
+
+.breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.breadcrumb a:hover {
+    color: #000;
+}
+
+/* Trip Banner */
+.trip-banner {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+
+.trip-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.banner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    display: flex;
+    align-items: flex-end;
+}
+
+.banner-content {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 60px 48px;
+    color: white;
+}
+
+.trip-title {
+    font-size: 56px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.trip-subtitle {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.95;
+}
+
+.trip-subtitle i {
+    font-size: 16px;
+}
+
+.divider {
+    opacity: 0.5;
+}
+
+/* Overview Container */
+.overview-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 60px;
+}
+
+.section-header {
+    margin-bottom: 40px;
+}
+
+.section-header h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 8px;
+}
+
+.section-header p {
+    font-size: 16px;
+    color: #666;
+}
+
+/* Features Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 32px;
+    margin-bottom: 48px;
+}
+
+/* Feature Card */
+.feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-color: #000;
+}
+
+.card-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.budget-icon {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+}
+
+.schedule-icon {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+}
+
+.places-icon {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}
+
+.card-content h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 8px;
+}
+
+.card-content p {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.card-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #000;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #999;
+    font-weight: 500;
+}
+
+.card-arrow {
+    position: absolute;
+    top: 32px;
+    right: 32px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.card-arrow i {
+    color: #666;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover .card-arrow {
+    background: #000;
+}
+
+.feature-card:hover .card-arrow i {
+    color: white;
+    transform: translateX(4px);
+}
+
+/* Quick Info Section */
+.quick-info-section {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 32px;
+}
+
+.quick-info-section h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 24px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.info-item i {
+    font-size: 24px;
+    color: #666;
+}
+
+.info-item div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    font-size: 13px;
+    color: #999;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+}
+
+.status-upcoming {
+    color: #2196F3;
+}
+
+/* Trip Description */
+.trip-description {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.trip-description h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 16px;
+}
+
+.trip-description p {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.8;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .features-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .breadcrumb,
+    .banner-content,
+    .overview-container {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .trip-banner {
+        height: 300px;
+    }
+
+    .trip-title {
+        font-size: 36px;
+    }
+
+    .trip-subtitle {
+        font-size: 14px;
+        flex-wrap: wrap;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .section-header h2 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .trip-banner {
+        height: 250px;
+    }
+
+    .trip-title {
+        font-size: 28px;
+    }
+
+    .banner-content {
+        padding-bottom: 32px;
+    }
+
+    .feature-card {
+        padding: 24px;
+    }
+
+    .card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+
+    .card-content h3 {
+        font-size: 20px;
+    }
+
+    .card-arrow {
+        width: 36px;
+        height: 36px;
+        top: 24px;
+        right: 24px;
+    }
+}
+    .btn-create-trip {
+        font-size: 14px;
+        padding: 12px 16px;
+    }

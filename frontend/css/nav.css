@@ -1,0 +1,254 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 60px;
+    background: rgba(255,255,255,0.95);
+    font-size: 20px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    gap: 40px;
+    height: auto;
+}
+nav a{
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+nav a:hover{
+    color: #000;
+}
+.logo{
+    display:flex ;
+    align-items:center;
+}
+.logo img{
+    height: 40px;
+    width: auto;
+}
+.search-bar{
+    position: relative;
+}
+.search-bar i,
+.search-icon{
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.search-bar input{
+    width: 100%;
+    padding: 9px 42px 9px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+.search-bar input:focus{
+    border-color: #000;
+}
+/*CTA Button*/
+.cta-container{
+    position: relative;
+}
+.cta-button{
+    background:black;
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.cta-button:hover{
+    background: #333;
+}
+ .cta-button::after {
+    content: '▼';
+    font-size: 10px;
+ }
+.dropdown{
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+    z-index: 100;   
+}
+.cta-container:hover .dropdown{
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.dropdown a{
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size:15px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.dropdown a:hover{
+    background: #f5f5f5;
+}
+/* Authentication Buttons */
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-buttons button {
+    padding: 9px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    outline: none;
+}
+
+.auth-buttons .primary {
+    background: black;
+    color: white;
+    border: 2px solid black;
+}
+
+.auth-buttons .primary:hover {
+    background: #333;
+}
+
+.auth-buttons .secondary {
+    background: transparent;
+    color: black;
+    border: 2px solid black;
+}
+
+.auth-buttons .secondary:hover {
+    background: #444;
+    color: white;
+}
+
+.auth-buttons .secondary:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 1024px) {
+    nav {
+        padding: 16px 40px;
+        gap: 20px;
+    }
+    
+    .auth-buttons button {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    nav {
+        padding: 14px 20px;
+        gap: 15px;
+        position: relative;
+        justify-content: space-between;
+    }
+    
+    .hamburger {
+        display: flex;
+        order: -1;
+        flex-shrink: 0;
+        z-index: 10;
+    }
+    
+    .logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 5;
+        pointer-events: none;
+    }
+    
+    .logo img {
+        pointer-events: auto;
+    }
+    
+    .search-bar,
+    .cta-container {
+        display: none;
+    }
+    
+    .auth-buttons {
+        gap: 10px;
+        margin-left: auto;
+        flex-shrink: 0;
+        z-index: 10;
+    }
+    
+    .auth-buttons button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    nav {
+        padding: 12px 15px;
+        gap: 10px;
+    }
+    
+    .hamburger span {
+        width: 22px;
+        height: 2.5px;
+    }
+    
+    .logo img {
+        height: 32px;
+    }
+    
+    .auth-buttons {
+        gap: 6px;
+    }
+    
+    .auth-buttons button {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 360px) {
+    nav {
+        padding: 10px 12px;
+    }
+    
+    .hamburger span {
+        width: 20px;
+        height: 2px;
+    }
+    
+    .auth-buttons button {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+    
+    .logo img {
+        height: 28px;
+    }
+}
