@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Schedule - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/schedule.css">
+</head>
+<body>
+    <nav>
+        <div class="logo">
+           <img src="../Svg/Logo.png" alt="Planora Logo">
+        </div>
+        <a href="index.html">Home</a>
+        <a href="trips.html">My Trips</a>
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="Search activities...">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+        <div class="cta-container">
+            <button class="cta-button">Quick Access</button>
+            <div class="dropdown">
+                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
+                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
+                <a href="places.html"><i class="fas fa-map-marker-alt"></i> Places</a>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+        </div>
+    </nav>
+
+    <div class="breadcrumb">
+        <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="trip-overview.html">Trip Overview</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Schedule</span>
+    </div>
+
+    <div class="schedule-container">
+        <div class="schedule-header">
+            <div class="header-content">
+                <h1><i class="far fa-calendar-alt"></i> Trip Schedule</h1>
+                <p class="trip-dates" id="tripDates">Loading trip details...</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-export">
+                    <i class="fas fa-download"></i>
+                    Export
+                </button>
+                <button class="btn-print">
+                    <i class="fas fa-print"></i>
+                    Print
+                </button>
+            </div>
+        </div>
+
+        <div class="schedule-content">
+            <!-- Calendar Section -->
+            <div class="calendar-section">
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <h3><i class="fas fa-calendar"></i> Select Date</h3>
+                        <button class="btn-today" onclick="selectToday()">
+                            <i class="fas fa-calendar-day"></i>
+                            Today
+                        </button>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
+
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <div>
+                            <span class="stat-value" id="totalDays">0</span>
+                            <span class="stat-label">Total Days</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-clipboard-list"></i>
+                        <div>
+                            <span class="stat-value" id="totalActivities">0</span>
+                            <span class="stat-label">Activities</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <span class="stat-value" id="totalHours">0</span>
+                            <span class="stat-label">Hours</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legend-card">
+                    <h4><i class="fas fa-palette"></i> Activity Types</h4>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #2196F3;"></span>
+                            Sightseeing
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #FF9800;"></span>
+                            Dining
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #4CAF50;"></span>
+                            Adventure
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #9C27B0;"></span>
+                            Shopping
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #f44336;"></span>
+                            Entertainment
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #607D8B;"></span>
+                            Transportation
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Section -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <div class="selected-date">
+                        <h2 id="selectedDateDisplay">Select a date</h2>
+                        <p id="dayInfo">-</p>
+                    </div>
+                    <button class="btn-add-activity" id="addActivityBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Activity
+                    </button>
+                </div>
+
+                <div class="timeline-container">
+                    <div class="time-grid" id="timeGrid">
+                        <!-- Time slots will be generated by JS -->
+                    </div>
+                    <div class="activities-timeline" id="activitiesTimeline">
+                        <!-- Activities will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-timeline" id="emptyTimeline" style="display: none;">
+                    <i class="far fa-calendar-plus"></i>
+                    <h3>No activities planned</h3>
+                    <p>Start organizing your day by adding activities</p>
+                    <button class="btn-add-activity">
+                        <i class="fas fa-plus"></i>
+                        Add Your First Activity
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Activity Modal -->
+    <div class="modal" id="activityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Activity
+                </h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="activityForm">
+                    <div class="form-group">
+                        <label for="activityTitle">
+                            <i class="fas fa-heading"></i>
+                            Activity Title *
+                        </label>
+                        <input type="text" id="activityTitle" placeholder="e.g., Visit Eiffel Tower" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="activityType">
+                                <i class="fas fa-tag"></i>
+                                Type
+                            </label>
+                            <select id="activityType">
+                                <option value="sightseeing">Sightseeing</option>
+                                <option value="dining">Dining</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="adventure">Adventure</option>
+                                <option value="relaxation">Relaxation</option>
+                                <option value="transportation">Transportation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="activityColor">
+                                <i class="fas fa-palette"></i>
+                                Color
+                            </label>
+                            <select id="activityColor">
+                                <option value="#2196F3">Blue</option>
+                                <option value="#FF9800">Orange</option>
+                                <option value="#4CAF50">Green</option>
+                                <option value="#9C27B0">Purple</option>
+                                <option value="#f44336">Red</option>
+                                <option value="#607D8B">Grey</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startTime">
+                                <i class="far fa-clock"></i>
+                                Start Time *
+                            </label>
+                            <input type="time" id="startTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">
+                                <i class="far fa-clock"></i>
+                                End Time
+                            </label>
+                            <input type="time" id="endTime">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityLocation">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Location
+                        </label>
+                        <input type="text" id="activityLocation" placeholder="Enter location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityDescription">
+                            <i class="fas fa-align-left"></i>
+                            Description
+                        </label>
+                        <textarea id="activityDescription" rows="3" placeholder="Add details about this activity..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityNotes">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes & Reminders
+                        </label>
+                        <textarea id="activityNotes" rows="2" placeholder="Any special notes..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelBtn">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check"></i>
+                            Save Activity
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/schedule.js"></script>
+</body>
+</html>

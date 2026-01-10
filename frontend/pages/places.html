@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Places to Visit - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/places.css">
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <img src="../Svg/Logo.png" alt="Planora Logo">
+        </div>
+        <a href="index.html">Home</a>
+        <a href="trips.html">My Trips</a>
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="Search places...">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+        <div class="cta-container">
+            <button class="cta-button">Quick Access</button>
+            <div class="dropdown">
+                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
+                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
+                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+        </div>
+    </nav>
+
+    <div class="breadcrumb">
+        <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="trip-overview.html">Trip Overview</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Places</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="places-header">
+        <div class="header-content">
+            <h1><i class="fas fa-map-marked-alt"></i> Places to Visit</h1>
+            <p id="tripInfo">Loading trip information...</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-map-view" id="toggleMapBtn">
+                <i class="fas fa-map"></i>
+                Map View
+            </button>
+            <button class="btn-add-place" id="addPlaceBtn">
+                <i class="fas fa-plus"></i>
+                Add Place
+            </button>
+        </div>
+    </div>
+
+    <div class="places-container">
+        <!-- View Toggle & Stats -->
+        <div class="control-bar">
+            <div class="stats-bar">
+                <div class="stat-pill">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span><strong id="totalPlaces">0</strong> Places</span>
+                </div>
+                <div class="stat-pill">
+                    <i class="fas fa-heart"></i>
+                    <span><strong id="favoritePlaces">0</strong> Favorites</span>
+                </div>
+                <div class="stat-pill">
+                    <i class="fas fa-check-circle"></i>
+                    <span><strong id="visitedPlaces">0</strong> Visited</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="filter-section">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-th"></i>
+                All Places
+            </button>
+            <button class="filter-btn" data-filter="attraction">
+                <i class="fas fa-landmark"></i>
+                Attractions
+            </button>
+            <button class="filter-btn" data-filter="restaurant">
+                <i class="fas fa-utensils"></i>
+                Restaurants
+            </button>
+            <button class="filter-btn" data-filter="accommodation">
+                <i class="fas fa-bed"></i>
+                Hotels
+            </button>
+            <button class="filter-btn" data-filter="shopping">
+                <i class="fas fa-shopping-bag"></i>
+                Shopping
+            </button>
+            <button class="filter-btn" data-filter="entertainment">
+                <i class="fas fa-theater-masks"></i>
+                Entertainment
+            </button>
+            <button class="filter-btn" data-filter="transport">
+                <i class="fas fa-car"></i>
+                Transport
+            </button>
+        </div>
+
+        <!-- Places Grid -->
+        <div class="places-grid" id="placesGrid">
+            <!-- Places will be loaded here dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" style="display: none;">
+            <div class="empty-icon">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <h3>No places added yet</h3>
+            <p>Start building your itinerary by adding places you want to visit</p>
+            <button class="btn-add-place">
+                <i class="fas fa-plus"></i>
+                Add Your First Place
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Container (Hidden by default) -->
+    <div class="map-container" id="mapContainer" style="display: none;">
+        <div class="map-header">
+            <h3><i class="fas fa-map"></i> Map View</h3>
+            <button class="btn-close-map" id="closeMapBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- Add Place Modal -->
+    <div class="modal" id="placeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-plus-circle"></i>
+                    Add Place
+                </h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="placeForm">
+                    <div class="form-group">
+                        <label for="placeName">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Place Name *
+                        </label>
+                        <input type="text" id="placeName" placeholder="e.g., Eiffel Tower" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="placeCategory">
+                                <i class="fas fa-tag"></i>
+                                Category *
+                            </label>
+                            <select id="placeCategory" required>
+                                <option value="">Select category</option>
+                                <option value="attraction">Attraction</option>
+                                <option value="restaurant">Restaurant</option>
+                                <option value="accommodation">Accommodation</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="transport">Transport</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="placeRating">
+                                <i class="fas fa-star"></i>
+                                Rating
+                            </label>
+                            <select id="placeRating">
+                                <option value="">Select rating</option>
+                                <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                                <option value="4">⭐⭐⭐⭐ (4)</option>
+                                <option value="3">⭐⭐⭐ (3)</option>
+                                <option value="2">⭐⭐ (2)</option>
+                                <option value="1">⭐ (1)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="placeAddress">
+                            <i class="fas fa-location-arrow"></i>
+                            Address
+                        </label>
+                        <input type="text" id="placeAddress" placeholder="Enter full address">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="placeDescription">
+                            <i class="fas fa-align-left"></i>
+                            Description
+                        </label>
+                        <textarea id="placeDescription" rows="3" placeholder="Why do you want to visit this place?"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="placePrice">
+                                <i class="fas fa-rupee-sign"></i>
+                                Price Level
+                            </label>
+                            <select id="placePrice">
+                                <option value="">Select price level</option>
+                                <option value="1">$ (Budget)</option>
+                                <option value="2">$$ (Moderate)</option>
+                                <option value="3">$$$ (Expensive)</option>
+                                <option value="4">$$$$ (Luxury)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="placeVisitDate">
+                                <i class="far fa-calendar"></i>
+                                Planned Visit Date
+                            </label>
+                            <input type="date" id="placeVisitDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="placeNotes">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes
+                        </label>
+                        <textarea id="placeNotes" rows="2" placeholder="Opening hours, tips, etc."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelBtn">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check"></i>
+                            Save Place
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/places.js"></script>
+    
+    <script>
+        function addToSchedule(placeId) {
+            showToast('Adding to schedule...', 'info');
+            // Implementation will be in places.js
+        }
+        
+        function toggleFavorite(placeId) {
+            // Implementation will be in places.js
+        }
+        let placesMap = null
+
+function initPlacesMap() {
+  if (typeof L === 'undefined') return
+  
+  placesMap = L.map('map').setView([20.5937, 78.9629], 5)
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(placesMap)
+}
+
+function addPlacesToMap(places) {
+  if (!placesMap) return
+  
+  // Clear existing markers
+  placesMap.eachLayer(layer => {
+    if (layer instanceof L.Marker) {
+      placesMap.removeLayer(layer)
+    }
+  })
+  
+  // Add markers for each place
+  places.forEach(place => {
+    if (place.location?.coordinates) {
+      let [lng, lat] = place.location.coordinates
+      
+      let icon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+                 
+               `,
+        iconSize: [30, 30]
+      })
+      
+      L.marker([lat, lng], { icon })
+        .addTo(placesMap)
+        .bindPopup(`
+          
+            ${place.name}
+            ${place.category}
+            ${place.rating ? `⭐ ${place.rating}` : ''}
+          
+        `)
+    }
+  })
+  
+  // Fit bounds to show all markers
+  if (places.length > 0) {
+    let bounds = places
+      .filter(p => p.location?.coordinates)
+      .map(p => [p.location.coordinates[1], p.location.coordinates[0]])
+    
+    if (bounds.length > 0) {
+      placesMap.fitBounds(bounds, { padding: [50, 50] })
+    }
+  }
+}
+
+// Call after loading places
+document.getElementById('toggleMapBtn')?.addEventListener('click', () => {
+  let mapContainer = document.getElementById('mapContainer')
+  if (mapContainer.style.display === 'none') {
+    mapContainer.style.display = 'block'
+    if (!placesMap) {
+      setTimeout(() => {
+        initPlacesMap()
+        addPlacesToMap(allPlaces)
+      }, 100)
+    } else {
+      placesMap.invalidateSize()
+      addPlacesToMap(allPlaces)
+    }
+  } else {
+    mapContainer.style.display = 'none'
+  }
+})
+    </script>
+</body>
+</html>

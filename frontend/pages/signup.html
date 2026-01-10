@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="../Svg/Logo.png" class="auth-logo">
+                <h1>Create Account</h1>
+                <p>Start planning your perfect group tours today</p>
+            </div>
+
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="fullname">
+                         <i class="fas fa-user"></i>
+                        Full Name
+                    </label>
+                    <input type="text" name="fullname" id="fullname" placeholder="Enter your fullname" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" name="email" id="signup-email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <div class="password-input">
+                        <input type="password" name="password" id="signup-password" placeholder="Create a password" required minlength="8">
+                        <button type="button" class="toggle-password" onclick="togglePassword('signup-password')">
+                            <i class="fas fa-eye" id="toggleIcon1"></i>
+                        </button>
+                    </div>
+                    <small class="password-hint">Minimum 8 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">
+                        <i class="fas fa-lock"></i>
+                        Confirm Password
+                    </label>
+                    <div class="password-input">
+                        <input type="password" name="confirm-password" id="confirm-password" placeholder="Confirm your password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirm-password')">
+                            <i class="fas fa-eye" id="toggleIcon2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" required>
+                        <span>I agree to the <a href="#">Terms & Conditions</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="auth-btn">
+                    <span>Create Account</span>
+                     <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <div class="auth-divider">
+                    <span>or sign up with</span>
+                </div>
+
+                <div class="social-login">
+                    <button type="button" class="social-btn google">
+                        <span class="google-icon">
+                            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+  <path fill="#EA4335" d="M24 9.5c3.3 0 6.3 1.1 8.7 3.3l6.5-6.5C35.3 2.3 29.9 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6.1C12.3 13.3 17.7 9.5 24 9.5z"/>
+  <path fill="#4285F4" d="M46.1 24.5c0-1.7-.2-3.3-.5-4.9H24v9.3h12.5c-.5 2.7-2.1 5-4.5 6.5l7 5.4c4.1-3.8 6.1-9.4 6.1-16.3z"/>
+  <path fill="#FBBC05" d="M10.4 28.4c-1-2.7-1-5.7 0-8.4l-7.8-6.1c-3.4 6.8-3.4 14.8 0 21.6l7.8-6.1z"/>
+  <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.7l-7-5.4c-2 1.3-4.6 2.1-9 2.1-6.3 0-11.7-3.8-13.6-9.2l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
+</svg>
+                        </span>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn facebook">
+                       <span class="facebook-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <path fill="#1877F2" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.016 4.388 10.987 10.125 11.854v-8.385H7.078v-3.469h3.047V9.845c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953h-1.513c-1.492 0-1.956.927-1.956 1.879v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.06 24 18.09 24 12.073z"/>
+</svg>
+                        </span>
+
+                        Facebook
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="login.html">Login</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/modules/auth.js"></script>
+</body>
+</html>

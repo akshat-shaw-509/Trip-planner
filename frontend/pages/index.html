@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planora - Your Ultimate Travel Companion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="logo">
+           <img src="../Svg/Logo.png" alt="Planora Logo">
+        </div>
+        <a href="trips.html">My Trips</a>
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+        <div class="cta-container">
+            <button class="cta-button">Quick Access</button>
+            <div class="dropdown">
+                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
+                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
+                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
+                <a href="activities.html"><i class="fas fa-list-check"></i> Activities</a>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="handleAuthButton('login')">Login</button>
+            <button class="secondary" onclick="handleAuthButton('signup')">Sign Up</button>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Plan Your Perfect Group Adventure</h1>
+            <p>Streamline group travel planning with expert insights, real-time collaboration, and integrated bookings - all in one beautiful platform</p>
+            <div class="hero-buttons">
+                <button class="btn-primary" onclick="handleAddTrip()">
+                    <i class="fas fa-plus"></i>
+                    Start Planning
+                </button>
+                <button class="btn-secondary" onclick="window.location.href='trips.html'">
+                    <i class="fas fa-suitcase-rolling"></i>
+                    View My Trips
+                </button>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <i class="fas fa-globe"></i>
+                <h3>200+</h3>
+                <p>Destinations</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>10K+</h3>
+                <p>Happy Travelers</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-star"></i>
+                <h3>4.9/5</h3>
+                <p>User Rating</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-header">
+            <h2>Everything You Need for Perfect Travel</h2>
+            <p>Powerful features to make group travel planning effortless</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3>Smart Itinerary</h3>
+                <p>Create detailed day-by-day plans with AI-powered suggestions</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3>Schedule Management</h3>
+                <p>Organize activities with visual timeline and reminders</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h3>Budget Tracking</h3>
+                <p>Monitor expenses and split costs among group members</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Group Collaboration</h3>
+                <p>Share plans and make decisions together in real-time</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h3>Interactive Maps</h3>
+                <p>Visualize your journey with location-based planning</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Mobile Ready</h3>
+                <p>Access your plans anywhere, anytime on any device</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Destinations Section -->
+    <section class="destinations">
+        <div class="section-header">
+            <h2>Explore Top Destinations</h2>
+            <p>Get inspired by these popular travel spots</p>
+        </div>
+        <div class="destinations-grid">
+            <div class="destination-card" onclick="exploreDestination('Paris')">
+                <img src="../Svg/paris.jpg" alt="Paris, France">
+                <div class="destination-overlay">
+                    <div class="destination-info">
+                        <h3>Paris, France</h3>
+                        <p><i class="fas fa-map-marker-alt"></i> Europe</p>
+                    </div>
+                    <button class="btn-explore">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="destination-card" onclick="exploreDestination('Kyoto')">
+                <img src="../Svg/Japan.jpg" alt="Kyoto, Japan">
+                <div class="destination-overlay">
+                    <div class="destination-info">
+                        <h3>Kyoto, Japan</h3>
+                        <p><i class="fas fa-map-marker-alt"></i> Asia</p>
+                    </div>
+                    <button class="btn-explore">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="destination-card" onclick="exploreDestination('Zurich')">
+                <img src="../Svg/zurich.jpg" alt="Zurich, Switzerland">
+                <div class="destination-overlay">
+                    <div class="destination-info">
+                        <h3>Zurich, Switzerland</h3>
+                        <p><i class="fas fa-map-marker-alt"></i> Europe</p>
+                    </div>
+                    <button class="btn-explore">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Start Your Journey?</h2>
+            <p>Join thousands of travelers planning their perfect trips</p>
+            <button class="btn-large" onclick="handleAddTrip()">
+                <i class="fas fa-plane-departure"></i>
+                Create Your First Trip
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="logo">
+                    <img src="../Svg/Logo.png" alt="Planora">
+                </div>
+                <p>Your ultimate travel planning companion</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="trips.html">My Trips</a>
+                <a href="planning.html">Plan New Trip</a>
+                <a href="#">Destinations</a>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Contact Us</a>
+                <a href="#">FAQs</a>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Planora. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/toast.js"></script>
+    
+    <script>
+        function handleAuthButton(type) {
+            if (type === 'login') {
+                window.location.href = 'login.html';
+            } else {
+                window.location.href = 'signup.html';
+            }
+        }
+        
+        function handleAddTrip() {
+            if (window.authHandler && window.authHandler.isAuthenticated()) {
+                window.location.href = 'planning.html';
+            } else {
+                if (window.showToast) {
+                    showToast('Please login to create a trip', 'info');
+                }
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            }
+        }
+        
+        function exploreDestination(destination) {
+            if (window.authHandler && window.authHandler.isAuthenticated()) {
+                sessionStorage.setItem('prefilledDestination', destination);
+                window.location.href = 'planning.html';
+            } else {
+                if (window.showToast) {
+                    showToast('Please login to plan your trip', 'info');
+                }
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>
