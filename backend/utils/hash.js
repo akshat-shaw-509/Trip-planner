@@ -9,23 +9,23 @@ let getSaltRounds=()=>{
 
 let hashPassword=async(plainPassword)=>{
     if(!plainPassword){
-        throw new Error('Password is required for hashing')
+        throw Error('Password is required for hashing')
     }
     if(typeof plainPassword!=='string'){
-        throw new Error('Password must be a string')
+        throw Error('Password must be a string')
     }
     if(plainPassword.length===0){
-        throw new Error('Password cannot be empty')
+        throw Error('Password cannot be empty')
     }
     if(Buffer.byteLength(plainPassword,'utf8')>72){
-        throw new Error('Password is too long (max 72 bytes)')
+        throw Error('Password is too long (max 72 bytes)')
     }
     try{
         let saltRounds=getSaltRounds()
         let hashedPassword=await bcrypt.hash(plainPassword,saltRounds)
         return hashedPassword
     } catch(error){
-        throw new Error('Failed to hash password')
+        throw Error('Failed to hash password')
     }
 }
 
@@ -108,19 +108,19 @@ let generateSalt=async(rounds=null)=>{
         let salt=await bcrypt.genSalt(saltRounds)
         return salt
     } catch(error){
-        throw new Error('Failed to generate salt')
+        throw Error('Failed to generate salt')
     }
 }
 
 let hashWithSalt=async(plainPassword,salt)=>{
     if(!plainPassword||!salt){
-        throw new Error('Password and salt are required')
+        throw Error('Password and salt are required')
     }
     try{
         let hashedPassword=await bcrypt.hash(plainPassword,salt)
         return hashedPassword
     } catch(error){
-        throw new Error('Failed to hash password with salt')
+        throw Error('Failed to hash password with salt')
     }
 }
 

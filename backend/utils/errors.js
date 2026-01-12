@@ -27,6 +27,7 @@ let ForbiddenError = (message = 'Forbidden') => {
   return createAppError(message, 403)
 }
 
+
 let NotFoundError = (message = 'Resource not found') => {
   return createAppError(message, 404)
 }
@@ -39,6 +40,10 @@ let InternalServerError = (message = 'Internal Server Error') => {
   return createAppError(message, 500)
 }
 
+let DatabaseError = (message = 'Database error') => {
+  return createAppError(message, 500)
+}
+
 module.exports = {
   ValidationError,
   BadRequestError,
@@ -47,4 +52,5 @@ module.exports = {
   NotFoundError,
   ConflictError,
   InternalServerError,
+  DatabaseError
 }

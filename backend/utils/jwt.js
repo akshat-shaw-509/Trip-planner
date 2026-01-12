@@ -12,7 +12,7 @@ let verifyToken = (token, secret) => {
     const message = error.name === 'TokenExpiredError' 
       ? 'Token expired' 
       : 'Invalid token'
-    throw new Error(message)
+    throw Error(message)
   }
 }
 
