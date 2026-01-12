@@ -1,4 +1,5 @@
-require('dotenv').config()
+let path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
 const requiredEnvVars = [
   'NODE_ENV',
@@ -6,21 +7,16 @@ const requiredEnvVars = [
   'MONGODB_URI',
   'JWT_SECRET',
   'JWT_REFRESH_SECRET'
-];
+]
 
 const optionalEnvVars = [
-  'MAPBOX_ACCESS_TOKEN',
-  'WEATHER_API_KEY', 
-  'CURRENCY_API_KEY',
   'EMAIL_SERVICE',
   'EMAIL_USER',
   'EMAIL_PASSWORD',
-  'AWS_ACCESS_KEY_ID',
-  'AWS_SECRET_ACCESS_KEY',
-  'AWS_BUCKET_NAME',
-  'AWS_REGION',
-  'FRONTEND_URL'
-];
+  'FRONTEND_URL',
+  'MAX_FILE_SIZE',
+  'UPLOAD_DIR'
+]
 
 const validateEnv = () => {
   const missing = requiredEnvVars.filter(envVar => !process.env[envVar])
@@ -30,14 +26,13 @@ const validateEnv = () => {
     process.exit(1)
   }
 
-  // Warn about missing optional vars (skip in test)
   if (process.env.NODE_ENV !== 'test') {
     const warnings = optionalEnvVars.filter(envVar => !process.env[envVar])
     if (warnings.length > 0) {
       console.warn('⚠️  Missing optional env vars:', warnings.join(', '))
     }
   }
-};
+}
 
 const config = {
   env: process.env.NODE_ENV || 'development',
@@ -58,11 +53,9 @@ const config = {
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER
   },
 
-  aws: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    bucketName: process.env.AWS_BUCKET_NAME,
-    region: process.env.AWS_REGION || 'us-east-1'
+  upload: {
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5242880, // 5MB default
+    uploadDir: process.env.UPLOAD_DIR || 'uploads'
   },
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5000',
