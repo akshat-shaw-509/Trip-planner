@@ -43,17 +43,14 @@ let placeSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number],
+        required: [true, 'Coordinates required'],
         validate: {
           validator: function (v) {
-            return (
-              v.length === 2 &&
-              v[0] >= -180 &&
-              v[0] <= 180 &&
-              v[1] >= -90 &&
-              value[1] <= 90
-            );
+            if (!Array.isArray(v) || v.length !== 2) return false
+            const [lng, lat] = v
+            return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90
           },
-          message: 'Invalid coordinates',
+          message: 'Coordinates must be [lng, lat]'
         }
       }
     },
@@ -95,7 +92,7 @@ placeSchema.index({ location: '2dsphere' })
 placeSchema.index({ tripId: 1, createdAt: -1 })
 placeSchema.index({ tripId: 1, visitStatus: 1 })
 
-placeSchema.virtual('distanceFromCenter').get(function(centerLngLat) {
+placeSchema.virtual('distanceFromCenter').get(function (centerLngLat) {
   if (!centerLngLat || !this.location?.coordinates) return 0
   const [centerLng, centerLat] = centerLngLat
   const [lng, lat] = this.location.coordinates
@@ -104,7 +101,7 @@ placeSchema.virtual('distanceFromCenter').get(function(centerLngLat) {
   )
 })
 
-placeSchema.methods.getSummary = function() {
+placeSchema.methods.getSummary = function () {
   return {
     id: this._id,
     name: this.name,
@@ -115,13 +112,13 @@ placeSchema.methods.getSummary = function() {
   }
 }
 
-placeSchema.statics.findByTripId = function(tripId) {
+placeSchema.statics.findByTripId = function (tripId) {
   return this.find({ tripId }).sort('-createdAt')
 }
 
-placeSchema.statics.findPlannedByTripId = function(tripId) {
-  return this.find({ 
-    tripId, 
+placeSchema.statics.findPlannedByTripId = function (tripId) {
+  return this.find({
+    tripId,
     visitStatus: 'planned',
     isDeleted: { $ne: true }
   }).sort('createdAt')

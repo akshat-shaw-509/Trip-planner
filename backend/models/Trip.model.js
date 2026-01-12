@@ -78,9 +78,7 @@ tripSchema.index({ userId: 1, status: 1 }); // Filter by status per user
 
 tripSchema.pre('validate', function(next) {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    next(new Error('End date must be after start date'))
-  } else {
-    next()
+    throw new Error('End date must be after start date')
   }
 })
 
