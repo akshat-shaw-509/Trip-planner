@@ -6,10 +6,10 @@ let geocodingService = require('./mapbox.service')
 let checkTripOwnership = async (tripId, userId) => {
   let trip = await Trip.findById(tripId).lean()
   if (!trip) {
-    throw new NotFoundError('Trip not found')
+    throw NotFoundError('Trip not found')
   }
   if (trip.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   return trip
 }
@@ -57,11 +57,11 @@ let getPlaceById = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId').lean()
   
   if (!place) {
-    throw new NotFoundError('Place not found')
+    throw NotFoundError('Place not found')
   }
   
   if (place.tripId.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   
   return place
@@ -71,11 +71,11 @@ let updatePlace = async (placeId, updateData, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
   
   if (!place) {
-    throw new NotFoundError('Place not found')
+    throw NotFoundError('Place not found')
   }
   
   if (place.tripId.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   
   // If address changed, try to geocode
@@ -99,11 +99,11 @@ let deletePlace = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
   
   if (!place) {
-    throw new NotFoundError('Place not found')
+    throw NotFoundError('Place not found')
   }
   
   if (place.tripId.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   
   await place.deleteOne()
@@ -114,11 +114,11 @@ let toggleFavorite = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
   
   if (!place) {
-    throw new NotFoundError('Place not found')
+    throw NotFoundError('Place not found')
   }
   
   if (place.tripId.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   
   place.isFavorite = !place.isFavorite
@@ -130,11 +130,11 @@ let updateVisitStatus = async (placeId, status, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
   
   if (!place) {
-    throw new NotFoundError('Place not found')
+    throw NotFoundError('Place not found')
   }
   
   if (place.tripId.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Access denied')
+    throw ForbiddenError('Access denied')
   }
   
   place.visitStatus = status
@@ -151,7 +151,7 @@ let searchNearby = async (tripId, query, userId) => {
   let { longitude, latitude, maxDistance = 5000 } = query
   
   if (!longitude || !latitude) {
-    throw new BadRequestError('Coordinates required')
+    throw BadRequestError('Coordinates required')
   }
 
   return Place.find({
@@ -177,7 +177,7 @@ let getByCategory = async (tripId, userId) => {
       $group: {
         _id: '$category',
         count: { $sum: 1 },
-        places: { $push: '$ROOT' }
+        places: { $push: '$$ROOT' }
       }
     },
     { $sort: { count: -1 } }

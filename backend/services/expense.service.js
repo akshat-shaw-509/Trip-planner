@@ -5,10 +5,10 @@ let { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/error
 let checkTripOwnership = async (tripId, userId) => {
     let trip = await Trip.findById(tripId).lean()
     if (!trip) {
-        throw new NotFoundError('Trip not found');
+        throw NotFoundError('Trip not found');
     }
     if (trip.userId.toString() !== userId.toString()) {
-        throw new ForbiddenError('You do not have permission to access this trip');
+        throw ForbiddenError('You do not have permission to access this trip');
     }
     return trip
 }
@@ -19,10 +19,10 @@ let checkExpenseOwnership = async (expenseId, userId) => {
         isDeleted: false
     }).lean()
     if(!expense){
-        throw new NotFoundError('Expense not found');
+        throw NotFoundError('Expense not found');
     }
     if (expense.userId.toString() !== userId.toString()) {
-        throw new ForbiddenError('You do not have permission to access this expense');
+        throw ForbiddenError('You do not have permission to access this expense');
     }
     return expense
 }
@@ -62,10 +62,10 @@ let getExpenseById = async (expenseId, userId) => {
     .lean()
 
     if(!expense){
-        throw new NotFoundError('Expense not found');
+        throw NotFoundError('Expense not found');
     }
     if (expense.userId.toString() !== userId.toString()) {
-        throw new ForbiddenError('You do not have permission to view this expense');
+        throw ForbiddenError('You do not have permission to view this expense');
     }
     return expense
 }
@@ -86,7 +86,7 @@ let deleteExpense = async (expenseId, userId) => {
         { new: true }
     )
     if (!result) {
-        throw new NotFoundError('Expense not found');
+        throw NotFoundError('Expense not found');
     }
     return { message: 'Expense deleted successfully' }
 }

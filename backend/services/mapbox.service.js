@@ -19,7 +19,7 @@ let geocodeAddress = async (address) => {
     })
 
     if (!response.data || response.data.length === 0) {
-      throw new BadRequestError('Address not found')
+      throw BadRequestError('Address not found')
     }
 
     return response.data.map(place => ({
@@ -33,7 +33,7 @@ let geocodeAddress = async (address) => {
     }))
   } catch (error) {
     console.error('Geocoding error:', error.message)
-    throw new BadRequestError('Failed to geocode address')
+    throw BadRequestError('Failed to geocode address')
   }
 }
 
@@ -51,7 +51,7 @@ let reverseGeocode = async (longitude, latitude) => {
     })
 
     if (!response.data) {
-      throw new BadRequestError('Location not found')
+      throw BadRequestError('Location not found')
     }
 
     return {
@@ -64,14 +64,14 @@ let reverseGeocode = async (longitude, latitude) => {
     }
   } catch (error) {
     console.error('Reverse geocoding error:', error.message)
-    throw new BadRequestError('Failed to reverse geocode')
+    throw BadRequestError('Failed to reverse geocode')
   }
 }
 
 // Get route using OpenRouteService (free alternative)
 let getRoute = async (coordinates, profile = 'driving-car') => {
   if (!coordinates || coordinates.length < 2) {
-    throw new BadRequestError('Need at least 2 coordinates')
+    throw BadRequestError('Need at least 2 coordinates')
   }
 
   // Note: You can use OpenRouteService for routing

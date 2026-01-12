@@ -5,10 +5,10 @@ let { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/error
 let checkTripOwnership = async (tripId, userId) => {
     let trip = await Trip.findById(tripId).lean()
     if (!trip) {
-        throw new NotFoundError('Trip not found');
+        throw NotFoundError('Trip not found');
     }
     if (trip.userId.toString() !== userId.toString()) {
-        throw new ForbiddenError('You do not have permission to add activities to this trip');
+        throw ForbiddenError('You do not have permission to add activities to this trip');
     }
     return trip
 }
@@ -20,7 +20,7 @@ let validateActivityDate = async (tripId, startTime) => {
     let tripStart = new Date(trip.startDate)
     let tripEnd = new Date(trip.endDate)
     if (activityDate < tripStart || activityDate > tripEnd) {
-        throw new BadRequestError('Activity date must be within trip dates')
+        throw BadRequestError('Activity date must be within trip dates')
     }
 }
 
@@ -53,10 +53,10 @@ let updateActivity = async (activityId, updateData, userId) => {
     }).lean()
 
     if (!activity) {
-        throw new NotFoundError('Activity not found')
+        throw NotFoundError('Activity not found')
     }
     if(activity.userId.toString() !== userId.toString()) {
-        throw new ForbiddenError('You do not have permission to update this activity')
+        throw ForbiddenError('You do not have permission to update this activity')
     }
     await validateActivityDate(activity.tripId, updateData.startTime)
     let updated=await Activity.findByIdAndUpdate(
@@ -74,7 +74,7 @@ let deleteActivity = async (activityId, userId) => {
     { new: true }
   )
   if (!activity) {
-    throw new NotFoundError('Activity not found')
+    throw NotFoundError('Activity not found')
   }
   return { message: 'Activity deleted successfully' }
 }
@@ -103,7 +103,7 @@ let updateActivityStatus = async (activityId, status, userId) => {
     { new: true, runValidators: true }
   ).populate('placeId')
   if (!activity) {
-    throw new NotFoundError('Activity not found')
+    throw NotFoundError('Activity not found')
   }
   return activity
 }
@@ -117,11 +117,11 @@ let getActivityById = async (activityId, userId) => {
     .lean()
 
   if (!activity) {
-    throw new NotFoundError('Activity not found')
+    throw NotFoundError('Activity not found')
   }
 
   if (activity.userId.toString() !== userId.toString()) {
-    throw new ForbiddenError('Not authorized for this activity')
+    throw ForbiddenError('Not authorized for this activity')
   }
   return activity
 }

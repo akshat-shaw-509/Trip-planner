@@ -6,7 +6,7 @@ const getTransporter = () => {
     console.warn('Email service not configured. Email functionality will be disabled.')
     return null
   }
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service:config.email.service,
     auth:{
         user:config.email.user,
@@ -45,7 +45,7 @@ let sendWelcomeEmail = async (user) => {
       <h1 style="color: #3b82f6;">Welcome to Planora!</h1>
       <p>Hi <strong>${user.name}</strong>,</p>
       <p>Thanks for joining! Create your first trip to get started.</p>
-      <a href="${config.frontend.url}/dashboard" 
+      <a href="${config.frontendUrl}/dashboard" 
          style="display: inline-block; padding: 12px 24px; background: #3b82f6; 
                 color: white; text-decoration: none; border-radius: 6px;">
         Go to Dashboard
@@ -57,7 +57,7 @@ let sendWelcomeEmail = async (user) => {
 };
 
 const sendPasswordResetEmail = async (user, resetToken) => {
-  const resetUrl = `${config.frontend.url}/reset-password?token=${resetToken}`
+  const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}`
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px;">
       <h1 style="color: #3b82f6;">Reset Your Password</h1>
@@ -83,7 +83,7 @@ const sendTripInvitation = async (trip, inviterName, inviteeEmail) => {
       <h2>${trip.title}</h2>
       <p><strong>Destination:</strong> ${trip.destination}</p>
       <p><strong>Dates:</strong> ${new Date(trip.startDate).toLocaleDateString()} - ${new Date(trip.endDate).toLocaleDateString()}</p>
-      <a href="${config.frontend.url}/trips/${trip._id}" 
+      <a href="${config.frontendUrl}/trips/${trip._id}" 
          style="display: inline-block; padding: 12px 24px; background: #3b82f6; 
                 color: white; text-decoration: none; border-radius: 6px;">
         View Trip
