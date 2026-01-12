@@ -1,36 +1,36 @@
 let mongoose = require('mongoose')
+let isConnected=false
 
 let connectDB = async () => {
   try {
-    let conn = await mongoose.connect(process.env.MONGODB_URI)
+    if(isConnected) return
+    await mongoose.connect(process.env.MONGODB_URI)
+    isConnected=true
+    console.log(`MongoDB Connected: ${mongoose.connection.host}`)
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`)
-
-    process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      console.log('MongoDB disconnected (SIGINT)');
-      process.exit(0);
-    })
-
-    process.on('SIGTERM', async () => {
-      await mongoose.connection.close()
-      console.log('MongoDB disconnected (SIGTERM)')
-      process.exit(0)
-    })
-    return conn
-  } catch (error) {
-    console.error('MongoDB connection error:', error.message)
-    process.exit(1)
+    process.once('SIGINT',closeConnection)
+    process.once('SIGTERM',closeConnection)
+    }catch(error){
+      console.error('MongoDB connection error:', error.message)
+      process.exit(1)
+    }
   }
-}
-
+    let closeConnection=async()=>{
+      try{
+        await mongoose.connection.close()
+        console.log('MongoDB disconnected')
+        process.exit(0)
+      } catch(error){
+        console.error('MongoDB close error:', error.message)
+        process.exit(1)
+      }
+    }
 let disconnectDB = async () => {
   try {
     await mongoose.connection.close()
     console.log('MongoDB disconnected')
   } catch (error) {
     console.error('Disconnect error:', error.message)
-    throw error
   }
 }
 
