@@ -9,16 +9,16 @@ let {
   validateChangePassword 
 } = require('../middleware/validation.middleware')
 
-// Public routes
+// Public routes (no authentication required)
 router.post('/register', validateRegister, authController.register)
 router.post('/login', validateLogin, authController.login)
 router.post('/refresh', authController.refreshToken)
 router.post('/forgot-password', authController.forgotPassword)
 router.post('/reset-password/:token', validatePasswordReset, authController.resetPassword)
 
-router.use(authenticate)
-router.get('/me', authController.getCurrentUser)
-router.post('/logout', authController.logout)
-router.post('/change-password', validateChangePassword, authController.changePassword)
+// Protected routes (authentication required)
+router.get('/me', authenticate, authController.getCurrentUser)
+router.post('/logout', authenticate, authController.logout)
+router.post('/change-password', authenticate, validateChangePassword, authController.changePassword)
 
 module.exports = router

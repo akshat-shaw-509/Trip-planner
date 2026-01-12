@@ -7,44 +7,88 @@ let {
   validateActivityUpdate 
 } = require('../middleware/activity.validation.middleware')
 
-
+// All routes require authentication
 router.use(authenticate)
+
+// IMPORTANT: These routes expect to be mounted at /api/activities
+// So /api/activities/trips/:tripId/activities becomes the full path
 
 router.post(
   '/trips/:tripId/activities',
   validateActivity,
-  activityController.createActivity
+  async (req, res, next) => {
+    try {
+      await activityController.createActivity(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/trips/:tripId/activities',
-  activityController.getActivitiesByTrip
+  async (req, res, next) => {
+    try {
+      await activityController.getActivitiesByTrip(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/trips/:tripId/activities/by-date',
-  activityController.getActivitiesByDate
+  async (req, res, next) => {
+    try {
+      await activityController.getActivitiesByDate(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/:activityId',
-  activityController.getActivityById
+  async (req, res, next) => {
+    try {
+      await activityController.getActivityById(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.put(
   '/:activityId',
   validateActivityUpdate,
-  activityController.updateActivity
+  async (req, res, next) => {
+    try {
+      await activityController.updateActivity(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.patch(
   '/:activityId/status',
-  activityController.updateActivityStatus
+  async (req, res, next) => {
+    try {
+      await activityController.updateActivityStatus(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.delete(
   '/:activityId',
-  activityController.deleteActivity
+  async (req, res, next) => {
+    try {
+      await activityController.deleteActivity(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
-
 module.exports = router

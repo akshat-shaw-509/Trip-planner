@@ -7,48 +7,100 @@ let {
   validateExpenseUpdate 
 } = require('../middleware/expense.validation.middleware')
 
+// All routes require authentication
 router.use(authenticate)
+
+// IMPORTANT: These routes expect to be mounted at /api/expenses
+// So /api/expenses/trips/:tripId/expenses becomes the full path
 
 router.post(
   '/trips/:tripId/expenses',
   validateExpense,
-  expenseController.createExpense
+  async (req, res, next) => {
+    try {
+      await expenseController.createExpense(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/trips/:tripId/expenses',
-  expenseController.getExpensesByTrip
+  async (req, res, next) => {
+    try {
+      await expenseController.getExpensesByTrip(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/trips/:tripId/expenses/summary',
-  expenseController.getTripExpenseSummary
+  async (req, res, next) => {
+    try {
+      await expenseController.getTripExpenseSummary(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/trips/:tripId/expenses/by-category',
-  expenseController.getExpensesByCategory
+  async (req, res, next) => {
+    try {
+      await expenseController.getExpensesByCategory(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.get(
   '/:expenseId',
-  expenseController.getExpenseById
+  async (req, res, next) => {
+    try {
+      await expenseController.getExpenseById(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.put(
   '/:expenseId',
   validateExpenseUpdate,
-  expenseController.updateExpense
+  async (req, res, next) => {
+    try {
+      await expenseController.updateExpense(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.patch(
   '/:expenseId/receipt',
-  expenseController.attachReceipt
+  async (req, res, next) => {
+    try {
+      await expenseController.attachReceipt(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 router.delete(
   '/:expenseId',
-  expenseController.deleteExpense
+  async (req, res, next) => {
+    try {
+      await expenseController.deleteExpense(req, res)
+    } catch (error) {
+      next(error)
+    }
+  }
 )
 
 module.exports = router

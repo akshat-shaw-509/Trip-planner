@@ -4,6 +4,9 @@ let tripController = require('../controllers/trip.controller');
 let { authenticate } = require('../middleware/auth.middleware');
 let { validateTrip, validateTripUpdate } = require('../middleware/trip.validation.middleware');
 
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Route works without auth' })
+})
 // All routes require authentication
 router.use(authenticate);
 
