@@ -1,5 +1,3 @@
-const { listen } = require("../../backend/app")
-
 let currentTripId = null
 let currentDate = null
 let activities = []

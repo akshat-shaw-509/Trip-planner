@@ -54,6 +54,10 @@ let loadPlaces=async (filter = 'all')=> {
   }
 }
 
+let getCategoryClass = (category) => {
+  return category.toLowerCase()
+}
+
 let displayPlaces=(places)=> {
   let grid = document.getElementById('placesGrid')
   let emptyState = document.querySelector('.empty-places')

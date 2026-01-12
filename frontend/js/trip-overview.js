@@ -5,7 +5,7 @@ let initTripOverview = async () => {
   let tripId = new URLSearchParams(window.location.search).get('id')
   if (!tripId) {
     showToast('Trip not found', 'error')
-    setTimeout(() => window.location.href = '/trips', 2000)
+    setTimeout(() => window.location.href = 'trips.html', 2000)
     return
   }
   await loadTripOverview(tripId)
@@ -23,7 +23,7 @@ let loadTripOverview = async (tripId) => {
     }
   } catch (error) {
     showToast('Failed to load trip', 'error')
-    setTimeout(() => window.location.href = '/trips', 2000)
+    setTimeout(() => window.location.href = 'trips.html', 2000)
   }
 }
 
@@ -89,11 +89,11 @@ let loadTripStats = async () => {
 
 let navigateTo = (section) => {
   let routes = {
-    budget: '/budget',
-    schedule: '/schedule', 
-    places: '/places'
+    budget: 'budget.html',
+    schedule: 'schedule.html', 
+    places: 'places.html'
   }
-  let url = `${routes[section] || '/trips'}?id=${currentTrip._id}`
+  let url = `${routes[section] || 'trips.html'}?id=${currentTrip._id}`
   window.location.href = url
 }
 

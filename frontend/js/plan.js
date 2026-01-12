@@ -59,7 +59,7 @@ async function handleTripCreation(e) {
     if (response.success) {
       showToast('Trip created successfully!', 'success')
       setTimeout(() => {
-        window.location.href = `/link?id=${response.data._id}`
+        window.location.href = `trip-overview.html?id=${response.data._id}`
       }, 1000)
     } else {
       throw new Error(response.message || 'Failed to create trip')

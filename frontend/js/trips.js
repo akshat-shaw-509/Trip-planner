@@ -74,7 +74,7 @@ let capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
 let attachTripListeners = (grid) => {
   grid.querySelectorAll('.trip-card').forEach(card => {
     card.addEventListener('click', () => {
-      window.location.href = `/overview?id=${card.dataset.tripId}`
+      window.location.href = `trip-overview.html?id=${card.dataset.tripId}`
     })
   })
 }
