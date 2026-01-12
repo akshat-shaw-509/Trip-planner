@@ -26,8 +26,8 @@ let logError = (err, req) => {
 }
 
 let notFoundHandler = (req, res, next) => {
-  let error = new NotFoundError(`Route ${req.originalUrl} not found`);
-  next(error);
+  let error = NotFoundError(`Route ${req.originalUrl} not found`)
+  next(error)
 }
 
 let errorHandler = (err, req, res, next) => {
