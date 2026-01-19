@@ -395,9 +395,8 @@ body {
 
 /* Social Login */
 .social-login {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    display: flex;
+    justify-content: center;
 }
 
 .social-btn {
@@ -413,6 +412,8 @@ body {
     justify-content: center;
     gap: 10px;
     transition: all 0.3s ease;
+    width: 100%;
+    max-width: 300px;
 }
 
 .social-btn:hover {
@@ -423,10 +424,6 @@ body {
 
 .social-btn.google {
     color: #333;
-}
-
-.social-btn.facebook {
-    color: #1877F2;
 }
 
 .social-btn svg {
@@ -457,6 +454,70 @@ body {
     color: #333;
 }
 
+/* Password Requirements Styling */
+.password-requirements {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.password-requirements ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.password-requirements li {
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s ease;
+}
+
+.password-requirements i {
+    font-size: 11px;
+    width: 12px;
+    flex-shrink: 0;
+}
+
+/* Invalid State (Default) */
+.password-requirements li.invalid {
+    color: #e74c3c;
+}
+
+/* Valid State */
+.password-requirements li.valid {
+    color: #2ecc71;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toast.hidden {
+    transform: translateX(400px);
+    opacity: 0;
+}
+
+.toast.success {
+    background: #2ecc71;
+}
+
+.toast.error {
+    background: #e74c3c;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .auth-wrapper {
@@ -480,10 +541,6 @@ body {
     .auth-header h2 {
         font-size: 28px;
     }
-
-    .social-login {
-        grid-template-columns: 1fr;
-    }
 }
 
 @media (max-width: 480px) {
@@ -503,5 +560,9 @@ body {
         flex-direction: column;
         gap: 12px;
         align-items: flex-start;
+    }
+
+    .stats-showcase {
+        grid-template-columns: 1fr;
     }
 }

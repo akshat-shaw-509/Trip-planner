@@ -1,0 +1,499 @@
+/* css/day-builder.css - Build My Day Generator Styles */
+
+.day-builder-cta {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 40px;
+  border-radius: 16px;
+  margin: 32px 0;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+.day-builder-cta h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.day-builder-cta p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+.day-builder-cta button {
+  background: white;
+  color: #6366f1;
+  padding: 14px 32px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.day-builder-cta button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Day Builder Modal */
+.day-builder-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.day-builder-modal.active {
+  display: flex;
+}
+
+.day-builder-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.day-builder-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-builder-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.day-builder-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: #9ca3af;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.day-builder-close:hover {
+  color: #4b5563;
+}
+
+.day-builder-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* Day selector */
+.day-selector {
+  margin-bottom: 28px;
+}
+
+.day-selector label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.day-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.day-tab {
+  padding: 10px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.day-tab:hover {
+  border-color: #c7d2fe;
+  background: #f0f1ff;
+}
+
+.day-tab.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+.day-tab-date {
+  display: block;
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* Timeline View */
+.timeline-container {
+  margin-top: 24px;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.timeline-header h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.timeline-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.timeline-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-stat i {
+  color: #6366f1;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.2s;
+  cursor: move;
+}
+
+.timeline-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.timeline-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.timeline-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+  padding-top: 4px;
+}
+
+.timeline-time-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.timeline-time-duration {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.timeline-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.timeline-icon.restaurant {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.timeline-icon.attraction {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.timeline-icon.accommodation {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.timeline-icon.transport {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.timeline-icon.other {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.timeline-details {
+  flex: 1;
+}
+
+.timeline-place-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.timeline-place-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.timeline-place-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.timeline-drag-handle {
+  cursor: grab;
+  color: #9ca3af;
+  font-size: 18px;
+  padding: 4px;
+}
+
+.timeline-drag-handle:active {
+  cursor: grabbing;
+}
+
+.timeline-remove-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 18px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.timeline-remove-btn:hover {
+  opacity: 1;
+}
+
+/* Empty state */
+.timeline-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #9ca3af;
+}
+
+.timeline-empty i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.timeline-empty h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.timeline-empty p {
+  font-size: 14px;
+}
+
+/* Loading state */
+.timeline-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 16px;
+}
+
+.timeline-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.day-builder-footer {
+  padding: 20px 28px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.day-builder-info {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.day-builder-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.day-builder-actions button {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+}
+
+.btn-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-save-itinerary {
+  background: #6366f1;
+  color: white;
+}
+
+.btn-save-itinerary:hover {
+  background: #4f46e5;
+}
+
+.btn-save-itinerary:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .day-builder-content {
+    max-height: 95vh;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .day-builder-body {
+    padding: 20px;
+  }
+
+  .timeline-item {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .timeline-time {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: auto;
+  }
+
+  .timeline-content {
+    width: 100%;
+  }
+
+  .day-builder-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .day-builder-actions {
+    width: 100%;
+  }
+
+  .day-builder-actions button {
+    flex: 1;
+  }
+}
