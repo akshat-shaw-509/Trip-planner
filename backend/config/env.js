@@ -58,6 +58,11 @@ const config = {
     uploadDir: process.env.UPLOAD_DIR || 'uploads'
   },
 
+  google: {
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET
+},
+
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5000',
 
   // Environment flags
@@ -65,6 +70,8 @@ const config = {
   isProd: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test'
 }
+
+
 
 // Validate before export
 validateEnv()
