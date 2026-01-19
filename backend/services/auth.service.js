@@ -1,83 +1,144 @@
-let bcrypt = require('bcryptjs')
+// services/auth.service.js
 let User = require('../models/User.model')
+let RefreshToken = require('../models/RefreshToken.model')
+let AuditLog = require('../models/AuditLog.model')
 let jwtUtils = require('../utils/jwt')
-let {
-  UnauthorizedError,
-  ValidationError,
-  ConflictError,
-  NotFoundError
-} = require('../utils/errors')
+let crypto = require('crypto')
 
-let register = async (userData) => {
+// Helper: Create custom error
+let createError = (message, statusCode) => {
+  let error = new Error(message)
+  error.statusCode = statusCode
+  return error
+}
+
+// Helper: Create Audit Log
+let createAudit = async (userId, action, req, details = {}) => {
+  try {
+    await AuditLog.create({
+      user: userId,
+      action,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      details
+    })
+  } catch (err) {
+    console.error('Audit log failed:', err)
+  }
+}
+
+// Helper: Generate Refresh Token Document
+let saveRefreshToken = async (userId) => {
+  let token = jwtUtils.generateRefreshToken(userId.toString())
+  let decoded = jwtUtils.verifyRefreshToken(token)
+  await RefreshToken.create({
+    token,
+    user: userId,
+    expiresAt: new Date(decoded.exp * 1000)
+  })
+  return token
+}
+
+let register = async (userData, req) => {
   let { name, email, password } = userData
   
+  // Validation
   if (!name || !email || !password) {
-    throw ValidationError('Name, email and password are required')
+    throw createError('Name, email and password are required', 400)
   }
   
   if (password.length < 8) {
-    throw ValidationError('Password must be at least 8 characters long')
+    throw createError('Password must be at least 8 characters long', 400)
   }
   
-  // Check if email exists
+  // Check password strength
+  let passwordErrors = []
+  if (!/[A-Z]/.test(password)) passwordErrors.push('Password must contain at least 1 uppercase letter')
+  if (!/[a-z]/.test(password)) passwordErrors.push('Password must contain at least 1 lowercase letter')
+  if (!/[0-9]/.test(password)) passwordErrors.push('Password must contain at least 1 number')
+  if (!/[@$!%*?&]/.test(password)) passwordErrors.push('Password must contain at least 1 special character (@$!%*?&)')
+  
+  if (passwordErrors.length > 0) {
+    let error = createError('Password does not meet requirements', 400)
+    error.errors = passwordErrors.map(msg => ({ field: 'password', message: msg }))
+    throw error
+  }
+  
+  // Check if email already exists
   let existingUser = await User.findOne({ email: email.toLowerCase() })
   if (existingUser) {
-    throw ConflictError('Email already registered')
+    throw createError('Email already registered', 409)
   }
   
-  // Create user (password will be hashed by User model pre-save hook)
+  // Create verification token
+  let verificationToken = crypto.randomBytes(32).toString('hex')
+  
   let user = await User.create({
     name,
     email: email.toLowerCase(),
-    password
+    password,
+    verificationToken
   })
   
+  await createAudit(user._id, 'REGISTER', req)
+
   // Generate tokens
   let accessToken = jwtUtils.generateAccessToken(user._id.toString())
-  let refreshToken = jwtUtils.generateRefreshToken(user._id.toString())
+  let refreshToken = await saveRefreshToken(user._id)
   
-  // Remove password from response
   let userObject = user.toObject()
-  delete userObject.password
   
   return {
     user: userObject,
     accessToken,
-    refreshToken
+    refreshToken,
+    requiresVerification: true
   }
 }
 
-let login = async (email, password) => {
+let login = async (email, password, req) => {
   if (!email || !password) {
-    throw ValidationError('Email and password are required')
+    throw createError('Email and password are required', 400)
   }
   
-  // Find user with password
   let user = await User.findOne({ email: email.toLowerCase() }).select('+password')
   
   if (!user) {
-    throw UnauthorizedError('Invalid email or password')
+    console.log('Login Failed: User not found for email:', email.toLowerCase())
+    throw createError('Invalid email or password', 401)
   }
   
-  // Check password
-  let isPasswordValid = await user.comparePassword(password)
-  if (!isPasswordValid) {
-    throw UnauthorizedError('Invalid email or password')
+  // Check Lockout
+  if (user.isLocked) {
+    console.log('Login Failed: Account locked for email:', email.toLowerCase())
+    throw createError('Account locked due to too many failed attempts. Try again later.', 429)
   }
-  
-  // Check if user is active
+
   if (!user.isActive) {
-    throw UnauthorizedError('Account is deactivated')
+    console.log('Login Failed: Account inactive for email:', email.toLowerCase())
+    throw createError('Account is deactivated', 401)
   }
+
+  console.log('Attempting login for:', email.toLowerCase())
+
+  let isPasswordValid = await user.comparePassword(password)
   
-  // Generate tokens
+  if (!isPasswordValid) {
+    console.log('Login Failed: Password mismatch for email:', email.toLowerCase())
+    throw createError('Invalid email or password', 401)
+  }
+
+  console.log('Login Success for:', email.toLowerCase())
+  
+  // Successful login - reset attempts
+ 
+
   let accessToken = jwtUtils.generateAccessToken(user._id.toString())
-  let refreshToken = jwtUtils.generateRefreshToken(user._id.toString())
+  let refreshToken = await saveRefreshToken(user._id)
   
-  // Remove password from response
+  await createAudit(user._id, 'LOGIN_SUCCESS', req)
+
   let userObject = user.toObject()
-  delete userObject.password
-  
   return {
     user: userObject,
     accessToken,
@@ -87,134 +148,111 @@ let login = async (email, password) => {
 
 let refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) {
-    throw ValidationError('Refresh token is required')
+    throw createError('Refresh token is required', 400)
   }
   
   try {
     let decoded = jwtUtils.verifyRefreshToken(refreshToken)
+    let tokenDoc = await RefreshToken.findOne({ token: refreshToken })
     
-    // Check if user still exists
-    let user = await User.findById(decoded.id)
-    if (!user || !user.isActive) {
-      throw UnauthorizedError('User not found or inactive')
+    if (!tokenDoc) {
+      throw createError('Invalid session (Token revoked)', 401)
     }
     
-    // Generate new access token
-    let accessToken = jwtUtils.generateAccessToken(user._id.toString())
+    let user = await User.findById(decoded.id)
+    if (!user || !user.isActive) {
+      throw createError('User not found or inactive', 401)
+    }
     
-    return { accessToken }
+    // Rotate tokens
+    await RefreshToken.deleteOne({ _id: tokenDoc._id })
+    let newAccessToken = jwtUtils.generateAccessToken(user._id.toString())
+    let newRefreshToken = await saveRefreshToken(user._id)
+    
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken }
   } catch (error) {
-    throw UnauthorizedError('Invalid or expired refresh token')
+    if (error.statusCode) throw error
+    throw createError('Invalid or expired refresh token', 401)
   }
 }
 
-let logout = async (userId) => {
-  // Verify user exists
-  let user = await User.findById(userId)
-  if (!user) {
-    throw NotFoundError('User not found')
+let logout = async (userId, refreshToken) => {
+  if (!refreshToken) {
+    throw createError('Refresh token is required', 400)
   }
-  
-  // In a stateless JWT system, logout is handled client-side
-  // Here we just confirm the action
+  await RefreshToken.deleteOne({ token: refreshToken })
   return { message: 'Logged out successfully' }
 }
 
-let forgotPassword = async (email) => {
-  if (!email) {
-    throw ValidationError('Email is required')
+let verifyEmail = async (token) => {
+  if (!token) {
+    throw createError('Verification token is required', 400)
   }
   
-  let user = await User.findOne({ email: email.toLowerCase() })
+  let hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+  let user = await User.findOne({ verificationToken: hashedToken })
   
-  // Don't reveal if user exists (security best practice)
   if (!user) {
-    return { message: 'If email exists, reset link will be sent' }
+    throw createError('Invalid or expired verification token', 400)
   }
   
-  // Generate reset token (expires in 1 hour)
+  user.isVerified = true
+  user.verificationToken = undefined
+  await user.save()
+  
+  return { message: 'Email verified successfully' }
+}
+
+let forgotPassword = async (email) => {
+  let user = await User.findOne({ email: email.toLowerCase() })
+  if (!user) return { message: 'If email exists, reset link will be sent' }
+  
   let resetToken = user.createPasswordResetToken()
   await user.save({ validateBeforeSave: false })
   
-  return {
-    resetToken,
-    user: {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name
-    }
-  }
+  return { resetToken } 
 }
 
 let resetPassword = async (token, newPassword) => {
-  if (!token || !newPassword) {
-    throw ValidationError('Token and new password are required')
-  }
-  
-  if (newPassword.length < 8) {
-    throw ValidationError('Password must be at least 8 characters long')
-  }
-  
-  // Hash the token to compare with stored hash
-  let crypto = require('crypto')
   let hashedToken = crypto.createHash('sha256').update(token).digest('hex')
   
-  // Find user with valid token
   let user = await User.findOne({
     resetPasswordHash: hashedToken,
     resetPasswordExpires: { $gt: Date.now() }
   })
   
   if (!user) {
-    throw UnauthorizedError('Invalid or expired reset token')
+    throw createError('Invalid or expired reset token', 401)
   }
   
-  // Update password (will be hashed by pre-save hook)
   user.password = newPassword
   user.resetPasswordHash = undefined
   user.resetPasswordExpires = undefined
   await user.save()
   
-  // Generate new tokens
-  let accessToken = jwtUtils.generateAccessToken(user._id.toString())
-  let refreshToken = jwtUtils.generateRefreshToken(user._id.toString())
+  await RefreshToken.deleteMany({ user: user._id })
   
-  return {
-    message: 'Password reset successful',
-    accessToken,
-    refreshToken
-  }
+  let accessToken = jwtUtils.generateAccessToken(user._id.toString())
+  let refreshToken = await saveRefreshToken(user._id)
+  
+  return { message: 'Password reset successful', accessToken, refreshToken }
 }
 
 let changePassword = async (userId, currentPassword, newPassword) => {
-  if (!userId || !currentPassword || !newPassword) {
-    throw ValidationError('User ID, current password, and new password are required')
-  }
-  
-  if (newPassword.length < 8) {
-    throw ValidationError('New password must be at least 8 characters long')
-  }
-  
-  if (currentPassword === newPassword) {
-    throw ValidationError('New password must be different from current password')
-  }
-  
-  // Get user with password
   let user = await User.findById(userId).select('+password')
   if (!user) {
-    throw NotFoundError('User not found')
+    throw createError('User not found', 404)
   }
   
-  // Verify current password
   let isPasswordValid = await user.comparePassword(currentPassword)
   if (!isPasswordValid) {
-    throw UnauthorizedError('Current password is incorrect')
+    throw createError('Current password is incorrect', 401)
   }
   
-  // Update password
   user.password = newPassword
   await user.save()
   
+  await RefreshToken.deleteMany({ user: userId })
   return { message: 'Password changed successfully' }
 }
 
@@ -223,6 +261,7 @@ module.exports = {
   login,
   refreshAccessToken,
   logout,
+  verifyEmail,
   forgotPassword,
   resetPassword,
   changePassword

@@ -5,6 +5,8 @@ let {
   ForbiddenError,
   BadRequestError
 } = require('../utils/errors')
+let fs = require('fs').promises
+let path = require('path')
 
 let createTrip = async (tripData, userId) => {
   let { title, destination, description, startDate, endDate, budget, travelers, tags, coverImage } = tripData
@@ -243,6 +245,62 @@ let removeCollaborator = async (tripId, collaboratorId, userId) => {
   return { message: 'Collaborator functionality requires Trip model update' }
 }
 
+// Upload banner for a trip
+let uploadBanner = async (tripId, userId, file) => {
+  try {
+    let trip = await Trip.findById(tripId)
+    
+    if (!trip) {
+      await fs.unlink(file.path).catch(() => {})
+      throw NotFoundError('Trip not found')
+    }
+
+    if (trip.userId.toString() !== userId) {
+      await fs.unlink(file.path).catch(() => {})
+      throw ForbiddenError('Not authorized to update this trip')
+    }
+
+    if (trip.coverImage && trip.coverImage.startsWith('/uploads/')) {
+      let oldPath = path.join(__dirname, '..', trip.coverImage)
+      await fs.unlink(oldPath).catch(() => {})
+    }
+
+    let bannerUrl = `/uploads/banners/${file.filename}`
+    trip.coverImage = bannerUrl
+    await trip.save()
+
+    return trip
+  } catch (error) {
+    if (file && file.path) {
+      await fs.unlink(file.path).catch(() => {})
+    }
+    throw error
+  }
+}
+
+// Remove banner from a trip
+let removeBanner = async (tripId, userId) => {
+  let trip = await Trip.findById(tripId)
+  
+  if (!trip) {
+    throw NotFoundError('Trip not found')
+  }
+
+  if (trip.userId.toString() !== userId) {
+    throw ForbiddenError('Not authorized to update this trip')
+  }
+
+  if (trip.coverImage && trip.coverImage.startsWith('/uploads/')) {
+    let oldPath = path.join(__dirname, '..', trip.coverImage)
+    await fs.unlink(oldPath).catch(() => {})
+  }
+
+  trip.coverImage = null
+  await trip.save()
+
+  return trip
+}
+
 module.exports = {
   createTrip,
   getTripsByUser,
@@ -254,5 +312,7 @@ module.exports = {
   getPastTrips,
   updateTripStatus,
   addCollaborator,
-  removeCollaborator
+  removeCollaborator,
+  uploadBanner,
+  removeBanner
 }

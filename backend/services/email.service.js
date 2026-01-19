@@ -93,8 +93,29 @@ const sendTripInvitation = async (trip, inviterName, inviteeEmail) => {
   return sendEmail(inviteeEmail, `Join "${trip.title}"`, html);
 }
 
+const sendVerificationEmail = async (user, verifyToken) => {
+  const verifyUrl = `${config.frontendUrl}/verify-email?token=${verifyToken}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px;">
+      <h1 style="color: #3b82f6;">Verify Your Email</h1>
+      <p>Hi <strong>${user.name}</strong>,</p>
+      <p>Please verify your email by clicking the button below:</p>
+      <a href="${verifyUrl}" 
+         style="display: inline-block; padding: 12px 24px; background: #3b82f6; 
+                color: white; text-decoration: none; border-radius: 6px;">
+        Verify Email
+      </a>
+      <p>If you didn’t create this account, ignore this email.</p>
+      <p>The Planora Team</p>
+    </div>
+  `
+  return sendEmail(user.email, 'Verify your email', html)
+}
+
+
 module.exports = {
   sendEmail,
+  sendVerificationEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendTripInvitation,

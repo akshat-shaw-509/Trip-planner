@@ -184,8 +184,28 @@ let getByCategory = async (tripId, userId) => {
   ])
 }
 
+let addAIPlaceToTrip = async (tripId, aiPlace, userId) => {
+  await checkTripOwnership(tripId, userId);
+
+  return Place.create({
+    tripId,
+    name: aiPlace.name,
+    category: aiPlace.category,
+    address: aiPlace.address || '',
+    location: aiPlace.location,
+    rating: aiPlace.rating || 0,
+    priceLevel: aiPlace.priceLevel || 0,
+    description: aiPlace.description || '',
+    source: 'ai',
+    visitStatus: 'planned'
+  });
+};
+
+
+
 module.exports = {
   createPlace,
+  addAIPlaceToTrip,
   getPlacesByTrip,
   getPlaceById,
   updatePlace,
