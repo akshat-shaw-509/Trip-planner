@@ -15,6 +15,7 @@ let handleValidationErrors = (req, res, next) => {
   next()
 }
 
+// ✅ FIXED: Remove handleValidationErrors from here
 let validateDateRange = () => [
   body('startDate')
     .notEmpty()
@@ -33,6 +34,7 @@ let validateDateRange = () => [
       }
       return true
     })
+  // ✅ NO handleValidationErrors here
 ]
 
 let validateTrip = [
@@ -61,12 +63,27 @@ let validateTrip = [
     .isFloat({ min: 0 })
     .withMessage('Budget must be positive'),
 
+  body('travelers')  // ✅ ADD THIS
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Travelers must be at least 1'),
+
+  body('tags')  // ✅ ADD THIS
+    .optional()
+    .isArray()
+    .withMessage('Tags must be an array'),
+
+  body('isPublic')  // ✅ ADD THIS
+    .optional()
+    .isBoolean()
+    .withMessage('isPublic must be boolean'),
+
   body('status')
     .optional()
     .isIn(Object.values(TRIP_STATUS))
     .withMessage(`Status: ${Object.values(TRIP_STATUS).join(', ')}`),
 
-  handleValidationErrors,
+  handleValidationErrors,  // ✅ Only ONE at the end
 ]
 
 let validateTripUpdate = [
@@ -109,12 +126,17 @@ let validateTripUpdate = [
     .isFloat({ min: 0 })
     .withMessage('Budget must be positive'),
 
+  body('travelers')  // ✅ ADD THIS
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Travelers must be at least 1'),
+
   body('status')
     .optional()
     .isIn(Object.values(TRIP_STATUS))
     .withMessage(`Status: ${Object.values(TRIP_STATUS).join(', ')}`),
 
-  handleValidationErrors,
+  handleValidationErrors,  // ✅ Only ONE at the end
 ]
 
 module.exports = { validateTrip, validateTripUpdate };

@@ -1,5 +1,19 @@
 let { body, validationResult } = require('express-validator');
-let { PLACE_CATEGORIES, PLACE_VISIT_STATUS } = require('../config/constants');
+
+// Activity types from the model
+const ACTIVITY_TYPES = [
+  'flight',
+  'accommodation',
+  'restaurant',
+  'attraction',
+  'transport',
+  'shopping',
+  'entertainment',
+  'other',
+];
+
+const ACTIVITY_STATUS = ['planned', 'confirmed', 'completed', 'cancelled'];
+const PRIORITY_LEVELS = ['low', 'medium', 'high'];
 
 let sharedFields = [
   body('title')
@@ -26,25 +40,48 @@ let sharedFields = [
     .isFloat({ min: 0 })
     .withMessage('Cost must be positive'),
 
+  body('currency')
+    .optional()
+    .trim()
+    .isLength({ min: 3, max: 3 })
+    .withMessage('Currency must be 3 characters (e.g., USD)'),
+
   body('placeId')
     .optional()
     .isMongoId()
     .withMessage('Invalid place ID'),
 
-  body('bookingReference', 'confirmationNumber')
+  body('location')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Location max 500 characters'),
+
+  body('bookingReference')
     .optional()
     .trim()
     .isLength({ max: 100 })
-    .withMessage('Reference max 100 characters'),
+    .withMessage('Booking reference max 100 characters'),
+
+  body('confirmationNumber')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Confirmation number max 100 characters'),
 
   body('url')
     .optional()
     .trim()
     .isURL()
-    .withMessage('Invalid URL')
-]
+    .withMessage('Invalid URL'),
 
-let validateDateRange =(startField, endField)=> [
+  body('priority')
+    .optional()
+    .isIn(PRIORITY_LEVELS)
+    .withMessage(`Priority must be: ${PRIORITY_LEVELS.join(', ')}`)
+];
+
+let validateDateRange = (startField, endField) => [
   body(startField)
     .notEmpty()
     .withMessage(`${startField} required`)
@@ -60,68 +97,72 @@ let validateDateRange =(startField, endField)=> [
         const start = new Date(req.body[startField]);
         const end = new Date(value);
         if (end <= start) {
-          throw new Error(`${endField} must be after ${startField}`)
+          throw new Error(`${endField} must be after ${startField}`);
         }
       }
       return true;
     })
-]
+];
 
 let validateActivity = [
   ...sharedFields,
   
-  body('category')
+  body('type')
     .notEmpty()
-    .withMessage('Category required')
-    .isIn(Object.values(PLACE_CATEGORIES))
-    .withMessage(`Category must be: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
+    .withMessage('Type required')
+    .isIn(ACTIVITY_TYPES)
+    .withMessage(`Type must be: ${ACTIVITY_TYPES.join(', ')}`),
 
   ...validateDateRange('startTime', 'endTime'),
 
-  body('visitStatus')
+  body('status')
     .optional()
-    .isIn(Object.values(PLACE_VISIT_STATUS))
-    .withMessage(`Status: ${Object.values(PLACE_VISIT_STATUS).join(', ')}`),
+    .isIn(ACTIVITY_STATUS)
+    .withMessage(`Status must be: ${ACTIVITY_STATUS.join(', ')}`),
 
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
+        message: 'Validation failed',
         errors: errors.array().map(({ path, msg }) => ({ field: path, message: msg }))
-      })
+      });
     }
-    next()
+    next();
   }
-]
+];
 
 const validateActivityUpdate = [
-  ...sharedFields,
+  ...sharedFields.map(field => 
+    field.optional({ nullable: true })
+  ),
 
   ...validateDateRange('startTime', 'endTime').map(field => 
     field.optional({ nullable: true })
   ),
 
-  body('category')
+  body('type')
     .optional()
-    .isIn(Object.values(PLACE_CATEGORIES))
-    .withMessage(`Category: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
+    .isIn(ACTIVITY_TYPES)
+    .withMessage(`Type must be: ${ACTIVITY_TYPES.join(', ')}`),
 
-  body('visitStatus')
+  body('status')
     .optional()
-    .isIn(Object.values(PLACE_VISIT_STATUS))
-    .withMessage(`Status: ${Object.values(PLACE_VISIT_STATUS).join(', ')}`),
+    .isIn(ACTIVITY_STATUS)
+    .withMessage(`Status must be: ${ACTIVITY_STATUS.join(', ')}`),
 
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
+        message: 'Validation failed',
         errors: errors.array().map(({ path, msg }) => ({ field: path, message: msg }))
-      })
+      });
     }
-    next()
+    next();
   }
-]
+];
 
-module.exports = { validateActivity, validateActivityUpdate }
+module.exports = { validateActivity, validateActivityUpdate };
