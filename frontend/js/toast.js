@@ -1,92 +1,119 @@
-// toast.js - Browser Compatible (No Node.js require)
+// toast.js — Unified Toast Notification System
+(function () {
+  'use strict';
 
-const getToastContainer = () => {
-  let container = document.getElementById('toast-container')
-  if (!container) {
-    container = document.createElement('div')
-    container.id = 'toast-container'
-    container.style.cssText = `
+  if (window.toastLoaded) return;
+  window.toastLoaded = true;
+
+  let toastContainer = null;
+
+  const COLORS = {
+    success: '#10b981',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6',
+  };
+
+  const ICONS = {
+    success: 'check-circle',
+    error: 'exclamation-circle',
+    warning: 'exclamation-triangle',
+    info: 'info-circle',
+  };
+
+  function initToastContainer() {
+    if (toastContainer) return;
+
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      z-index: 9999;
+      z-index: 10000;
       display: flex;
       flex-direction: column;
       gap: 10px;
-    `
-    document.body.appendChild(container)
+      max-width: 500px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
   }
-  return container
-}
 
-const ICONS = {
-  success: 'fa-check-circle',
-  error: 'fa-exclamation-circle',
-  warning: 'fa-exclamation-triangle',
-  info: 'fa-info-circle',
-}
+  function showToast(message, type = 'info', duration = 4000) {
+    initToastContainer();
 
-const COLORS = {
-  success: '#10b981',
-  error: '#ef4444',
-  warning: '#f59e0b',
-  info: '#3b82f6',
-}
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
 
-const showToast = (message, type = 'info') => {
-  const container = getToastContainer()
-  const toast = document.createElement('div')
-  
-  toast.className = `toast toast--${type}`
-  toast.style.cssText = `
-    background: white;
-    color: #1f2937;
-    padding: 16px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 300px;
-    max-width: 500px;
-    border-left: 4px solid ${COLORS[type] || COLORS.info};
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s ease-out;
-  `
-  
-  toast.innerHTML = `
-    <i class="fas ${ICONS[type] || ICONS.info}" style="color: ${COLORS[type] || COLORS.info}; font-size: 20px;"></i>
-    <span style="flex: 1; font-size: 14px; line-height: 1.5;">${message}</span>
-  `
-  
-  container.appendChild(toast)
-  
-  // Trigger animation
-  setTimeout(() => {
-    toast.style.opacity = '1'
-    toast.style.transform = 'translateX(0)'
-  }, 10)
-  
-  // Auto remove after 3 seconds
-  setTimeout(() => {
-    toast.style.opacity = '0'
-    toast.style.transform = 'translateX(100%)'
-    
+    const bgColor = COLORS[type] || COLORS.info;
+    const icon = ICONS[type] || ICONS.info;
+
+    toast.style.cssText = `
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 20px;
+      background: white;
+      color: #1f2937;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-left: 4px solid ${bgColor};
+      font-size: 14px;
+      line-height: 1.6;
+      animation: slideIn 0.3s ease;
+      pointer-events: auto;
+      cursor: pointer;
+      max-width: 100%;
+      word-wrap: break-word;
+    `;
+
+    toast.innerHTML = `
+      <i class="fas fa-${icon}" style="color:${bgColor}; font-size:18px; flex-shrink:0; margin-top:2px;"></i>
+      <span style="flex:1; white-space: pre-line;">${escapeHtml(message)}</span>
+      <i class="fas fa-times" style="font-size:16px; opacity:0.7; flex-shrink:0;"></i>
+    `;
+
+    toast.onclick = () => removeToast(toast);
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => removeToast(toast), duration);
+
+    return toast;
+  }
+
+  function removeToast(toast) {
+    if (!toast || !toast.parentElement) return;
+
+    toast.style.animation = 'slideOut 0.3s ease';
     setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast)
-      }
-      
-      // Remove container if empty
-      if (container.children.length === 0) {
-        container.remove()
-      }
-    }, 300)
-  }, 3000)
-}
+      if (toast.parentElement) toast.parentElement.removeChild(toast);
+    }, 300);
+  }
 
-// Make available globally
-window.showToast = showToast
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 
-console.log('✅ Toast module loaded')
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(400px); opacity: 0; }
+    }
+    .toast:hover {
+      transform: translateX(-5px);
+      transition: transform 0.2s ease;
+    }
+  `;
+  document.head.appendChild(style);
+
+  window.showToast = showToast;
+  console.log('✅ Unified toast system loaded');
+})();

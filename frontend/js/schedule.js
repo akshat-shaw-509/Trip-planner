@@ -1,238 +1,635 @@
-let currentTripId = null
-let currentDate = null
-let activities = []
-let calendar = null
-
-// Init everything
-let initSchedule = async () => {
-  if (!authHandler.requireAuth()) return
-  currentTripId = new URLSearchParams(window.location.search).get('id')
-  if (!currentTripId) {
-    showToast('Select a trip first', 'error')
-    setTimeout(() => window.location.href = '/trips', 2000)
-    return
-  }
-
-  await Promise.all([
-    loadTripDetails(),
-    initCalendar(),
-    initTimeGrid(),
-    initModal()
-  ])
-  
-  selectDate(new Date())
-}
-
-// Load trip data
-let loadTripDetails = async () => {
-  try {
-    let response = await apiService.trips.getById(currentTripId)
-    window.currentTrip = response.data
-  } catch (error) {
-    console.error('Load trip failed:', error)
-  }
-}
-
-// Calendar setup
-let initCalendar = () => {
-  let el = document.getElementById('calendar')
-  if (!flatpickr || !el) return
-
-  let trip = window.currentTrip;
-  calendar = flatpickr(el, {
-    inline: true,
-    minDate: trip?.startDate,
-    maxDate: trip?.endDate,
-    defaultDate: new Date(),
-    onChange: ([date]) => date && selectDate(date)
-  })
-}
-
-// 24h time grid
-let initTimeGrid = () => {
-  let grid = document.getElementById('time-grid')
-  if (!grid) return
-  grid.innerHTML = Array.from({ length: 24 }, (_, i) => 
-    `<div class="time-slot"><span class="time-label">${formatHour(i)}</span></div>`
-  ).join('')
-}
-
-let formatHour = (hour) => {
-  let period = hour >= 12 ? 'PM' : 'AM'
-  let display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
-  return `${display}:00 ${period}`
-}
-
-// Main date selector
-let selectDate = async (date) => {
-  currentDate = date
-  updateDateDisplay(date)
-  await loadActivities(date)
-}
-
-let updateDateDisplay = (date) => {
-  const display = document.getElementById('selected-date-display')
-  if (display) {
-    display.textContent = date.toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    })
-  }
-}
-
-// Load + display activities
-let loadActivities = async (date) => {
-  try {
-    let dateStr = date.toISOString().split('T')[0]
-    let response = await apiService.activities.getByDate(currentTripId, dateStr)
-    activities = response.data || []
-    displayActivities()
-  } catch (error) {
-    console.error('Load activities failed:', error)
-    displayActivities([])
-  }
-}
-
-let displayActivities = () => {
-  let timeline = document.getElementById('activities-timeline')
-  if (!timeline) return
-
-  timeline.innerHTML = activities.length 
-    ? activities.map(createActivityBlock).join('')
-    : '<div class="empty-timeline"><p>No activities</p></div>'
-}
-
-let createActivityBlock = (activity) => {
-  let { top, height } = calculatePosition(activity)
-  return `
-    <div class="activity-block" 
-         style="top: ${top}px; height: ${height}px; --bg-color: ${activity.color || '#ff99cc'};"
-         data-activity-id="${activity._id}"
-         onclick="editActivity('${activity._id}')">
-      <div class="activity-title">${activity.title}</div>
-      ${activity.description ? `<div class="activity-description">${activity.description}</div>` : ''}
-      <div class="activity-time">${formatTimeRange(activity)}</div>
-    </div>
-  `
-}
-
-let calculatePosition = (activity) => {
-  let start = new Date(activity.startTime)
-  let end = activity.endTime ? new Date(activity.endTime) : null
-  let top = (start.getHours() * 80) + (start.getMinutes() / 60 * 80)
-  let height = end ? ((end - start) / (1000 * 60 * 60)) * 80 : 80
-  return { top, height }
-}
-
-let formatTimeRange = (activity) => {
-  let start = new Date(activity.startTime);
-  let end = activity.endTime ? new Date(activity.endTime) : null;
-  return `${start.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}${
-    end ? ' - ' + end.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true}) : ''
-  }`
-}
-
-// Modal handlers
-let initModal = () => {
-  let modal = document.getElementById('activity-modal')
-  if (!modal) return
-
-  document.getElementById('add-place-btn')?.addEventListener('click', openActivityModal)
-  document.querySelector('#modal-close, #cancel-btn')?.addEventListener('click', closeActivityModal)
-  document.getElementById('save-activity-btn')?.addEventListener('click', saveActivity)
-  
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeActivityModal()
-  })
-}
-
-let openActivityModal = (activity = null) => {
-  let modal = document.getElementById('activity-modal')
-  let title = document.getElementById('modal-title')
-  
-  if (activity) {
-    title.textContent = 'Edit Activity'
-    populateForm(activity)
-    modal.dataset.activityId = activity._id
-  } else {
-    title.textContent = 'Add Activity'
-    resetActivityForm()
-    delete modal.dataset.activityId
-  }
-  modal.classList.add('active')
-}
-
-let closeActivityModal = () => {
-  let modal = document.getElementById('activity-modal')
-  modal?.classList.remove('active')
-  resetActivityForm()
-}
-
-let resetActivityForm = () => {
-  ['activity-title', 'activity-description', 'start-time', 'end-time'].forEach(id => {
-    document.getElementById(id).value = ''
-  })
-}
-
-let populateForm = (activity) => {
-  document.getElementById('activity-title').value = activity.title
-  document.getElementById('activity-description').value = activity.description || ''
-  document.getElementById('start-time').value = new Date(activity.startTime).toTimeString().slice(0, 5)
-  if (activity.endTime) {
-    document.getElementById('end-time').value = new Date(activity.endTime).toTimeString().slice(0, 5)
-  }
-}
-
-let saveActivity = async () => {
-  let formData = getFormData()
-  if (!formData.title || !formData.startTime) {
-    showToast('Fill required fields', 'error')
-    return
-  }
-
-  try {
-    let modal = document.getElementById('activity-modal')
-    let activityId = modal.dataset.activityId
-    let response = activityId 
-      ? await apiService.activities.update(activityId, formData)
-      : await apiService.activities.create(currentTripId, formData)
-
-    if (response.success) {
-      showToast('Activity saved!', 'success')
-      closeActivityModal()
-      await loadActivities(currentDate)
+// SCHEDULE.JS - FRESH COPY - DELETE OLD FILE FIRST
+(function() {
+    'use strict';
+    
+    // Prevent double loading
+    if (window.schedulePageLoaded) {
+        console.warn('Schedule page already loaded, skipping...');
+        return;
     }
-  } catch (error) {
-    showToast('Save failed', 'error')
-  }
+    window.schedulePageLoaded = true;
+
+    let tripId = null;
+    let tripData = null;
+    let selectedDate = new Date();
+    let activities = [];
+    let currentActivityId = null;
+    let calendar = null;
+
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 Schedule page initializing...');
+        
+        // Check authentication
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            showAlert('Please log in to continue', 'error');
+            setTimeout(() => window.location.href = 'index.html', 1500);
+            return;
+        }
+
+        // Get trip ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        tripId = urlParams.get('id');
+
+        if (!tripId) {
+    showAlert('Trip not found. Please select a trip first.', 'error');
+    setTimeout(() => window.location.href = 'trips.html', 1500);
+    return;
 }
 
-let getFormData = () => {
-  let color = document.querySelector('.color-option.active')?.dataset.color || '#ff99cc'
-  return {
-    title: document.getElementById('activity-title').value,
-    description: document.getElementById('activity-description').value,
-    type: 'other',
-    startTime: combineDateAndTime(currentDate, document.getElementById('start-time').value),
-    endTime: document.getElementById('end-time').value ? combineDateAndTime(currentDate, document.getElementById('end-time').value) : null,
-    color,
-  }
+        console.log('📍 Loading trip:', tripId);
+
+        try {
+            await loadTripData();
+            await loadActivities();
+            initializeCalendar();
+            generateTimeGrid();
+            updateStats();
+            setupEventListeners();
+            
+            // Set user name
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const userName = document.getElementById('userName');
+            if (userName) {
+                userName.textContent = user.name || 'User';
+            }
+            
+            console.log('✅ Schedule page loaded successfully');
+        } catch (error) {
+            console.error('❌ Initialization error:', error);
+            showAlert('Failed to initialize page: ' + error.message, 'error');
+        }
+    });
+
+    // Setup all event listeners
+    function setupEventListeners() {
+        // Add activity buttons
+        const addActivityBtn = document.getElementById('addActivityBtn');
+        const addActivityEmptyBtn = document.getElementById('addActivityEmptyBtn');
+        if (addActivityBtn) addActivityBtn.onclick = openAddActivityModal;
+        if (addActivityEmptyBtn) addActivityEmptyBtn.onclick = openAddActivityModal;
+
+        // Modal buttons
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveActivityBtn = document.getElementById('saveActivityBtn');
+        
+        if (closeModalBtn) closeModalBtn.onclick = closeActivityModal;
+        if (cancelBtn) cancelBtn.onclick = closeActivityModal;
+        if (saveActivityBtn) saveActivityBtn.onclick = saveActivity;
+
+        // Other buttons
+        const todayBtn = document.getElementById('todayBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (todayBtn) todayBtn.onclick = goToToday;
+        if (exportBtn) exportBtn.onclick = exportSchedule;
+        if (logoutBtn) {
+            logoutBtn.onclick = () => {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            };
+        }
+
+        // Close modal on outside click
+        const activityModal = document.getElementById('activityModal');
+        if (activityModal) {
+            activityModal.onclick = (e) => {
+                if (e.target.id === 'activityModal') {
+                    closeActivityModal();
+                }
+            };
+        }
+    }
+
+    // Load trip data
+    async function loadTripData() {
+        try {
+            console.log('📥 Fetching trip data...');
+            const response = await window.apiService.trips.getById(tripId);
+            
+            if (!response || !response.data) {
+                throw new Error('Invalid response from server');
+            }
+            
+            tripData = response.data;
+            console.log('📦 Trip data loaded:', tripData.title);
+            
+            // Update UI
+            const tripTitle = document.getElementById('tripTitle');
+            const tripBreadcrumb = document.getElementById('tripBreadcrumb');
+            const tripDates = document.getElementById('tripDates');
+            
+            if (tripTitle) tripTitle.textContent = tripData.title + ' Schedule';
+            if (tripBreadcrumb) tripBreadcrumb.textContent = tripData.title;
+            
+            const startDate = new Date(tripData.startDate).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric'
+            });
+            const endDate = new Date(tripData.endDate).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric'
+            });
+            
+            if (tripDates) tripDates.textContent = `${startDate} - ${endDate}`;
+            
+        } catch (error) {
+            console.error('❌ Error loading trip:', error);
+            throw new Error('Failed to load trip data: ' + (error.message || 'Unknown error'));
+        }
+    }
+
+    // Load activities
+    async function loadActivities() {
+        try {
+            console.log('📥 Fetching activities...');
+            const response = await window.apiService.activities.getByTrip(tripId);
+            
+            console.log('📦 Activities response:', response);
+            
+            // Handle both response.data and direct array
+            activities = response.data || response || [];
+            
+            console.log(`✅ Activities loaded: ${activities.length}`);
+            renderActivities();
+            
+        } catch (error) {
+            console.error('⚠️ Error loading activities:', error);
+            
+            // Don't throw - just show empty state
+            activities = [];
+            renderActivities();
+            
+            if (error.statusCode !== 404) {
+                showAlert('Could not load activities', 'warning');
+            }
+        }
+    }
+
+    // Initialize Flatpickr Calendar
+    function initializeCalendar() {
+        if (!tripData) {
+            console.error('❌ Cannot initialize calendar: trip data not loaded');
+            return;
+        }
+
+        console.log('📅 Initializing calendar...');
+        
+        const calendarEl = document.getElementById('calendar');
+        if (!calendarEl) {
+            console.error('❌ Calendar element not found');
+            return;
+        }
+
+        try {
+            calendar = flatpickr("#calendar", {
+                inline: true,
+                minDate: new Date(tripData.startDate),
+                maxDate: new Date(tripData.endDate),
+                defaultDate: selectedDate,
+                onChange: function(selectedDates) {
+                    if (selectedDates.length > 0) {
+                        selectedDate = selectedDates[0];
+                        updateSelectedDate();
+                        renderActivities();
+                    }
+                },
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    const date = dayElem.dateObj;
+                    const dateStr = formatDate(date);
+                    const dayActivities = activities
+    .map(a => splitActivityByDay(a)).flat()
+    .filter(a => formatDate(a.startTime) === dateStr);
+
+
+                    if (dayActivities.length > 0) {
+                        const indicator = document.createElement('span');
+                        indicator.className = 'event-indicator';
+                        indicator.style.cssText = 'background: #4CAF50; width: 6px; height: 6px; border-radius: 50%; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);';
+                        dayElem.appendChild(indicator);
+                    }
+                }
+            });
+            
+            updateSelectedDate();
+            console.log('✅ Calendar initialized');
+            
+        } catch (error) {
+            console.error('❌ Calendar initialization error:', error);
+            showAlert('Calendar failed to load', 'warning');
+        }
+    }
+
+    // Generate time grid (7 AM to 11 PM)
+    function generateTimeGrid() {
+        const timeGrid = document.querySelector('.time-grid');
+        if (!timeGrid) return;
+        
+        timeGrid.innerHTML = '';
+
+        for (let hour = 0; hour < 24; hour++) {
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'time-label';
+            timeLabel.textContent = formatHour(hour);
+            
+            timeSlot.appendChild(timeLabel);
+            timeGrid.appendChild(timeSlot);
+        }
+    }
+
+    // Render activities on timeline
+    function renderActivities() {
+    const timeline = document.getElementById('activitiesTimeline');
+    const emptyState = document.getElementById('emptyTimeline');
+    if (!timeline || !emptyState) return;
+
+    const dateStr = formatDate(selectedDate);
+
+    const dayActivities = activities
+        .map(a => splitActivityByDay(a)).flat()
+        .filter(a => formatDate(a.startTime) === dateStr)
+        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+    console.log('Render:', dateStr, dayActivities);
+
+    if (dayActivities.length === 0) {
+        timeline.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    timeline.innerHTML = '';
+    dayActivities.forEach(a => timeline.appendChild(createActivityBlock(a)));
 }
 
-let combineDateAndTime = (date, timeStr) => {
-  let [hours, minutes] = timeStr.split(':')
-  let combined = new Date(date)
-  combined.setHours(parseInt(hours), parseInt(minutes), 0, 0)
-  return combined.toISOString()
+
+
+    // Create activity block element
+    function createActivityBlock(activity) {
+  const block = document.createElement('div');
+  block.className = 'activity-block';
+
+  const startTime = new Date(activity.startTime);
+  const endTime = activity.endTime
+    ? new Date(activity.endTime)
+    : new Date(startTime.getTime() + 60 * 60 * 1000);
+
+  const midnight = new Date(startTime);
+  midnight.setHours(24, 0, 0, 0);
+  const effectiveEnd = endTime > midnight ? midnight : endTime;
+
+  const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+  const endMinutes = effectiveEnd.getHours() * 60 + effectiveEnd.getMinutes();
+
+  const duration = Math.max(endMinutes - startMinutes, 15);
+
+  const PX_PER_MIN = 80 / 60;     // same scale as grid
+  const MAX_HEIGHT = 320;         // visually safe max
+
+  const height = Math.min(duration * PX_PER_MIN, MAX_HEIGHT);
+
+  block.style.top = `${startMinutes * PX_PER_MIN}px`;
+  block.style.height = `${height}px`;
+
+  const colors = {
+    flight: '#2196F3',
+    accommodation: '#9C27B0',
+    restaurant: '#FF9800',
+    attraction: '#4CAF50',
+    transport: '#607D8B',
+    shopping: '#E91E63',
+    entertainment: '#00BCD4',
+    other: '#795548'
+  };
+
+  block.style.borderLeftColor = colors[activity.type] || colors.other;
+
+  block.innerHTML = `
+    <div class="activity-title">
+      <i class="fas fa-${getActivityIcon(activity.type)}"></i>
+      ${activity.title}${activity._segmentOf ? ' (continued)' : ''}
+    </div>
+    <div class="activity-description">${activity.description || ''}</div>
+    <div class="activity-time">
+      <i class="fas fa-clock"></i>
+      ${formatTime(startTime)} - ${formatTime(effectiveEnd)}
+    </div>
+  `;
+
+  block.onclick = () => editActivity(activity);
+  return block;
 }
 
-let editActivity = (id) => {
-  let activity = activities.find(a => a._id === id)
-  if (activity) openActivityModal(activity)
+    // Get icon for activity type
+    function getActivityIcon(type) {
+        const icons = {
+            flight: 'plane',
+            accommodation: 'bed',
+            restaurant: 'utensils',
+            attraction: 'landmark',
+            transport: 'car',
+            shopping: 'shopping-bag',
+            entertainment: 'ticket',
+            other: 'circle'
+        };
+        return icons[type] || icons.other;
+    }
+
+    // Update selected date display
+    function updateSelectedDate() {
+        if (!tripData) return;
+        
+        const dateStr = selectedDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        
+        const selectedDateEl = document.getElementById('selectedDate');
+        const dayInfoEl = document.getElementById('dayInfo');
+        
+        if (selectedDateEl) selectedDateEl.textContent = dateStr;
+        
+        const tripStart = new Date(tripData.startDate);
+        const tripStartMidnight = new Date(tripStart.toDateString());
+const selectedMidnight = new Date(selectedDate.toDateString());
+
+const dayNumber = Math.floor(
+  (selectedMidnight - tripStartMidnight) / (1000 * 60 * 60 * 24)
+) + 1;
+
+        
+        if (dayInfoEl) dayInfoEl.textContent = `Day ${dayNumber} of your trip`;
+    }
+
+    // Update statistics
+    function updateStats() {
+        const total = activities.length;
+        const completed = activities.filter(a => a.status === 'completed').length;
+        const pending = activities.filter(a => a.status === 'planned').length;
+        
+        const totalEl = document.getElementById('totalActivities');
+        const completedEl = document.getElementById('completedActivities');
+        const pendingEl = document.getElementById('pendingActivities');
+        
+        if (totalEl) totalEl.textContent = total;
+        if (completedEl) completedEl.textContent = completed;
+        if (pendingEl) pendingEl.textContent = pending;
+    }
+
+    // Open add activity modal
+    function openAddActivityModal() {
+        currentActivityId = null;
+        const modalTitle = document.getElementById('modalTitle');
+        const form = document.getElementById('activityForm');
+        
+        if (modalTitle) modalTitle.textContent = 'Add Activity';
+        if (form) form.reset();
+        
+        // Set default date and time
+        const dateTime = new Date(selectedDate);
+        dateTime.setHours(9, 0, 0, 0);
+        const startTimeInput = document.getElementById('activityStartTime');
+        if (startTimeInput) {
+            startTimeInput.value = formatDateTime(dateTime);
+        }
+        
+        const modal = document.getElementById('activityModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    // Close activity modal
+    function closeActivityModal() {
+        const modal = document.getElementById('activityModal');
+        if (modal) modal.classList.remove('active');
+        currentActivityId = null;
+    }
+
+    // Edit activity
+    function editActivity(activity) {
+        currentActivityId = activity._id;
+        
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.textContent = 'Edit Activity';
+        
+        document.getElementById('activityTitle').value = activity.title;
+        document.getElementById('activityDescription').value = activity.description || '';
+        document.getElementById('activityStartTime').value = formatDateTime(new Date(activity.startTime));
+        document.getElementById('activityEndTime').value = activity.endTime ? formatDateTime(new Date(activity.endTime)) : '';
+        document.getElementById('activityType').value = activity.type;
+        document.getElementById('activityCost').value = activity.cost || '';
+        document.getElementById('activityLocation').value = activity.location || '';
+        document.getElementById('activityNotes').value = activity.notes || '';
+        
+        const modal = document.getElementById('activityModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    function formatDateTime(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-// Start everything
-document.addEventListener('DOMContentLoaded', initSchedule)
 
-if (typeof window !== 'undefined') {
-  window.editActivity = editActivity
+    // Save activity
+    async function saveActivity() {
+        const title = document.getElementById('activityTitle').value.trim();
+        const description = document.getElementById('activityDescription').value.trim();
+        const startTime = document.getElementById('activityStartTime').value;
+        const endTime = document.getElementById('activityEndTime').value;
+        const type = document.getElementById('activityType').value;
+        const cost = parseFloat(document.getElementById('activityCost').value) || 0;
+        const location = document.getElementById('activityLocation').value.trim();
+        const notes = document.getElementById('activityNotes').value.trim();
+
+        if (!title || !startTime || !type) {
+            showAlert('Please fill in all required fields', 'error');
+            return;
+        }
+
+
+const activityDate = startTime.split('T')[0];
+
+  const activityData = {
+    title,
+    type,                       // MUST be called "type"
+    startTime: new Date(startTime).toISOString(),
+    endTime: endTime ? new Date(endTime).toISOString() : null,
+    visitStatus: 'planned',
+    notes: notes || ''
+};
+
+console.log('📤 Sending activity payload:', activityData);
+
+
+
+        try {
+            if (currentActivityId) {
+                await window.apiService.activities.update(currentActivityId, activityData);
+                showAlert('Activity updated successfully', 'success');
+            } else {
+                await window.apiService.activities.create(tripId, activityData);
+                showAlert('Activity created successfully', 'success');
+            }
+            
+            closeActivityModal();
+            await loadActivities();
+            updateStats();
+            
+            if (calendar) {
+                calendar.redraw();
+            }
+        } catch (error) {
+            console.error('❌ Error saving activity:', error);
+            showAlert(error.message || 'Failed to save activity', 'error');
+        }
+    }
+
+    // Go to today
+    function goToToday() {
+        if (!tripData) return;
+        
+        const today = new Date();
+        const tripStart = new Date(tripData.startDate);
+        const tripEnd = new Date(tripData.endDate);
+        
+        if (today >= tripStart && today <= tripEnd) {
+            selectedDate = today;
+            if (calendar) {
+                calendar.setDate(today);
+            }
+            updateSelectedDate();
+            renderActivities();
+        } else {
+            showAlert('Today is outside the trip dates', 'info');
+        }
+    }
+
+    // Export schedule
+    function exportSchedule() {
+        showAlert('Export feature coming soon!', 'info');
+    }
+
+    // Utility functions
+  
+    function formatTime(date) {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    function formatHour(hour) {
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+        return `${displayHour}:00 ${period}`;
+    }
+
+    function formatDate(input) {
+    const d = new Date(input);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
 }
+
+    function showAlert(message, type = 'info') {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#2196F3'};
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+function splitActivityByDay(activity) {
+    const segments = [];
+
+    const start = new Date(activity.startTime);
+    const end = activity.endTime
+        ? new Date(activity.endTime)
+        : new Date(start.getTime() + 60 * 60 * 1000);
+
+    let current = new Date(start);
+    let isFirst = true;
+
+    while (current < end) {
+        const segmentStart = new Date(current);
+        const nextMidnight = new Date(current);
+        nextMidnight.setHours(24, 0, 0, 0);
+        const segmentEnd = end < nextMidnight ? end : nextMidnight;
+
+        segments.push({
+            _id: activity._id,
+            title: activity.title,
+            description: activity.description,
+            type: activity.type,
+            status: activity.status,
+            startTime: segmentStart.toISOString(),
+            endTime: segmentEnd.toISOString(),
+            _segmentOf: isFirst ? null : activity._id   // 👈 only mark continued if NOT first
+        });
+
+        isFirst = false;
+        current = nextMidnight;
+    }
+
+    return segments;
+}
+
+
+    // Add CSS for toast animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    console.log('✅ Schedule module loaded (no duplicates)');
+})();

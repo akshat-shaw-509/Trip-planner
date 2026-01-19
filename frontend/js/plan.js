@@ -34,28 +34,39 @@ function initializePlanningForm() {
 async function handleTripCreation(e) {
   e.preventDefault()
   let formData = new FormData(e.target)
+  
+  // Parse tags properly
+  let tagsInput = formData.get('tags')
+  let tagsArray = []
+  if (tagsInput) {
+    tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean)
+  }
+
   let tripData = {
     title: formData.get('title'),
     destination: formData.get('destination'),
     startDate: formData.get('startDate'),
     endDate: formData.get('endDate'),
-    budget: formData.get('budget') ? parseFloat(formData.get('budget')) : undefined,
+    budget: formData.get('budget') ? parseFloat(formData.get('budget')) : null, // Use null instead of undefined if empty
     description: formData.get('description'),
+    travelers: parseInt(formData.get('travelers')) || 1, // <--- ADD THIS LINE (Reads travelers from form)
+    tags: tagsArray, // <--- ADD THIS LINE (Pass the array)
     isPublic: formData.get('isPublic') === 'on',
-    status: 'draft',
+    status: 'planning',
   }
 
-  let tagsInput = formData.get('tags')
-  if (tagsInput) {
-    tripData.tags = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean)
-  }
+  // DEBUGGING: Log what we are sending
+  console.log('Sending Trip Data:', tripData)
+
   let submitBtn = document.getElementById('createTripBtn')
   let originalText = submitBtn.innerHTML
   
   try {
     submitBtn.disabled = true
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...'
+    
     let response = await apiService.trips.create(tripData)
+    
     if (response.success) {
       showToast('Trip created successfully!', 'success')
       setTimeout(() => {
@@ -66,6 +77,7 @@ async function handleTripCreation(e) {
     }
   } catch (error) {
     console.error('Error creating trip:', error)
+    console.error('Full error object:', error) // Check console for more details
     showToast(error.message || 'Failed to create trip', 'error')
     submitBtn.disabled = false
     submitBtn.innerHTML = originalText
@@ -91,46 +103,44 @@ function initializeMap() {
 async function updateMapLocation() {
   let destination = document.getElementById('destination').value
   if (!destination || !map) return
+
   try {
+    // CHANGED: Use Open-Meteo instead of Nominatim (No API key needed, No CORS issues)
     let response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` + 
-      `q=${encodeURIComponent(destination)}&format=json&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'Planora/1.0'
-        }
-      }
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1&language=en&format=json`
     )
     let data = await response.json()
-    
-    if (data.length > 0) {
-      let { lat, lon, display_name } = data[0]
-      map.setView([lat, lon], 10)
+
+    // Open-Meteo returns { results: [...] } instead of just [...]
+    if (data.results && data.results.length > 0) {
+      // Open-Meteo uses 'latitude' and 'longitude'
+      let { latitude, latitude: lat, longitude, longitude: lon, name, country } = data.results[0]
       
+      // Destructure safely
+      lat = latitude
+      lon = longitude
+
+      map.setView([lat, lon], 10)
+
       // Remove existing markers
       map.eachLayer(layer => {
         if (layer instanceof L.Marker) {
           map.removeLayer(layer)
         }
       })
-      
+
       // Add new marker
       L.marker([lat, lon])
         .addTo(map)
-        .bindPopup(display_name)
+        .bindPopup(`${name}, ${country}`)
         .openPopup()
+    } else {
+      console.log('Location not found')
     }
   } catch (error) {
     console.error('Geocoding failed:', error)
   }
 }
-
-function updateMapLocation() {
-  let destination = document.getElementById('destination').value;
-  // Implement geocoding to update map location
-  // This would require integration with a geocoding service
-}
-
 // Initialize map if Leaflet is loaded
 if (typeof L !== 'undefined') {
   setTimeout(initializeMap, 100)

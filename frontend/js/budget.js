@@ -1,163 +1,314 @@
-let currentTripId = null
-let expenses = []
-let chart = null
+let currentTripId = null;
+let expenseList = [];
+let currentExpenseId = null;
+let tripBudget = 0;
+let categoryChart = null;
+let trendChart = null;
 
-let initBudgetTracker = async () => {
-    if (!authHandler.requireAuth()) return
-    currentTripId = new URLSearchParams(window.location.search).get('id') ||
-        localStorage.getItem('currentTripId')
+
+function updateAnalytics() {
+    renderCategoryChart();
+    renderTrendChart();
+    renderCategoryBreakdown();
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!authHandler.requireAuth()) return;
+    currentTripId = new URLSearchParams(window.location.search).get('id') || localStorage.getItem('currentTripId');
     if (!currentTripId) {
-        showToast('Select a trip first', 'error')
-        setTimeout(() => window.location.href = '/trips', 2000)
-        return
+        showToast('Select a trip first', 'error');
+        setTimeout(() => window.location.href = 'trips.html', 2000);
+        return;
     }
-    await Promise.all([
-        loadExpenses(),
-        initModal()
-    ])
+    await loadTripInfo();
+    await loadExpenses();
+    initExpenseHandlers();
+});
+
+async function loadTripInfo() {
+    try {
+        const res = await apiService.trips.getById(currentTripId);
+        const trip = res.data;
+        if (trip) {
+            document.getElementById('tripName').textContent = trip.title;
+            document.getElementById('totalBudget').textContent = `₹${trip.budget?.toLocaleString() || 0}`;
+            tripBudget = trip.budget || 0;
+        }
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-let loadExpenses = async () => {
-  try {
-    const response = await apiService.expenses.getByTrip(currentTripId)
-    expenses = response.data || []
-    displayExpenses()
-    await loadExpenseSummary()
-    updateChart()
-  } catch (error) {
-    showToast('Failed to load expenses', 'error')
-  }
+async function loadExpenses() {
+    try {
+        const res = await apiService.expenses.getByTrip(currentTripId);
+       expenseList = Array.isArray(res.data) ? res.data : [];
+        displayExpenses();
+        updateSummary();
+        updateAnalytics();
+    } catch (err) {
+        console.error('Failed to load expenses', err);
+        showToast('Failed to load expenses', 'error');
+    }
 }
 
-let displayExpenses = () => {
-  const listEl = document.querySelector('.expense-list')
-  if (!listEl) return
-  listEl.innerHTML = expenses.length 
-    ? expenses.map(createExpenseItem).join('')
-    : '<p class="empty-state">No expenses yet</p>'
+function displayExpenses() {
+    const listEl = document.getElementById('expensesList');
+    if (!listEl) return;
+    // Apply category filter
+    const cat = document.getElementById('categoryFilter').value;
+    let filtered = expenseList;
+    if (cat && cat !== 'all') {
+        filtered = filtered.filter(e => e.category === cat);
+    }
+    // Apply sorting
+    const sortVal = document.getElementById('sortFilter').value;
+    if (sortVal) {
+        const [field, order] = sortVal.split('-');
+        filtered.sort((a,b) => {
+            if (field === 'date') {
+                const diff = new Date(a.date) - new Date(b.date);
+                return order==='asc' ? diff : -diff;
+            }
+            if (field === 'amount') {
+                return order==='asc' ? a.amount - b.amount : b.amount - a.amount;
+            }
+            return 0;
+        });
+    }
+    // Render
+    if (filtered.length === 0) {
+        listEl.innerHTML = '';
+        document.querySelector('.expenses-section .empty-state').style.display = 'flex';
+        return;
+    }
+    document.querySelector('.expenses-section .empty-state').style.display = 'none';
+    listEl.innerHTML = filtered.map(e => createExpenseItem(e)).join('');
+    // Attach click for edit
+    filtered.forEach(e => {
+        const el = listEl.querySelector(`[data-expense-id="${e._id}"]`);
+        if (el) {
+            el.onclick = () => editExpense(e);
+        }
+    });
 }
 
-let createExpenseItem = (expense) => {
-  return `
-    <div class="expense-item ${expense.category.toLowerCase()}" data-expense-id="${expense._id}">
-      <div class="expense-info">
-        <div class="expense-avatar">
-          <i class="fas fa-${getCategoryIcon(expense.category)}"></i>
-        </div>
-        <div class="expense-details">
-          <div class="expense-text">${expense.description}</div>
-          <div class="expense-meta">
-            ${new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • 
-            ${expense.category}
+function createExpenseItem(exp) {
+    const date = new Date(exp.date).toLocaleDateString();
+    const iconMap = {
+        accommodation: 'bed', food: 'utensils', transport: 'car',
+        activities: 'skiing', shopping: 'shopping-bag',
+        entertainment: 'theater-masks', miscellaneous: 'ellipsis-h'
+    };
+    const icon = iconMap[exp.category] || 'receipt';
+    return `
+      <div class="expense-item ${exp.category}" data-expense-id="${exp._id}">
+        <div class="expense-info">
+          <div class="expense-avatar"><i class="fas fa-${icon}"></i></div>
+          <div class="expense-details">
+            <div class="expense-text">${escapeHtml(exp.description)}</div>
+            <div class="expense-meta">
+              ${date} • ${capitalizeFirst(exp.category)}
+              ${exp.paidBy ? `• Paid by ${escapeHtml(exp.paidBy)}` : ''}
+            </div>
           </div>
         </div>
-      </div>
-      <div class="expense-amount">₹${expense.amount.toLocaleString()}</div>
-    </div>
-  `
+        <div class="expense-amount">₹${exp.amount.toLocaleString()}</div>
+      </div>`;
 }
 
-let getCategoryIcon = (category) => {
-  let icons = {
-    accommodation: 'bed', food: 'utensils', transport: 'car',
-    activities: 'skiing', shopping: 'shopping-bag', 
-    entertainment: 'theater-masks', miscellaneous: 'ellipsis-h'
-  }
-  return icons[category] || 'receipt'
+function initExpenseHandlers() {
+    // Open/close modal
+    document.getElementById('addExpenseBtn').onclick = openAddExpenseModal;
+    document.getElementById('closeModal').onclick = closeExpenseModal;
+    document.getElementById('cancelBtn').onclick = closeExpenseModal;
+    document.getElementById('expenseForm').onsubmit = handleExpenseSubmit;
+    // Filter/sort
+    document.getElementById('categoryFilter').onchange = displayExpenses;
+    document.getElementById('sortFilter').onchange = displayExpenses;
 }
 
-let loadExpenseSummary = async () => {
-  try {
-    let response = await apiService.expenses.getSummary(currentTripId)
-    let summary = response.data
-    let totalEl = document.querySelector('.total-expenditure .amount')
-    if (totalEl) {
-      totalEl.textContent = `₹${summary.totalAmount.toLocaleString()}`
+function openAddExpenseModal() {
+    currentExpenseId = null;
+    document.getElementById('modalTitle').textContent = 'Add Expense';
+    document.getElementById('expenseForm').reset();
+    document.getElementById('expenseModal').style.display = 'block';
+}
+
+function closeExpenseModal() {
+    document.getElementById('expenseModal').style.display = 'none';
+}
+
+async function handleExpenseSubmit(e) {
+    e.preventDefault();
+    const data = {
+        description: document.getElementById('expenseDescription').value.trim(),
+        amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
+        category: document.getElementById('expenseCategory').value,
+        date: document.getElementById('expenseDate').value,
+        paymentMethod: document.getElementById('expensePaymentMethod').value,
+        paidBy: document.getElementById('expensePaidBy').value.trim(),
+        notes: document.getElementById('expenseNotes').value.trim()
+    };
+    
+    // 🔍 DEBUG: Log the data being sent
+    console.log('📤 Submitting expense data:', JSON.stringify(data, null, 2));
+    console.log('Trip ID:', currentTripId);
+    console.log('Is Update?:', !!currentExpenseId);
+    
+    try {
+        if (currentExpenseId) {
+            const result = await apiService.expenses.update(currentExpenseId, data);
+            console.log('✅ Update successful:', result);
+            showToast('Expense updated', 'success');
+        } else {
+            const result = await apiService.expenses.create(currentTripId, data);
+            console.log('✅ Create successful:', result);
+            showToast('Expense added', 'success');
+        }
+        closeExpenseModal();
+        await loadExpenses();
+    } catch (err) {
+        // 🔍 ENHANCED ERROR LOGGING
+        console.error('❌ Saving expense failed:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
+        
+        // Try to get validation errors
+        if (err.validationErrors) {
+            console.error('Validation errors:', err.validationErrors);
+            const errorMessages = err.validationErrors.map(e => `${e.field}: ${e.message}`).join('\n');
+            showToast(`Validation failed:\n${errorMessages}`, 'error');
+        } else if (err.response?.data) {
+            console.error('Response data:', err.response.data);
+            showToast(err.response.data.message || 'Failed to save expense', 'error');
+        } else {
+            showToast('Failed to save expense', 'error');
+        }
     }
-  } catch (error) {
-    console.error('Summary failed:', error)
-  }
 }
 
-let updateChart = () => {
-  let canvas = document.getElementById('expenseChart')
-  if (!canvas || typeof Chart === 'undefined') return
-  let ctx = canvas.getContext('2d')
-  let categoryData = expenses.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + e.amount
-    return acc
-  }, {})
-  if (chart) chart.destroy()
-  chart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(categoryData).map(capitalize),
-      datasets: [{
-        data: Object.values(categoryData),
-        backgroundColor: ['#ffb3e6', '#ffe6e6', '#d9b3ff', '#fff9b3', '#b3ffb3', '#b3d9ff', '#ffd9b3']
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom' } }
+function editExpense(exp) {
+    currentExpenseId = exp._id;
+    document.getElementById('modalTitle').textContent = 'Edit Expense';
+    document.getElementById('expenseDescription').value = exp.description;
+    document.getElementById('expenseAmount').value = exp.amount;
+    document.getElementById('expenseCategory').value = exp.category;
+    document.getElementById('expenseDate').value = exp.date.split('T')[0];
+    document.getElementById('expensePaymentMethod').value = exp.paymentMethod || 'cash';
+    document.getElementById('expensePaidBy').value = exp.paidBy || '';
+    document.getElementById('expenseNotes').value = exp.notes || '';
+    document.getElementById('expenseModal').style.display = 'block';
+}
+
+function updateSummary() {
+    const total = expenseList.reduce((sum,e) => sum + e.amount, 0);
+    const remaining = tripBudget - total;
+    const avg = expenseList.length ? (total / expenseList.length) : 0;
+
+    const percent = tripBudget > 0 ? Math.min((total / tripBudget) * 100, 100) : 0;
+
+    document.getElementById('totalSpent').textContent = `₹${total.toLocaleString()}`;
+    document.getElementById('remaining').textContent = `₹${Math.max(remaining, 0).toLocaleString()}`;
+    document.getElementById('dailyAverage').textContent = `₹${avg.toFixed(2)}`;
+
+    const progress = document.getElementById('spentProgress');
+    const percentText = document.getElementById('spentPercentage');
+
+    if (progress) {
+        progress.style.width = `${percent}%`;
     }
-  })
-}
 
-let capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
-
-let initModal = () => {
-  let modal = document.querySelector('.modal')
-  if (!modal) return
-  document.querySelector('.add-expense')?.addEventListener('click', () => 
-    modal.classList.add('active')
-  )
-  document.querySelectorAll('.close-btn, .cancel-btn')?.forEach(btn => 
-    btn.addEventListener('click', () => {
-      modal.classList.remove('active')
-      resetForm()
-    })
-  )
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('active')
-      resetForm()
+    if (percentText) {
+        percentText.textContent = `${percent.toFixed(1)}% of budget`;
     }
-  })
-  document.querySelector('.submit-btn')?.addEventListener('click', handleAddExpense)
 }
 
-let handleAddExpense = async () => {
-  const inputs = document.querySelectorAll('.manual-input input')
-  const [paidBy, category, amountStr] = Array.from(inputs).map(i => i.value)
-  const amount = parseFloat(amountStr)
-  if (!paidBy || !category || !amount || amount <= 0) {
-    showToast('Fill all fields with valid amount', 'error')
-    return
-  }
-  let expenseData = {
-    description: paidBy,
-    category: category.toLowerCase(),
-    amount,
-    currency: 'INR',
-    paymentMethod: 'cash',
-    date: new Date().toISOString().split('T')[0]
-  }
-  try {
-    let response = await apiService.expenses.create(currentTripId, expenseData)
-    if (response.success) {
-      showToast('Expense added!', 'success')
-      document.querySelector('.modal').classList.remove('active')
-      resetForm()
-      await loadExpenses()
-    }
-  } catch (error) {
-    showToast('Failed to add expense', 'error')
-  }
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-let resetForm = () => {
-  document.querySelectorAll('.manual-input input').forEach(input => input.value = '')
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-document.addEventListener('DOMContentLoaded', initBudgetTracker)
+function updateAnalytics() {
+    renderCategoryChart();
+    renderTrendChart();
+    renderCategoryBreakdown();
+}
+
+function renderCategoryChart() {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
+
+    const totals = {};
+    expenseList.forEach(e => {
+        totals[e.category] = (totals[e.category] || 0) + e.amount;
+    });
+
+    const labels = Object.keys(totals);
+    const data = Object.values(totals);
+
+    if (categoryChart) categoryChart.destroy();
+
+    categoryChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data,
+            }]
+        }
+    });
+}
+
+function renderTrendChart() {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+
+    const dailyTotals = {};
+    expenseList.forEach(e => {
+        const d = new Date(e.date).toLocaleDateString();
+        dailyTotals[d] = (dailyTotals[d] || 0) + e.amount;
+    });
+
+    const labels = Object.keys(dailyTotals).sort((a,b) => new Date(a) - new Date(b));
+    const data = labels.map(l => dailyTotals[l]);
+
+    if (trendChart) trendChart.destroy();
+
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Daily Spend',
+                data,
+                fill: false,
+                tension: 0.3
+            }]
+        }
+    });
+}
+
+function renderCategoryBreakdown() {
+    const container = document.getElementById('categoryBreakdown');
+    if (!container) return;
+
+    const totals = {};
+    expenseList.forEach(e => {
+        totals[e.category] = (totals[e.category] || 0) + e.amount;
+    });
+
+    container.innerHTML = Object.entries(totals).map(([cat, amt]) => `
+        <div class="breakdown-item">
+            <span>${capitalizeFirst(cat)}</span>
+            <span>₹${amt.toLocaleString()}</span>
+        </div>
+    `).join('');
+}

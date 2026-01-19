@@ -1,4 +1,4 @@
-// auth.js - Browser Compatible (No Node.js require)
+// auth.js - FIXED VERSION
 
 const authHandler = {
   isAuthenticated() {
@@ -13,7 +13,9 @@ const authHandler = {
 
   storeAuthData(accessToken, refreshToken, user) {
     localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('refreshToken', refreshToken)
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken)
+    }
     localStorage.setItem('user', JSON.stringify(user))
   },
 
@@ -26,30 +28,63 @@ const authHandler = {
   async handleLogin(email, password) {
     try {
       const response = await apiService.auth.login({ email, password })
+
       if (response.success) {
-        const { accessToken, refreshToken, user } = response.data
+        const dataPayload = response.data || response
+        const accessToken = dataPayload.accessToken || dataPayload.token
+        const refreshToken = dataPayload.refreshToken || null
+        const user = dataPayload.user
+
+        if (!accessToken) {
+          throw new Error('No access token received from server')
+        }
+
         this.storeAuthData(accessToken, refreshToken, user)
+        showToast('Login successful! Redirecting...', 'success')
+        setTimeout(() => window.location.href = 'trips.html', 1000)
+
         return { success: true, user }
       }
+
       throw new Error(response.message || 'Login failed')
+
     } catch (error) {
       console.error('Login error:', error)
-      throw error
+      showToast(error.message || 'Login failed', 'error')
+      return { success: false, error: error.message }
     }
   },
 
   async handleRegister(name, email, password) {
     try {
       const response = await apiService.auth.register({ name, email, password })
+
       if (response.success) {
-        const { accessToken, refreshToken, user } = response.data
+        const dataPayload = response.data || response
+        const accessToken = dataPayload.accessToken || dataPayload.token
+        const refreshToken = dataPayload.refreshToken || null
+        const user = dataPayload.user
+
         this.storeAuthData(accessToken, refreshToken, user)
+        showToast('Registration successful! Redirecting...', 'success')
+        setTimeout(() => window.location.href = 'trips.html', 1000)
+
         return { success: true, user }
       }
+
       throw new Error(response.message || 'Registration failed')
+
     } catch (error) {
       console.error('Registration error:', error)
-      throw error
+
+      if (error.backendErrors && Array.isArray(error.backendErrors)) {
+        const errorList = error.backendErrors.map(e => `• ${e.message}`).join('\n')
+        showToast(`Registration Failed:\n${errorList}`, 'error')
+      } else {
+        showToast(error.message || 'Registration failed', 'error')
+      }
+
+      return { success: false, error: error.message }
     }
   },
 
@@ -67,19 +102,19 @@ const authHandler = {
   async refreshToken() {
     try {
       const refreshToken = localStorage.getItem('refreshToken')
-      if (!refreshToken) throw new Error('No refresh token')
-      
+      if (!refreshToken) return false
+
       const response = await apiService.auth.refreshToken(refreshToken)
+
       if (response.success) {
         const { accessToken } = response.data
         localStorage.setItem('accessToken', accessToken)
         return true
       }
-      throw new Error('Token refresh failed')
+
+      return false
     } catch (error) {
-      console.error('Token refresh error:', error)
-      this.clearAuthData()
-      window.location.href = 'index.html'
+      console.warn('Token refresh failed, staying logged in')
       return false
     }
   },
@@ -99,20 +134,7 @@ if (document.getElementById('loginForm')) {
     e.preventDefault()
     const email = document.getElementById('email').value
     const password = document.getElementById('password').value
-    
-    try {
-      await authHandler.handleLogin(email, password)
-      if (typeof showToast !== 'undefined') {
-        showToast('Login successful!', 'success')
-      }
-      setTimeout(() => window.location.href = 'trips.html', 1000)
-    } catch (error) {
-      if (typeof showToast !== 'undefined') {
-        showToast(error.message || 'Login failed', 'error')
-      } else {
-        alert(error.message || 'Login failed')
-      }
-    }
+    await authHandler.handleLogin(email, password)
   })
 }
 
@@ -120,52 +142,51 @@ if (document.getElementById('loginForm')) {
 if (document.getElementById('signupForm')) {
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault()
-    const name = document.getElementById('name').value
-    const email = document.getElementById('email').value
-    const password = document.getElementById('password').value
-    const confirmPassword = document.getElementById('confirm-password').value
-    
+
+    const name = document.getElementById('name').value.trim()
+    const email = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value.trim()
+    const confirmPassword = document.getElementById('confirm-password').value.trim()
+
     if (password !== confirmPassword) {
-      if (typeof showToast !== 'undefined') {
-        showToast('Passwords do not match', 'error')
-      } else {
-        alert('Passwords do not match')
-      }
+      showToast('Passwords do not match', 'error')
       return
     }
-    
-    if (password.length < 8) {
-      if (typeof showToast !== 'undefined') {
-        showToast('Password must be at least 8 characters', 'error')
-      } else {
-        alert('Password must be at least 8 characters')
-      }
+
+    const requirements = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[@$!%*?&]/.test(password)
+    }
+
+    if (!Object.values(requirements).every(Boolean)) {
+      showToast('Please meet all password requirements', 'error')
       return
     }
-    
-    try {
-      await authHandler.handleRegister(name, email, password)
-      if (typeof showToast !== 'undefined') {
-        showToast('Registration successful!', 'success')
-      }
-      setTimeout(() => window.location.href = 'trips.html', 1000)
-    } catch (error) {
-      if (typeof showToast !== 'undefined') {
-        showToast(error.message || 'Registration failed', 'error')
-      } else {
-        alert(error.message || 'Registration failed')
-      }
+
+    const submitBtn = document.getElementById('signupBtn')
+    const originalText = submitBtn.innerHTML
+    submitBtn.disabled = true
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...'
+
+    const result = await authHandler.handleRegister(name, email, password)
+
+    if (!result.success) {
+      submitBtn.disabled = false
+      submitBtn.innerHTML = originalText
     }
   })
 }
 
-// Password toggle
 function togglePassword(inputId) {
   const input = document.getElementById(inputId)
   if (!input) return
-  
-  const icon = input.nextElementSibling?.querySelector('i')
-  
+
+  const button = input.nextElementSibling
+  const icon = button?.querySelector('i')
+
   if (input.type === 'password') {
     input.type = 'text'
     if (icon) icon.classList.replace('fa-eye', 'fa-eye-slash')
@@ -175,8 +196,92 @@ function togglePassword(inputId) {
   }
 }
 
-// Make available globally
+// ✅ FIXED: Google OAuth Handler - USE ONLY .env CLIENT_ID
+async function handleGoogleLogin(response) {
+  try {
+    console.log('🔵 Google login callback triggered', response)
+    
+    if (!response || !response.credential) {
+      showToast('Google login failed - no credential received', 'error')
+      return
+    }
+
+    const baseURL = apiService.baseURL || 'http://localhost:5000/api'
+    showToast('Authenticating with Google...', 'info')
+
+    const res = await fetch(`${baseURL}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        idToken: response.credential
+      })
+    })
+
+    const data = await res.json()
+    console.log('🔵 Google auth response:', data)
+
+    if (!data.success) {
+      showToast(data.message || 'Google login failed', 'error')
+      return
+    }
+
+    const { accessToken, user } = data.data
+    authHandler.storeAuthData(accessToken, null, user)
+
+    showToast('Google login successful! Redirecting...', 'success')
+    setTimeout(() => {
+      window.location.href = 'trips.html'
+    }, 1000)
+
+  } catch (error) {
+    console.error('❌ Google login error:', error)
+    showToast('Google login error: ' + error.message, 'error')
+  }
+}
+
+// ✅ FIXED: Google SDK Initialization - SINGLE CLIENT_ID
+let googleInitialized = false
+
+function initializeGoogleSignIn() {
+  if (googleInitialized || !window.google) return
+
+  const clientId = '971566670592-c4v3bk1u8oe7ejv51bvmnc2nvg8729jo.apps.googleusercontent.com'
+
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleLogin,
+    ux_mode: 'popup'
+  })
+
+  // ✅ THIS is the key fix
+  google.accounts.id.renderButton(
+    document.getElementById('googleLoginBtn'),
+    {
+      theme: 'outline',
+      size: 'large',
+      text: 'continue_with'
+    }
+  )
+
+  googleInitialized = true
+  console.log('✅ Google Sign-In button rendered')
+}
+
+
+// ✅ Called when Google SDK loads
+function onGoogleScriptLoad() {
+  console.log('✅ Google SDK loaded')
+  initializeGoogleSignIn()
+}
+
+
+
+
+
 window.authHandler = authHandler
 window.togglePassword = togglePassword
+window.handleGoogleLogin = handleGoogleLogin
+window.onGoogleScriptLoad = onGoogleScriptLoad
 
 console.log('✅ Auth module loaded')
