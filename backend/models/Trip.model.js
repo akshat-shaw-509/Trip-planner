@@ -60,6 +60,15 @@ let tripSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    coverImage: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    tags: {
+      type: [String],
+      default: []
+    }
   },
   {
     timestamps: true,
@@ -73,38 +82,40 @@ let tripSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-tripSchema.index({ userId: 1, createdAt: -1 }); // List all user trips newest first
-tripSchema.index({ userId: 1, status: 1 }); // Filter by status per user 
+tripSchema.index({ userId: 1, createdAt: -1 }); 
+tripSchema.index({ userId: 1, status: 1 }); 
 
-tripSchema.pre('validate', function(next) {
+// ✅ FIXED: Properly handle validation with next()
+tripSchema.pre('validate', async function () {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    throw new Error('End date must be after start date')
+    throw new Error('End date must be after start date');
   }
-})
+});
+
 
 // Virtual property: trip duration in days
 tripSchema.virtual('duration').get(function() {
   if (!this.startDate || !this.endDate) {
-    return 0
+    return 0;
   }
-  let diffTime = Math.abs(this.endDate - this.startDate)
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-})
+  let diffTime = Math.abs(this.endDate - this.startDate);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+});
 
 // Virtual property: check if trip is upcoming
 tripSchema.virtual('isUpcoming').get(function() {
-  return this.startDate > new Date() && this.status !== 'cancelled'
-})
+  return this.startDate > new Date() && this.status !== 'cancelled';
+});
 
 // Virtual property: check if trip is active/ongoing
 tripSchema.virtual('isActive').get(function() {
-  return this.startDate <= new Date() && this.endDate >= new Date() && this.status === 'ongoing'
-})
+  return this.startDate <= new Date() && this.endDate >= new Date() && this.status === 'ongoing';
+});
 
 // Virtual property: check if trip is past
 tripSchema.virtual('isPast').get(function() {
-  return this.endDate < new Date() || this.status === 'completed'
-})
+  return this.endDate < new Date() || this.status === 'completed';
+});
 
 // Instance method: Get trip summary
 tripSchema.methods.getSummary = function() {
@@ -121,19 +132,20 @@ tripSchema.methods.getSummary = function() {
     travelers: this.travelers,
     budget: {
       amount: this.budget,
-    }
-  }
-}
+    },
+    coverImage: this.coverImage
+  };
+};
 
 // Static method: Find trips by user ID
 tripSchema.statics.findByUserId = function(userId) {
-  return this.find({ userId }).sort('-createdAt')
-}
+  return this.find({ userId }).sort('-createdAt');
+};
 
 // Static method: Find trips by status for a user
 tripSchema.statics.findByUserIdAndStatus = function(userId, status) {
-  return this.find({ userId, status }).sort('-createdAt')
-}
+  return this.find({ userId, status }).sort('-createdAt');
+};
 
 let Trip = mongoose.model('Trip', tripSchema);
 

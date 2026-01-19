@@ -1,82 +1,62 @@
-let mongoose = require('mongoose')
-let bcrypt = require('bcryptjs')
-let crypto = require('crypto')
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
 
-let userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
-      trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [100, 'Name must not exceed 100 characters'],
+      required: true,
+      trim: true
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: true,
       unique: true,
       lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
+      trim: true
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
-      select: false,
+      required: true,
+      minlength: 8,
+      select: false
     },
-    avatar: {
+    role: {
       type: String,
-      default: null,
-    },
-    bio: {
-      type: String,
-      maxlength: [500, 'Bio must not exceed 500 characters'],
-      default: '',
+      enum: ['user', 'admin'],
+      default: 'user'
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: true
     },
-    resetPasswordHash: {
-      type: String,
-      select: false
+    isVerified: {
+      type: Boolean,
+      default: false
     },
-    resetPasswordExpires: {
-      type: Date,
-      select: false
-    },
+    googleId: {
+  type: String,
+  unique: true,
+  sparse: true
+},
+authProvider: {
+  type: String,
+  enum: ['local', 'google'],
+  default: 'local'
+}
   },
-   {
-    timestamps: true,
-    toJSON: {
-      transform: function (doc, ret) {
-        delete ret.password
-        delete ret.resetPasswordHash
-        delete ret.resetPasswordExpires
-        return ret
-      },
-    },
-  }
+  { timestamps: true }
 )
-// Hash password before saving
-userSchema.pre('save', async function () {
-  if (!this.isModified('password')) return 
-  this.password = await bcrypt.hash(this.password,10)
+
+// 🔐 Hash password before saving
+UserSchema.pre('save', async function () {
+  if (!this.isModified('password')) return
+  this.password = await bcrypt.hash(this.password, 12)
 })
 
-// Method to compare passwords
-userSchema.methods.comparePassword = function (plain) {
-  return bcrypt.compare(plain,this.password)
+// 🔍 Instance method to check password
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password)
 }
 
-// Method to generate password reset token
-userSchema.methods.createPasswordResetToken = function () {
-  let token=crypto.randomBytes(32).toString('hex')
-  this.resetPasswordHash=crypto.createHash('sha256').update(token).digest('hex')
-  this.resetPasswordExpires=Date.now()+60*60*1000 
-  return token
-}
-
-let User = mongoose.model('User', userSchema)
-module.exports = User
+module.exports = mongoose.model('User', UserSchema)
