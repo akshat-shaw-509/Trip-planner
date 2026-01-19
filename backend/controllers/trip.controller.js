@@ -1,5 +1,6 @@
 let tripService = require('../services/trip.service')
 let { asyncHandler } = require('../middleware/error.middleware')
+let { ValidationError } = require('../utils/errors')
 
 let sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
     let response = { success: true }
@@ -77,6 +78,38 @@ let updateTripStatus = asyncHandler(async(req, res) => {
     sendSuccess(res,200,trip,'Trip status updated successfully')
 })
 
+// Upload trip banner
+let uploadBanner = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw ValidationError('No image file provided');
+  }
+
+  let updatedTrip = await tripService.uploadBanner(req.params.tripId, req.user.id, req.file);
+
+  res.status(200).json({
+    success: true,
+    message: 'Banner uploaded successfully',
+    data: {
+      _id: updatedTrip._id,
+      coverImage: updatedTrip.coverImage
+    }
+  });
+});
+
+// Remove trip banner
+let removeBanner = asyncHandler(async (req, res) => {
+  let updatedTrip = await tripService.removeBanner(req.params.tripId, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Banner removed successfully',
+    data: {
+      _id: updatedTrip._id,
+      coverImage: null
+    }
+  });
+});
+
 module.exports = {
     createTrip,
     getUserTrips,
@@ -89,4 +122,6 @@ module.exports = {
     addCollaborator,
     removeCollaborator,
     updateTripStatus,
+    uploadBanner,
+    removeBanner
 };

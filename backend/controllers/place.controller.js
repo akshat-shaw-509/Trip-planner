@@ -101,8 +101,23 @@ let getPlacesByCategory = async (req, res, next) => {
   }
 }
 
+let addAIPlace = async (req, res, next) => {
+  try {
+    let place = await placeService.addAIPlaceToTrip(
+      req.params.tripId,
+      req.body,
+      req.user.id
+    );
+    sendSuccess(res, 201, place, 'AI place added to trip');
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   createPlace,
+  addAIPlace,
   getPlacesByTrip,
   getPlaceById,
   updatePlace,

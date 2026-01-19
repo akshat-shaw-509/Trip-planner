@@ -14,7 +14,7 @@ let sendError = (res, statusCode, message) => {
 
 let uploadImage = async (req, res, next) => {
   if (!req.file) {
-    return sendError(res, 400, 'No file provided')
+    return sendError(res, 400,'No file provided')
   }
   
   try {
