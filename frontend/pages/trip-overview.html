@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,59 +7,134 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/trip-overview.css">
-</head>
+    <link rel="stylesheet" href="../css/toast.css">
+    <style>
+        /* Banner Upload Button Styles */
+        .banner-upload-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
 
+        .banner-upload-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .banner-upload-btn:active {
+            transform: translateY(0);
+        }
+
+        .banner-upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .banner-upload-btn i {
+            font-size: 16px;
+        }
+
+        .trip-banner {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .banner-upload-btn {
+                top: 12px;
+                right: 12px;
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+
+            .banner-upload-btn span {
+                display: none;
+            }
+
+            .banner-upload-btn i {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
 <body>
     <nav>
         <div class="logo">
-            <img src="../Svg/Logo.png" alt="Logo">
+            <img src="../Svg/Logo.png" alt="Planora">
         </div>
-        <a href="index.html">Dashboard</a>
         <div class="search-bar">
-            <i class="fa fa-search"></i>
-            <input type="search" id="searchInput" placeholder="Search Trips...">
+            <input type="text" placeholder="Search trips...">
+            <i class="fas fa-search"></i>
         </div>
         <div class="cta-container">
-            <button class="cta-button">Start Planning</button>
+            <button class="cta-button">
+                <i class="fas fa-user"></i>
+                <span id="userName">User</span>
+            </button>
             <div class="dropdown">
-                <a href="planning.html">Planning</a>
-                <a href="schedule.html">Schedule</a>
-                <a href="budget.html">Budget</a>
+                <a href="index.html"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="trips.html"><i class="fas fa-suitcase"></i> My Trips</a>
+                <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
-        </div>
-        <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='../auth/login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='../auth/signup.html'">Sign Up</button>
         </div>
     </nav>
 
+    <!-- Breadcrumb -->
     <div class="breadcrumb">
-        <a href="trip.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Trip Overview</span>
     </div>
 
+    <!-- Banner -->
     <div class="trip-banner">
-        <img src="../Svg/default-destination.jpg" alt="Trip Destination">
-        <div class="banner-overlay">
-            <div class="banner-content">
-                <h1 class="trip-title">Loading...</h1>
-                <p class="trip-subtitle">
-                    <i class="far fa-calendar"></i>
-                    <span class="divider">•</span>
-                    <i class="fas fa-map-marker-alt"></i>
-                </p>
-            </div>
-        </div>
+    <img src="https://source.unsplash.com/1600x400/?travel,destination" alt="Trip Banner">
+    <div class="banner-overlay"></div>
+    
+    <!-- Add this button -->
+    <button class="banner-upload-btn">
+        <i class="fas fa-image"></i>
+        <span>Change Banner</span>
+    </button>
+    
+    <div class="banner-content">
+        <h1 class="trip-title">Loading...</h1>
+        <p class="trip-subtitle">
+            <i class="far fa-calendar"></i> <span id="tripDates">Loading...</span>
+            <span class="divider">•</span>
+            <i class="fas fa-map-marker-alt"></i> <span id="tripLocation">Loading...</span>
+        </p>
     </div>
+</div>
 
+    <!-- Overview Container -->
     <div class="overview-container">
         <div class="section-header">
             <h2>Trip Overview</h2>
             <p>Manage all aspects of your trip in one place</p>
         </div>
 
+        <!-- Feature Cards -->
         <div class="features-grid">
-            <div class="feature-card" onclick="navigateTo('budget')">
-                <div class="card-icon budget-icon">
+            <!-- Budget Card -->
+            <div class="feature-card budget-card" onclick="navigateTo('budget')">
+                <div class="card-icon">
                     <i class="fas fa-wallet"></i>
                 </div>
                 <div class="card-content">
@@ -75,8 +149,10 @@
                     <i class="fas fa-arrow-right"></i>
                 </div>
             </div>
-            <div class="feature-card" onclick="navigateTo('schedule')">
-                <div class="card-icon schedule-icon">
+
+            <!-- Schedule Card -->
+            <div class="feature-card schedule-card" onclick="navigateTo('schedule')">
+                <div class="card-icon">
                     <i class="far fa-calendar-alt"></i>
                 </div>
                 <div class="card-content">
@@ -91,17 +167,19 @@
                     <i class="fas fa-arrow-right"></i>
                 </div>
             </div>
-            <div class="feature-card" onclick="navigateTo('places')">
-                <div class="card-icon places-icon">
-                    <i class="fas fa-map-marked-alt"></i>
+
+            <!-- Places Card -->
+            <div class="feature-card places-card" onclick="navigateTo('places')">
+                <div class="card-icon">
+                    <i class="fas fa-map-marker-alt"></i>
                 </div>
                 <div class="card-content">
-                    <h3>Places to Visit</h3>
-                    <p>Explore and add destinations to your itinerary</p>
+                    <h3>Places</h3>
+                    <p>Discover and manage places to visit during your trip</p>
                 </div>
                 <div class="card-stats">
-                    <span class="stat-value">0 Places</span>
-                    <span class="stat-label">Added</span>
+                    <span class="stat-value">0</span>
+                    <span class="stat-label">Places</span>
                 </div>
                 <div class="card-arrow">
                     <i class="fas fa-arrow-right"></i>
@@ -109,35 +187,15 @@
             </div>
         </div>
     </div>
-<div class="quick-info-section">
-            <h3>Trip Details</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <i class="fas fa-users"></i>
-                    <div>
-                        <span class="info-label">Travelers</span>
-                        <span class="info-value">---</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <span class="info-label">Status</span>
-                        <span class="info-value status-upcoming">---</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="trip-description">
-            <h3>About This Trip</h3>
-            <p>No description available.</p>
-        </div>
-    </div>    
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts - Load in correct order -->
+    <script src="../js/nav.js"></script>
     <script src="../js/api-service.js"></script>
-    <script src="../js/config.js"></script>
-    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
     <script src="../js/toast.js"></script>
-    <script src="../js/modules/navAuth.js"></script>
     <script src="../js/trip-overview.js"></script>
 </body>
 </html>

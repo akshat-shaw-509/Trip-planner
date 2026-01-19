@@ -27,65 +27,36 @@
             </div>
         </div>
         <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='../auth/login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='../auth/signup.html'">Sign Up</button>
+            <button class="primary" onclick="window.location.href='login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
         </div>
     </nav>
 
-    <div class="breadcrumb">
+<div class="breadcrumb">
         <a href="trips.html">Trips</a>
         <i class="fas fa-chevron-right"></i>
-        <a href="trip-overview.html">Trip Overview</a>
+        <a href="trip-overview.html?id=<%= currentTripId %>">Trip Overview</a>
         <i class="fas fa-chevron-right"></i>
         <span>Activities</span>
     </div>
 
     <div class="activities-container">
         <div class="activities-header">
-            <div>
-                <h1>Trip Activities</h1>
-                <p class="subtitle">Plan and manage your daily activities</p>
-            </div>
-            <button class="btn-add-activity" id="addActivityBtn">
-                <i class="fas fa-plus"></i>
-                Add Activity
-            </button>
+            <h1>Trip Activities</h1>
+            <button class="btn-add-activity" id="addActivityBtn"><i class="fas fa-plus"></i> Add Activity</button>
         </div>
-
-        <!-- Filter Section -->
         <div class="filter-section">
-            <button class="filter-btn active" data-filter="all">
-                <i class="fas fa-th"></i>
-                All Activities
-            </button>
-            <button class="filter-btn" data-filter="planned">
-                <i class="far fa-clock"></i>
-                Planned
-            </button>
-            <button class="filter-btn" data-filter="in_progress">
-                <i class="fas fa-play"></i>
-                In Progress
-            </button>
-            <button class="filter-btn" data-filter="completed">
-                <i class="fas fa-check"></i>
-                Completed
-            </button>
+            <button class="filter-btn active" data-filter="all"><i class="fas fa-th"></i> All Activities</button>
+            <button class="filter-btn" data-filter="planned"><i class="far fa-clock"></i> Planned</button>
+            <button class="filter-btn" data-filter="in_progress"><i class="fas fa-play"></i> In Progress</button>
+            <button class="filter-btn" data-filter="completed"><i class="fas fa-check"></i> Completed</button>
         </div>
-
-        <!-- Activities Grid -->
-        <div class="activities-grid" id="activitiesGrid">
-            <!-- Activities will be loaded here dynamically -->
-        </div>
-
-        <!-- Empty State -->
-        <div class="empty-state" style="display: none;">
+        <div class="activities-grid" id="activitiesGrid"></div>
+        <div class="empty-state" style="display:none;">
             <i class="fas fa-clipboard-list"></i>
             <h3>No activities yet</h3>
             <p>Start planning by adding your first activity</p>
-            <button class="btn-add-activity">
-                <i class="fas fa-plus"></i>
-                Add Your First Activity
-            </button>
+            <button class="btn-add-activity" id="addActivityEmptyBtn"><i class="fas fa-plus"></i> Add Your First Activity</button>
         </div>
     </div>
 
@@ -162,6 +133,7 @@
         </div>
     </div>
 
+    <script src="../js/nav.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/toast.js"></script>
     <script src="../js/activities.js"></script>
