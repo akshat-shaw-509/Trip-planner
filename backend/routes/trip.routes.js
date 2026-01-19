@@ -1,12 +1,17 @@
+// routes/trip.routes.js
+// Add these imports at the top of your existing file
+
 let express = require('express');
 let router = express.Router();
 let tripController = require('../controllers/trip.controller');
 let { authenticate } = require('../middleware/auth.middleware');
 let { validateTrip, validateTripUpdate } = require('../middleware/trip.validation.middleware');
+let { uploadBanner } = require('../middleware/upload.middleware');  // NEW IMPORT
 
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Route works without auth' })
 })
+
 // All routes require authentication
 router.use(authenticate);
 
@@ -24,5 +29,9 @@ router.patch('/trips/:tripId/status', tripController.updateTripStatus);
 // Collaborators
 router.post('/trips/:tripId/collaborators', tripController.addCollaborator);
 router.delete('/trips/:tripId/collaborators/:collaboratorId', tripController.removeCollaborator);
+
+// Banner upload routes - NEW
+router.post('/trips/:tripId/banner', uploadBanner.single('image'), tripController.uploadBanner);
+router.delete('/trips/:tripId/banner', tripController.removeBanner);
 
 module.exports = router;
