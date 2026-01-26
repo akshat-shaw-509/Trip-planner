@@ -1,25 +1,34 @@
-// controllers/auth.controller.js
-let authService = require('../services/auth.service')
-let emailService = require('../services/email.service')
+const authService = require('../services/auth.service')
+const emailService = require('../services/email.service')
 const googleAuthService = require('../services/googleAuth.service')
 
-let sendSuccess = (res, statusCode, data = null, message = null) => {
-  let response = { success: true }
+/**
+ * Send standardized success response
+ */
+const sendSuccess = (res, statusCode, data = null, message = null) => {
+  const response = { success: true }
   if (data) response.data = data
   if (message) response.message = message
   res.status(statusCode).json(response)
 }
 
-let register = async (req, res) => {
+/**
+ * Register new user
+ * POST /api/auth/register
+ */
+const register = async (req, res) => {
   try {
-    let result = await authService.register(req.body, req)
-    
-    // Send Welcome/Verification Email
-    emailService.sendVerificationEmail(result.user.email, result.user.verificationToken).catch(err => {
-      console.error('Verification email failed:', err)
-    })
+    const result = await authService.register(req.body, req)
 
-    // Secure Cookie for Refresh Token
+    // Send verification email (non-blocking)
+    emailService
+      .sendVerificationEmail(
+        result.user.email,
+        result.user.verificationToken
+      )
+      .catch(err => console.error('Verification email failed:', err))
+
+    // Store refresh token securely in cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -27,13 +36,14 @@ let register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    // Don't send refreshToken in body, only in cookie
-    let { refreshToken, ...responseBody } = result
+    // Remove refreshToken from response body
+    const { refreshToken, ...responseBody } = result
+
     sendSuccess(res, 201, responseBody, 'User registered. Please verify email.')
   } catch (error) {
     console.error('Registration error:', error)
-    
-    // Handle validation errors from express-validator
+
+    // Validation errors (express-validator)
     if (error.errors && Array.isArray(error.errors)) {
       return res.status(400).json({
         success: false,
@@ -41,16 +51,16 @@ let register = async (req, res) => {
         errors: error.errors
       })
     }
-    
-    // Handle operational errors with statusCode
+
+    // Operational errors with statusCode
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
         message: error.message
       })
     }
-    
-    // Handle generic errors
+
+    // Fallback error
     res.status(500).json({
       success: false,
       message: error.message || 'Registration failed'
@@ -58,10 +68,19 @@ let register = async (req, res) => {
   }
 }
 
-let login = async (req, res) => {
+/**
+ * Login user
+ * POST /api/auth/login
+ */
+const login = async (req, res) => {
   try {
-    let result = await authService.login(req.body.email, req.body.password, req)
+    const result = await authService.login(
+      req.body.email,
+      req.body.password,
+      req
+    )
 
+    // Store refresh token in cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -69,7 +88,7 @@ let login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    let { refreshToken, ...responseBody } = result
+    const { refreshToken, ...responseBody } = result
     sendSuccess(res, 200, responseBody, 'Login successful')
   } catch (error) {
     console.error('Login error:', error)
@@ -80,9 +99,13 @@ let login = async (req, res) => {
   }
 }
 
-let refreshToken = async (req, res) => {
+/**
+ * Refresh access token using refresh token
+ * POST /api/auth/refresh-token
+ */
+const refreshToken = async (req, res) => {
   try {
-    let token = req.cookies.refreshToken
+    const token = req.cookies.refreshToken
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -90,8 +113,9 @@ let refreshToken = async (req, res) => {
       })
     }
 
-    let result = await authService.refreshAccessToken(token)
+    const result = await authService.refreshAccessToken(token)
 
+    // Rotate refresh token
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -99,7 +123,7 @@ let refreshToken = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    let { refreshToken: _, ...responseBody } = result
+    const { refreshToken: _, ...responseBody } = result
     sendSuccess(res, 200, responseBody, 'Token refreshed successfully')
   } catch (error) {
     console.error('Refresh token error:', error)
@@ -111,12 +135,18 @@ let refreshToken = async (req, res) => {
   }
 }
 
-let logout = async (req, res) => {
+/**
+ * Logout user
+ * POST /api/auth/logout
+ */
+const logout = async (req, res) => {
   try {
-    let token = req.cookies.refreshToken
+    const token = req.cookies.refreshToken
+
     if (req.user && token) {
       await authService.logout(req.user.id, token)
     }
+
     res.clearCookie('refreshToken')
     sendSuccess(res, 200, null, 'Logged out successfully')
   } catch (error) {
@@ -128,9 +158,13 @@ let logout = async (req, res) => {
   }
 }
 
-let verifyEmail = async (req, res) => {
+/**
+ * Verify email using token
+ * GET /api/auth/verify/:token
+ */
+const verifyEmail = async (req, res) => {
   try {
-    let result = await authService.verifyEmail(req.params.token)
+    const result = await authService.verifyEmail(req.params.token)
     sendSuccess(res, 200, null, result.message)
   } catch (error) {
     console.error('Email verification error:', error)
@@ -141,7 +175,11 @@ let verifyEmail = async (req, res) => {
   }
 }
 
-let getCurrentUser = async (req, res) => {
+/**
+ * Get current authenticated user
+ * GET /api/auth/me
+ */
+const getCurrentUser = async (req, res) => {
   try {
     sendSuccess(res, 200, req.user)
   } catch (error) {
@@ -153,7 +191,11 @@ let getCurrentUser = async (req, res) => {
   }
 }
 
-let forgotPassword = async (req, res) => {
+/**
+ * Request password reset
+ * POST /api/auth/forgot-password
+ */
+const forgotPassword = async (req, res) => {
   try {
     await authService.forgotPassword(req.body.email)
     sendSuccess(res, 200, null, 'If email exists, reset link will be sent')
@@ -166,18 +208,25 @@ let forgotPassword = async (req, res) => {
   }
 }
 
-let resetPassword = async (req, res) => {
+/**
+ * Reset password using token
+ * POST /api/auth/reset-password/:token
+ */
+const resetPassword = async (req, res) => {
   try {
-    let result = await authService.resetPassword(req.params.token, req.body.password)
-    
+    const result = await authService.resetPassword(
+      req.params.token,
+      req.body.password
+    )
+
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
-    
-    let { refreshToken, ...responseBody } = result
+
+    const { refreshToken, ...responseBody } = result
     sendSuccess(res, 200, responseBody, result.message)
   } catch (error) {
     console.error('Reset password error:', error)
@@ -188,9 +237,18 @@ let resetPassword = async (req, res) => {
   }
 }
 
-let changePassword = async (req, res) => {
+/**
+ * Change password for logged-in user
+ * POST /api/auth/change-password
+ */
+const changePassword = async (req, res) => {
   try {
-    let result = await authService.changePassword(req.user.id, req.body.currentPassword, req.body.newPassword)
+    const result = await authService.changePassword(
+      req.user.id,
+      req.body.currentPassword,
+      req.body.newPassword
+    )
+
     sendSuccess(res, 200, null, result.message)
   } catch (error) {
     console.error('Change password error:', error)
@@ -201,26 +259,24 @@ let changePassword = async (req, res) => {
   }
 }
 
-// ✅ FIXED: Google OAuth Controller
+/**
+ * Google OAuth login
+ * POST /api/auth/google
+ */
 const googleLogin = async (req, res) => {
   try {
-    console.log('🔵 Google login request received:', { 
-      hasIdToken: !!req.body.idToken,
-      hasAccessToken: !!req.body.accessToken 
-    })
-
     const { idToken, accessToken } = req.body
-    
+
     if (!idToken && !accessToken) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID token or access token required' 
+      return res.status(400).json({
+        success: false,
+        message: 'ID token or access token required'
       })
     }
 
     const result = await googleAuthService.googleLogin(idToken, accessToken)
 
-    // Set refresh token cookie
+    // Store refresh token securely
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -228,20 +284,17 @@ const googleLogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    // Don't send refresh token in response body
     const { refreshToken, ...responseBody } = result
-    
-    console.log('✅ Google login successful for:', result.user.email)
-    
+
     res.status(200).json({
       success: true,
       data: responseBody,
       message: 'Google login successful'
     })
   } catch (error) {
-    console.error('❌ Google login controller error:', error)
-    res.status(401).json({ 
-      success: false, 
+    console.error('Google login error:', error)
+    res.status(401).json({
+      success: false,
       message: error.message || 'Google authentication failed'
     })
   }

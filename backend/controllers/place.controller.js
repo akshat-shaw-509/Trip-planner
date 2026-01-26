@@ -1,119 +1,208 @@
-let placeService = require('../services/place.service')
+const placeService = require('../services/place.service')
 
-let sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
-  let response = { success: true }
+/**
+ * Standard success response helper
+ */
+const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
+  const response = { success: true }
   if (data) response.data = data
   if (message) response.message = message
   Object.assign(response, extra)
   res.status(statusCode).json(response)
 }
 
-let sendError = (res, statusCode, message) => {
+/**
+ * Standard error response helper
+ */
+const sendError = (res, statusCode, message) => {
   res.status(statusCode).json({ success: false, message })
 }
 
-let createPlace = async (req, res, next) => {
+/**
+ * Create a new place in a trip
+ * POST /api/trips/:tripId/places
+ */
+const createPlace = async (req, res, next) => {
   try {
-    let place = await placeService.createPlace(req.params.tripId, req.body, req.user.id)
+    const place = await placeService.createPlace(
+      req.params.tripId,
+      req.body,
+      req.user.id
+    )
+
     sendSuccess(res, 201, place, 'Place created successfully')
   } catch (error) {
     next(error)
   }
 }
 
-let getPlacesByTrip = async (req, res, next) => {
+/**
+ * Get all places for a trip (supports filters)
+ * GET /api/trips/:tripId/places
+ */
+const getPlacesByTrip = async (req, res, next) => {
   try {
-    let filters = {
+    const filters = {
       category: req.query.category,
       visitStatus: req.query.visitStatus
     }
-    let places = await placeService.getPlacesByTrip(req.params.tripId, req.user.id, filters)
+
+    const places = await placeService.getPlacesByTrip(
+      req.params.tripId,
+      req.user.id,
+      filters
+    )
+
     sendSuccess(res, 200, places, null, { count: places.length })
   } catch (error) {
     next(error)
   }
 }
 
-let getPlaceById = async (req, res, next) => {
+/**
+ * Get a single place by ID
+ * GET /api/places/:placeId
+ */
+const getPlaceById = async (req, res, next) => {
   try {
-    let place = await placeService.getPlaceById(req.params.placeId, req.user.id)
+    const place = await placeService.getPlaceById(
+      req.params.placeId,
+      req.user.id
+    )
+
     sendSuccess(res, 200, place)
   } catch (error) {
     next(error)
   }
 }
 
-let updatePlace = async (req, res, next) => {
+/**
+ * Update place details
+ * PUT /api/places/:placeId
+ */
+const updatePlace = async (req, res, next) => {
   try {
-    let place = await placeService.updatePlace(req.params.placeId, req.body, req.user.id)
+    const place = await placeService.updatePlace(
+      req.params.placeId,
+      req.body,
+      req.user.id
+    )
+
     sendSuccess(res, 200, place, 'Place updated successfully')
   } catch (error) {
     next(error)
   }
 }
 
-let deletePlace = async (req, res, next) => {
+/**
+ * Delete a place from a trip
+ * DELETE /api/places/:placeId
+ */
+const deletePlace = async (req, res, next) => {
   try {
-    let result = await placeService.deletePlace(req.params.placeId, req.user.id)
+    const result = await placeService.deletePlace(
+      req.params.placeId,
+      req.user.id
+    )
+
     sendSuccess(res, 200, null, result.message)
   } catch (error) {
     next(error)
   }
 }
 
-let toggleFavorite = async (req, res, next) => {
+/**
+ * Toggle favorite status for a place
+ * POST /api/places/:placeId/favorite
+ */
+const toggleFavorite = async (req, res, next) => {
   try {
-    let place = await placeService.toggleFavorite(req.params.placeId, req.user.id)
+    const place = await placeService.toggleFavorite(
+      req.params.placeId,
+      req.user.id
+    )
+
     sendSuccess(res, 200, place, 'Favorite status updated')
   } catch (error) {
     next(error)
   }
 }
 
-let updateVisitStatus = async (req, res, next) => {
+/**
+ * Update visit status (planned / visited / skipped)
+ * PATCH /api/places/:placeId/visit-status
+ */
+const updateVisitStatus = async (req, res, next) => {
   try {
-    const { visitStatus } = req.body;
+    const { visitStatus } = req.body
     if (!visitStatus) {
       return sendError(res, 400, 'Visit status required')
     }
-    let place = await placeService.updateVisitStatus(req.params.placeId,visitStatus, req.user.id)
+
+    const place = await placeService.updateVisitStatus(
+      req.params.placeId,
+      visitStatus,
+      req.user.id
+    )
+
     sendSuccess(res, 200, place, 'Visit status updated successfully')
   } catch (error) {
     next(error)
   }
 }
 
-let searchNearbyPlaces = async (req, res, next) => {
+/**
+ * Search nearby places based on trip center
+ * GET /api/trips/:tripId/places/nearby
+ */
+const searchNearbyPlaces = async (req, res, next) => {
   try {
-    let places = await placeService.searchNearby(req.params.tripId, req.query, req.user.id)
+    const places = await placeService.searchNearby(
+      req.params.tripId,
+      req.query,
+      req.user.id
+    )
+
     sendSuccess(res, 200, places, null, { count: places.length })
   } catch (error) {
     next(error)
   }
 }
 
-let getPlacesByCategory = async (req, res, next) => {
+/**
+ * Get places grouped by category
+ * GET /api/trips/:tripId/places/categories
+ */
+const getPlacesByCategory = async (req, res, next) => {
   try {
-    let categories = await placeService.getByCategory(req.params.tripId, req.user.id)
+    const categories = await placeService.getByCategory(
+      req.params.tripId,
+      req.user.id
+    )
+
     sendSuccess(res, 200, categories)
   } catch (error) {
     next(error)
   }
 }
 
-let addAIPlace = async (req, res, next) => {
+/**
+ * Add AI-recommended place to a trip
+ * POST /api/trips/:tripId/places/ai
+ */
+const addAIPlace = async (req, res, next) => {
   try {
-    let place = await placeService.addAIPlaceToTrip(
+    const place = await placeService.addAIPlaceToTrip(
       req.params.tripId,
       req.body,
       req.user.id
-    );
-    sendSuccess(res, 201, place, 'AI place added to trip');
-  } catch (error) {
-    next(error);
-  }
-};
+    )
 
+    sendSuccess(res, 201, place, 'AI place added to trip')
+  } catch (error) {
+    next(error)
+  }
+}
 
 module.exports = {
   createPlace,
