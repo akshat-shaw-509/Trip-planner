@@ -10,9 +10,6 @@ let {
 // All routes require authentication
 router.use(authenticate)
 
-// IMPORTANT: These routes expect to be mounted at /api/activities
-// So /api/activities/trips/:tripId/activities becomes the full path
-
 router.post(
   '/trips/:tripId/activities',
   validateActivity,

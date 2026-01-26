@@ -11,7 +11,7 @@ let {
   validateChangePassword 
 } = require('../middleware/validation.middleware')
 
-// ✅ Auth rate limiter (LOCAL auth only)
+//Auth rate limiter (LOCAL auth only)
 let authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -23,7 +23,7 @@ let authLimiter = rateLimit({
 router.post('/login', validateLogin, authLimiter, authController.login)
 router.post('/register', validateRegister, authLimiter, authController.register)
 
-// Google OAuth (❌ NO rate limiter)
+// Google OAuth (NO rate limiter)
 router.post('/google', authController.googleLogin)
 
 // Tokens & recovery
@@ -41,5 +41,33 @@ router.post(
   validateChangePassword,
   authController.changePassword
 )
+
+// ===================== Config Endpoints (Public) =====================
+// Unified config endpoint - returns all frontend configuration
+router.get('/config', (req, res) => {
+  res.json({ 
+    success: true,
+    config: {
+      apiBaseURL: process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}/api`,
+      googleClientId: process.env.GOOGLE_CLIENT_ID,
+      geoapifyApiKey: process.env.GEOAPIFY_API_KEY
+    }
+  });
+});
+
+// Individual config endpoints (for backwards compatibility or specific use)
+router.get('/google-client-id', (req, res) => {
+  res.json({ 
+    success: true, 
+    clientId: process.env.GOOGLE_CLIENT_ID 
+  });
+});
+
+router.get('/geoapify-api-key', (req, res) => {
+  res.json({ 
+    success: true, 
+    apiKey: process.env.GEOAPIFY_API_KEY 
+  });
+});
 
 module.exports = router
