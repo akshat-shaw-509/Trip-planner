@@ -1,98 +1,155 @@
-// middleware/auth.middleware.js
+// JWT library for token verification
+const jwt = require('jsonwebtoken')
 
-let jwt = require('jsonwebtoken')
-let User = require('../models/User.model')
-let config = require('../config/env')
-let { UnauthorizedError } = require('../utils/errors')
+// User model to fetch authenticated user
+const User = require('../models/User.model')
+
+// Environment configuration (JWT secret, etc.)
+const config = require('../config/env')
+
+// Custom error helper for unauthorized access
+const { UnauthorizedError } = require('../utils/errors')
+
+/**
+ * -------------------- Helper Functions --------------------
+ */
 
 /**
  * Extract Bearer token from Authorization header
+ * Expected format:
+ * Authorization: Bearer <token>
  */
-let getTokenFromHeader = (req) => {
-  let authHeader = req.headers.authorization
+const getTokenFromHeader = (req) => {
+  const authHeader = req.headers.authorization
+
+  // Header must exist and start with "Bearer "
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null
+
+  // Split "Bearer <token>" and return token
   return authHeader.split(' ')[1]
 }
 
 /**
- * Authenticate user (STRICT)
+ * -------------------- Authentication Middleware --------------------
  */
-let authenticate = async (req, res, next) => {
+
+/**
+ * Authenticate user (STRICT)
+ * - Requires a valid JWT token
+ * - Ensures user exists and is active
+ * - Attaches user object to req.user
+ */
+const authenticate = async (req, res, next) => {
   try {
-    let token = getTokenFromHeader(req)
+    // Extract token from request header
+    const token = getTokenFromHeader(req)
+
     if (!token) {
       throw UnauthorizedError('No token provided')
     }
 
-    let decoded = jwt.verify(token, config.jwt.secret)
-    let user = await User.findById(decoded.id)
+    // Verify token using JWT secret
+    const decoded = jwt.verify(token, config.jwt.secret)
+
+    // Fetch user from database using decoded token ID
+    const user = await User.findById(decoded.id)
 
     if (!user) {
       throw UnauthorizedError('User not found')
     }
 
-    // Optional strict checks
+    // Optional strict checks (enable if needed)
     // if (!user.isVerified) {
     //   throw UnauthorizedError('Please verify your email first')
     // }
 
+    // Block inactive users
     if (!user.isActive) {
       throw UnauthorizedError('User account is inactive')
     }
 
+    // Attach authenticated user to request object
     req.user = user
+
     next()
   } catch (error) {
+    // Token expired
     if (error.name === 'TokenExpiredError') {
       return next(UnauthorizedError('Token expired'))
     }
 
+    // Invalid or malformed token
     if (error.name === 'JsonWebTokenError') {
       return next(UnauthorizedError('Invalid token'))
     }
 
-    // Custom app errors
+    // Custom application errors
     if (error.statusCode) {
       return next(error)
     }
 
+    // Fallback authentication error
     next(UnauthorizedError('Authentication failed'))
   }
 }
 
 /**
- * Role-based authorization
+ * -------------------- Authorization Middleware --------------------
  */
-let authorize = (...roles) => {
+
+/**
+ * Role-based authorization
+ * Usage example:
+ * authorize('admin', 'moderator')
+ */
+const authorize = (...roles) => {
   return (req, res, next) => {
+    // User must be authenticated and have required role
     if (!req.user || !roles.includes(req.user.role)) {
       throw UnauthorizedError('Insufficient permissions')
     }
+
     next()
   }
 }
 
 /**
- * Optional authentication (NON-STRICT)
+ * -------------------- Optional Authentication --------------------
  */
-let optionalAuth = async (req, res, next) => {
+
+/**
+ * Optional authentication (NON-STRICT)
+ * - Does NOT throw error if token is missing or invalid
+ * - Attaches req.user only if token is valid
+ * - Useful for public routes with enhanced features for logged-in users
+ */
+const optionalAuth = async (req, res, next) => {
   try {
-    let token = getTokenFromHeader(req)
+    const token = getTokenFromHeader(req)
+
+    // Continue as guest if no token
     if (!token) return next()
 
-    let decoded = jwt.verify(token, config.jwt.secret)
-    let user = await User.findById(decoded.id)
+    // Verify token
+    const decoded = jwt.verify(token, config.jwt.secret)
 
+    // Fetch user from database
+    const user = await User.findById(decoded.id)
+
+    // Attach user only if active
     if (user && user.isActive) {
       req.user = user
     }
   } catch (error) {
-    // Ignore token errors in optional auth
+    // Silently ignore token errors in optional auth
   }
 
   next()
 }
 
+/**
+ * Export authentication & authorization middlewares
+ */
 module.exports = {
   authenticate,
   authorize,

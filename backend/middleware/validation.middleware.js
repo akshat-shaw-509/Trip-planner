@@ -1,7 +1,9 @@
-// middleware/validation.middleware.js
-let { body, validationResult } = require('express-validator');
+let { body, validationResult } = require('express-validator')
 
-// Updated: Granular Password Validation
+/**
+ * -------------------- Password Validation Rules --------------------
+ * Enforces strong password policy
+ */
 let validatePassword = [
   body('password')
     .notEmpty()
@@ -18,12 +20,14 @@ let validatePassword = [
     .withMessage('Password must contain at least 1 special character (@$!%*?&)')
 ]
 
-// FIXED: Proper error handling without calling next() for errors
+/**
+ * -------------------- Common Validation Error Handler --------------------
+ * Formats validation errors in a consistent response structure
+ */
 let handleValidationErrors = (req, res, next) => {
   let errors = validationResult(req)
   
   if (!errors.isEmpty()) {
-    // Return immediately - don't call next()
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
@@ -34,11 +38,14 @@ let handleValidationErrors = (req, res, next) => {
     })
   }
   
-  // Only call next() if validation passes
   next()
 }
 
+/**
+ * -------------------- Register Validation --------------------
+ */
 let validateRegister = [
+  // User full name validation
   body('name')
     .trim()
     .notEmpty()
@@ -46,6 +53,7 @@ let validateRegister = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Name must be between 2 and 100 characters'),
 
+  // Email validation
   body('email')
     .trim()
     .notEmpty()
@@ -54,12 +62,18 @@ let validateRegister = [
     .withMessage('Please enter a valid email')
     .normalizeEmail(),
 
+  // Strong password validation
   ...validatePassword,
 
+  // Final validation error handler
   handleValidationErrors,
 ]
 
+/**
+ * -------------------- Login Validation --------------------
+ */
 let validateLogin = [
+  // Email validation
   body('email')
     .trim()
     .notEmpty()
@@ -68,28 +82,44 @@ let validateLogin = [
     .withMessage('Please enter a valid email')
     .normalizeEmail(),
   
+  // Password presence check (strength not required for login)
   body('password')
     .notEmpty()
     .withMessage('Password is required'),
 
+  // Final validation error handler
   handleValidationErrors,
 ]
 
+/**
+ * -------------------- Password Reset Validation --------------------
+ * Used when setting a new password
+ */
 let validatePasswordReset = [
   ...validatePassword,
   handleValidationErrors,
 ]
 
+/**
+ * -------------------- Change Password Validation --------------------
+ * Requires current password + new strong password
+ */
 let validateChangePassword = [
+  // Current password verification
   body('currentPassword')
     .notEmpty()
     .withMessage('Current password is required'),
 
+  // New password strength validation
   ...validatePassword,
 
+  // Final validation error handler
   handleValidationErrors,
 ]
 
+/**
+ * Export all validation middlewares
+ */
 module.exports = {
   validateRegister,
   validateLogin,

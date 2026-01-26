@@ -1,168 +1,163 @@
-let { body, validationResult } = require('express-validator');
+/**
+ * -------------------- Activity Validation Middleware --------------------
+ */
 
-// Activity types from the model
-const ACTIVITY_TYPES = [
-  'flight',
-  'accommodation',
-  'restaurant',
-  'attraction',
-  'transport',
-  'shopping',
-  'entertainment',
-  'other',
-];
+/**
+ * Validate activity creation
+ * Ensures required fields are present and valid
+ */
+const validateActivity = (req, res, next) => {
+  const { title, startTime, endTime, date } = req.body;
 
-const ACTIVITY_STATUS = ['planned', 'confirmed', 'completed', 'cancelled'];
-const PRIORITY_LEVELS = ['low', 'medium', 'high'];
+  // Title is required
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Title is required and must be a non-empty string'
+    });
+  }
 
-let sharedFields = [
-  body('title')
-    .trim()
-    .notEmpty()
-    .withMessage('Title required')
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Title must be between 3 and 200 characters'),
+  // Start time is required
+  if (!startTime) {
+    return res.status(400).json({
+      success: false,
+      message: 'Start time is required'
+    });
+  }
 
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 2000 })
-    .withMessage('Description max 2000 characters'),
+  // End time is required
+  if (!endTime) {
+    return res.status(400).json({
+      success: false,
+      message: 'End time is required'
+    });
+  }
 
-  body('notes')
-    .optional()
-    .trim()
-    .isLength({ max: 1000 })
-    .withMessage('Notes max 1000 characters'),
+  // Validate time logic: end time must be after start time
+  const start = new Date(startTime);
+  const end = new Date(endTime);
 
-  body('cost')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Cost must be positive'),
+  if (isNaN(start.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid start time format'
+    });
+  }
 
-  body('currency')
-    .optional()
-    .trim()
-    .isLength({ min: 3, max: 3 })
-    .withMessage('Currency must be 3 characters (e.g., USD)'),
+  if (isNaN(end.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid end time format'
+    });
+  }
 
-  body('placeId')
-    .optional()
-    .isMongoId()
-    .withMessage('Invalid place ID'),
+  if (start >= end) {
+    return res.status(400).json({
+      success: false,
+      message: 'End time must be after start time'
+    });
+  }
 
-  body('location')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Location max 500 characters'),
-
-  body('bookingReference')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Booking reference max 100 characters'),
-
-  body('confirmationNumber')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Confirmation number max 100 characters'),
-
-  body('url')
-    .optional()
-    .trim()
-    .isURL()
-    .withMessage('Invalid URL'),
-
-  body('priority')
-    .optional()
-    .isIn(PRIORITY_LEVELS)
-    .withMessage(`Priority must be: ${PRIORITY_LEVELS.join(', ')}`)
-];
-
-let validateDateRange = (startField, endField) => [
-  body(startField)
-    .notEmpty()
-    .withMessage(`${startField} required`)
-    .isISO8601()
-    .withMessage('Valid ISO date required'),
-
-  body(endField)
-    .optional()
-    .isISO8601()
-    .withMessage('Valid ISO date required')
-    .custom((value, { req }) => {
-      if (value && req.body[startField]) {
-        const start = new Date(req.body[startField]);
-        const end = new Date(value);
-        if (end <= start) {
-          throw new Error(`${endField} must be after ${startField}`);
-        }
-      }
-      return true;
-    })
-];
-
-let validateActivity = [
-  ...sharedFields,
-  
-  body('type')
-    .notEmpty()
-    .withMessage('Type required')
-    .isIn(ACTIVITY_TYPES)
-    .withMessage(`Type must be: ${ACTIVITY_TYPES.join(', ')}`),
-
-  ...validateDateRange('startTime', 'endTime'),
-
-  body('status')
-    .optional()
-    .isIn(ACTIVITY_STATUS)
-    .withMessage(`Status must be: ${ACTIVITY_STATUS.join(', ')}`),
-
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  // Date validation (if provided)
+  if (date) {
+    const activityDate = new Date(date);
+    if (isNaN(activityDate.getTime())) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(({ path, msg }) => ({ field: path, message: msg }))
+        message: 'Invalid date format'
       });
     }
-    next();
   }
-];
 
-const validateActivityUpdate = [
-  ...sharedFields.map(field => 
-    field.optional({ nullable: true })
-  ),
+  // All validations passed
+  next();
+};
 
-  ...validateDateRange('startTime', 'endTime').map(field => 
-    field.optional({ nullable: true })
-  ),
+/**
+ * Validate activity update
+ * Only validates fields that are being updated
+ */
+const validateActivityUpdate = (req, res, next) => {
+  const { title, startTime, endTime, date } = req.body;
 
-  body('type')
-    .optional()
-    .isIn(ACTIVITY_TYPES)
-    .withMessage(`Type must be: ${ACTIVITY_TYPES.join(', ')}`),
-
-  body('status')
-    .optional()
-    .isIn(ACTIVITY_STATUS)
-    .withMessage(`Status must be: ${ACTIVITY_STATUS.join(', ')}`),
-
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  // Title validation (if provided)
+  if (title !== undefined) {
+    if (typeof title !== 'string' || title.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(({ path, msg }) => ({ field: path, message: msg }))
+        message: 'Title must be a non-empty string'
       });
     }
-    next();
   }
-];
 
-module.exports = { validateActivity, validateActivityUpdate };
+  // Time validation (if both provided)
+  if (startTime && endTime) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid start time format'
+      });
+    }
+
+    if (isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid end time format'
+      });
+    }
+
+    if (start >= end) {
+      return res.status(400).json({
+        success: false,
+        message: 'End time must be after start time'
+      });
+    }
+  }
+
+  // Individual time format validation
+  if (startTime && !endTime) {
+    const start = new Date(startTime);
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid start time format'
+      });
+    }
+  }
+
+  if (endTime && !startTime) {
+    const end = new Date(endTime);
+    if (isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid end time format'
+      });
+    }
+  }
+
+  // Date validation (if provided)
+  if (date !== undefined) {
+    const activityDate = new Date(date);
+    if (isNaN(activityDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format'
+      });
+    }
+  }
+
+  // All validations passed
+  next();
+};
+
+/**
+ * Export validation middleware
+ * Used in activity routes
+ */
+module.exports = {
+  validateActivity,
+  validateActivityUpdate
+};

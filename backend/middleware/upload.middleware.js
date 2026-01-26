@@ -1,48 +1,81 @@
-// middleware/upload.middleware.js
-// Create this new file for Multer configuration
+let multer = require('multer')
 
-let multer = require('multer');
-let path = require('path');
-let fs = require('fs').promises;
+// Path -> helps build OS-safe file paths
+let path = require('path')
 
-// Configure storage for banner uploads
+// fs.promises -> async filesystem operations
+let fs = require('fs').promises
+
+/**
+ * -------------------- Storage Configuration --------------------
+ * Disk storage setup for banner uploads
+ */
 let bannerStorage = multer.diskStorage({
+  /**
+   * Destination callback
+   * Ensures the upload directory exists before saving the file
+   */
   destination: async (req, file, cb) => {
-    let uploadPath = path.join(__dirname, '../uploads/banners');
+    // Define upload directory for banners
+    let uploadPath = path.join(__dirname, '../uploads/banners')
+
     try {
-      await fs.mkdir(uploadPath, { recursive: true });
-      cb(null, uploadPath);
+      // Create directory if it doesn't exist
+      await fs.mkdir(uploadPath, { recursive: true })
+
+      cb(null, uploadPath)
     } catch (error) {
-      cb(error);
+      cb(error)
     }
   },
-  filename: (req, file, cb) => {
-    // Use tripId from route params
-    let uniqueName = `banner-${req.params.tripId}-${Date.now()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  }
-});
 
-// File filter for images only
+  /**
+   * Filename callback
+   * Generates a unique filename using tripId and timestamp
+   */
+  filename: (req, file, cb) => {
+    let uniqueName = `banner-${req.params.tripId}-${Date.now()}${path.extname(file.originalname)}`
+
+    cb(null, uniqueName)
+  }
+})
+
+/**
+ * -------------------- File Type Filter --------------------
+ * Allows only valid image formats
+ */
 let imageFileFilter = (req, file, cb) => {
-  let allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  // Allowed MIME types for banner images
+  let allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
   
   if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
+    // Accept file
+    cb(null, true)
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG and WebP are allowed'), false);
+    // Reject file with error
+    cb(
+      new Error('Invalid file type. Only JPEG, PNG and WebP are allowed'),
+      false
+    )
   }
-};
+}
 
-// Multer instance for banner uploads
+/**
+ * -------------------- Multer Upload Middleware --------------------
+ * Handles banner uploads with size and type restrictions
+ */
 let uploadBanner = multer({
-  storage: bannerStorage,
-  fileFilter: imageFileFilter,
+  storage: bannerStorage,   // Custom disk storage
+  fileFilter: imageFileFilter, // Image-only uploads
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    // Maximum file size: 5MB
+    fileSize: 5 * 1024 * 1024
   }
-});
+})
 
+/**
+ * Export upload middleware
+ */
 module.exports = {
   uploadBanner
-};
+}
