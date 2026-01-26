@@ -43,26 +43,31 @@ app.use(
 /* =========================
    3. CORS CONFIG (FIXED)
 ========================= */
-let corsOriginConfig = process.env.CORS_ORIGIN || ''
-let allowedOrigins = corsOriginConfig
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean)
-
-const devOrigins = [
+const allowedOrigins = [
+  'https://akshat-shaw-509.github.io',
+  'https://trip-planner-n1g3.onrender.com',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:8000',
   'http://127.0.0.1:8000'
-]
+];
 
-allowedOrigins = [...new Set([...allowedOrigins, ...devOrigins])]
 app.use(cors({
-  origin: 'https://akshat-shaw-509.github.io',
+  origin: function (origin, callback) {
+    // allow server-to-server & Postman
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}))
+}));
+
 
 /* =========================
    4. Rate limiting
