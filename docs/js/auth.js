@@ -74,7 +74,7 @@ let authHandler = {
       showToast('Account created', 'success')
 
       setTimeout(() => {
-        window.location.href = 'trips.html'
+        window.location.href = './trips.html'
       }, 1000)
 
       return { success: true, user }
