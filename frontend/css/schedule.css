@@ -5,8 +5,10 @@
 }
 
 body {
-    background: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: #ffffff;
+    color: #1a2332;
+    line-height: 1.6;
 }
 
 /* Breadcrumb */
@@ -21,25 +23,25 @@ body {
 }
 
 .breadcrumb a {
-    color: #666;
+    color: #64748b;
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: color 0.3s;
+    transition: color 0.2s;
 }
 
 .breadcrumb a:hover {
-    color: #000;
+    color: #0066cc;
 }
 
 .breadcrumb i {
     font-size: 10px;
-    color: #999;
+    color: #94a3b8;
 }
 
 .breadcrumb span {
-    color: #000;
+    color: #1a2332;
     font-weight: 600;
 }
 
@@ -52,29 +54,31 @@ body {
 
 /* Schedule Header */
 .schedule-header {
-    background: linear-gradient(135deg, #000 0%, #333 100%);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
     padding: 40px;
-    border-radius: 16px;
+    border-radius: 20px;
     margin-bottom: 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.2);
 }
 
 .header-content h1 {
-    font-size: 36px;
+    font-size: 48px;
     font-weight: 700;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 12px;
+    letter-spacing: -0.01em;
 }
 
 .trip-dates {
-    font-size: 16px;
-    opacity: 0.9;
+    font-size: 18px;
+    opacity: 0.95;
+    line-height: 1.7;
 }
 
 .header-actions {
@@ -84,11 +88,11 @@ body {
 
 .btn-export,
 .btn-print {
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
     color: white;
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 12px 20px;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
     border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
@@ -96,13 +100,15 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-export:hover,
 .btn-print:hover {
-    background: rgba(255,255,255,0.25);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Schedule Content */
@@ -123,7 +129,7 @@ body {
     background: white;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .calendar-header {
@@ -136,29 +142,31 @@ body {
 .calendar-header h3 {
     font-size: 18px;
     font-weight: 700;
+    color: #1a2332;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .btn-today {
-    background: #f8f9fa;
-    border: 2px solid #e5e5e5;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
     padding: 8px 16px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    color: #475569;
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-today:hover {
-    background: #000;
+    background: #0066cc;
     color: white;
-    border-color: #000;
+    border-color: #0066cc;
 }
 
 #calendar {
@@ -179,13 +187,13 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
 }
 
 .stat-item:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .stat-item i {
@@ -196,7 +204,7 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    background: linear-gradient(135deg, #000 0%, #333 100%);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
 }
 
@@ -208,13 +216,13 @@ body {
     display: block;
     font-size: 24px;
     font-weight: 700;
-    color: #000;
+    color: #1a2332;
 }
 
 .stat-label {
     display: block;
     font-size: 13px;
-    color: #666;
+    color: #64748b;
     margin-top: 2px;
 }
 
@@ -223,12 +231,13 @@ body {
     background: white;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .legend-card h4 {
     font-size: 16px;
     font-weight: 700;
+    color: #1a2332;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -246,7 +255,7 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 14px;
-    color: #666;
+    color: #64748b;
 }
 
 .legend-color {
@@ -259,9 +268,9 @@ body {
 /* Timeline Section */
 .timeline-section {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 32px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .timeline-header {
@@ -270,25 +279,26 @@ body {
     align-items: center;
     margin-bottom: 32px;
     padding-bottom: 24px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 1px solid rgba(26, 35, 50, 0.08);
 }
 
 .selected-date h2 {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
-    color: #000;
+    color: #1a2332;
     margin-bottom: 4px;
+    letter-spacing: -0.01em;
 }
 
 #dayInfo {
     font-size: 14px;
-    color: #666;
+    color: #64748b;
 }
 
 .btn-add-activity {
-    background: #000;
+    background: #0066cc;
     color: white;
-    border: none;
+    border: 1.5px solid #0066cc;
     padding: 14px 24px;
     border-radius: 10px;
     font-size: 14px;
@@ -297,19 +307,22 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-add-activity:hover {
-    background: #333;
-    transform: translateY(-2px);
+    background: #0052a3;
+    border-color: #0052a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 /* Timeline Container */
 .timeline-container {
     position: relative;
-  min-height: 1920px;
-  overflow: hidden;   
+    min-height: 1920px;
+    overflow: hidden;   
 }
 
 .time-grid {
@@ -317,12 +330,12 @@ body {
     left: 0;
     top: 0;
     width: 70px;
-    border-right: 2px solid #e5e5e5;
+    border-right: 1.5px solid #e2e8f0;
 }
 
 .time-slot {
     height: 80px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f1f5f9;
     position: relative;
 }
 
@@ -335,19 +348,19 @@ body {
     left: -70px;
     top: -10px;
     font-size: 13px;
-    color: #666;
+    color: #64748b;
     font-weight: 600;
     width: 60px;
     text-align: right;
 }
 
 .activities-timeline {
-     position: absolute;
+    position: absolute;
     top: 0;
     left: 70px;
     right: 0;
-     bottom: 0;
-  overflow: hidden;
+    bottom: 0;
+    overflow: hidden;
 }
 
 .activity-block {
@@ -359,20 +372,20 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     border-left: 4px solid;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     background: white;
 }
 
 .activity-block:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .activity-title {
     font-size: 16px;
     font-weight: 700;
     margin-bottom: 6px;
-    color: #000;
+    color: #1a2332;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -380,12 +393,12 @@ body {
 
 .activity-title i {
     font-size: 14px;
-    color: #666;
+    color: #64748b;
 }
 
 .activity-description {
     font-size: 13px;
-    color: #666;
+    color: #64748b;
     line-height: 1.5;
     margin-bottom: 8px;
     display: -webkit-box;
@@ -395,7 +408,7 @@ body {
 
 .activity-time {
     font-size: 12px;
-    color: #999;
+    color: #94a3b8;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -410,19 +423,19 @@ body {
 
 .empty-timeline i {
     font-size: 64px;
-    color: #ddd;
+    color: #e2e8f0;
     margin-bottom: 24px;
 }
 
 .empty-timeline h3 {
     font-size: 24px;
-    color: #333;
+    color: #1a2332;
     margin-bottom: 12px;
 }
 
 .empty-timeline p {
     font-size: 16px;
-    color: #666;
+    color: #64748b;
     margin-bottom: 32px;
 }
 
@@ -434,7 +447,8 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
     z-index: 1000;
     align-items: center;
     justify-content: center;
@@ -446,12 +460,12 @@ body {
 
 .modal-content {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -459,12 +473,13 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid rgba(26, 35, 50, 0.08);
 }
 
 .modal-header h3 {
     font-size: 24px;
     font-weight: 700;
+    color: #1a2332;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -475,19 +490,19 @@ body {
     border: none;
     font-size: 28px;
     cursor: pointer;
-    color: #666;
+    color: #64748b;
     width: 36px;
     height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
 .modal-close:hover {
-    background: #f5f5f5;
-    color: #000;
+    background: #f8fafc;
+    color: #1a2332;
 }
 
 .modal-body {
@@ -505,11 +520,11 @@ body {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #333;
+    color: #1a2332;
 }
 
 .form-group label i {
-    color: #666;
+    color: #64748b;
 }
 
 .form-group input,
@@ -517,18 +532,22 @@ body {
 .form-group textarea {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e5e5e5;
+    border: 1.5px solid #e2e8f0;
     border-radius: 10px;
     font-size: 14px;
-    transition: border-color 0.3s;
+    background: #f8fafc;
+    transition: all 0.2s;
     font-family: inherit;
+    color: #1a2332;
+    outline: none;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    outline: none;
-    border-color: #000;
+    border-color: #0066cc;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.08);
 }
 
 .form-row {
@@ -542,43 +561,49 @@ body {
     gap: 12px;
     justify-content: flex-end;
     padding: 24px;
-    border-top: 1px solid #e5e5e5;
+    border-top: 1px solid rgba(26, 35, 50, 0.08);
 }
 
 .btn-primary,
 .btn-secondary {
-    padding: 12px 24px;
+    padding: 14px 28px;
     border-radius: 10px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
     border: none;
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .btn-primary {
-    background: #000;
+    background: #0066cc;
     color: white;
+    border: 1.5px solid #0066cc;
 }
 
 .btn-primary:hover {
-    background: #333;
+    background: #0052a3;
+    border-color: #0052a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 .btn-secondary {
-    background: white;
-    color: #000;
-    border: 2px solid #e5e5e5;
+    background: transparent;
+    color: #475569;
+    border: 1.5px solid #e2e8f0;
 }
 
 .btn-secondary:hover {
-    background: #f5f5f5;
+    border-color: #cbd5e1;
+    background: #f8fafc;
 }
 
-/* Responsive */
+/* Responsive Design */
 @media (max-width: 1024px) {
     .schedule-content {
         grid-template-columns: 1fr;
@@ -610,7 +635,7 @@ body {
     }
 
     .header-content h1 {
-        font-size: 28px;
+        font-size: 36px;
     }
 
     .header-actions {
@@ -637,6 +662,10 @@ body {
         align-items: flex-start;
     }
 
+    .selected-date h2 {
+        font-size: 28px;
+    }
+
     .btn-add-activity {
         width: 100%;
         justify-content: center;
@@ -659,10 +688,6 @@ body {
     .form-row {
         grid-template-columns: 1fr;
     }
-
-    .selected-date h2 {
-        font-size: 24px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -671,7 +696,7 @@ body {
     }
 
     .header-content h1 {
-        font-size: 24px;
+        font-size: 28px;
     }
 
     .stat-item {

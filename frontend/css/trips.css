@@ -5,8 +5,8 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #ffffff;
     min-height: 100vh;
     padding-bottom: 3rem;
 }
@@ -26,6 +26,9 @@ body {
     margin-bottom: 3rem;
     gap: 2rem;
     flex-wrap: wrap;
+    padding: 3rem;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    border-radius: 24px;
 }
 
 .header-content h1 {
@@ -33,7 +36,6 @@ body {
     font-weight: 700;
     color: white;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -46,7 +48,7 @@ body {
 
 .btn-create-trip {
     background: white;
-    color: #667eea;
+    color: #0066cc;
     border: none;
     padding: 1rem 2rem;
     border-radius: 12px;
@@ -56,14 +58,13 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
 }
 
 .btn-create-trip:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-    background: #f8f9ff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Quick Stats Section */
@@ -81,13 +82,15 @@ body {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+    border: 2px solid transparent;
     transition: all 0.3s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.15);
+    border-color: #e0f2fe;
 }
 
 .stat-icon {
@@ -98,23 +101,23 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 1.75rem;
-    color: white;
+    color: #0066cc;
 }
 
 .stat-icon.upcoming {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
 }
 
 .stat-icon.ongoing {
-    background: linear-gradient(135deg, #f093fb, #f5576c);
+    background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
 }
 
 .stat-icon.completed {
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
 }
 
 .stat-icon.countries {
-    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
 }
 
 .stat-content {
@@ -126,12 +129,15 @@ body {
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
-    color: #2d3748;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stat-label {
     font-size: 0.9rem;
-    color: #718096;
+    color: #64748b;
     font-weight: 500;
 }
 
@@ -141,7 +147,7 @@ body {
     border-radius: 16px;
     padding: 1.5rem;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -163,7 +169,7 @@ body {
     border-radius: 10px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #718096;
+    color: #64748b;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -172,12 +178,12 @@ body {
 }
 
 .filter-tab:hover {
-    background: #f7fafc;
-    color: #2d3748;
+    background: #f8fafc;
+    color: #0066cc;
 }
 
 .filter-tab.active {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
 }
 
@@ -192,7 +198,7 @@ body {
     border-radius: 10px;
     font-size: 0.95rem;
     font-weight: 500;
-    color: #2d3748;
+    color: #1a2332;
     cursor: pointer;
     background: white;
     transition: all 0.3s ease;
@@ -200,7 +206,7 @@ body {
 
 .sort-select:hover,
 .sort-select:focus {
-    border-color: #667eea;
+    border-color: #0066cc;
     outline: none;
 }
 
@@ -218,14 +224,16 @@ body {
     border-radius: 20px;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+    border: 2px solid transparent;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
 .trip-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 32px rgba(0, 102, 204, 0.15);
+    border-color: #e0f2fe;
 }
 
 .trip-image {
@@ -233,6 +241,7 @@ body {
     width: 100%;
     height: 220px;
     overflow: hidden;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
 }
 
 .trip-image img {
@@ -256,13 +265,13 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     background: rgba(255, 255, 255, 0.95);
-    color: #667eea;
+    color: #0066cc;
     backdrop-filter: blur(10px);
     z-index: 2;
 }
 
 .trip-status.status-active {
-    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
 }
 
@@ -282,25 +291,16 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transform: scale(0.8);
+    opacity: 1;
+    transform: scale(1);
     transition: all 0.3s ease;
     z-index: 3;
     backdrop-filter: blur(10px);
 }
 
-.trip-card:hover .delete-trip-btn {
-    opacity: 1;
-    transform: scale(1);
-}
-
 .delete-trip-btn:hover {
     background: rgba(220, 38, 38, 1);
     transform: scale(1.1);
-}
-
-.delete-trip-btn:active {
-    transform: scale(0.95);
 }
 
 .trip-content {
@@ -310,7 +310,7 @@ body {
 .trip-content h3 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a202c;
+    color: #1a2332;
     margin-bottom: 1rem;
     line-height: 1.3;
 }
@@ -328,12 +328,12 @@ body {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.95rem;
-    color: #718096;
+    color: #64748b;
 }
 
 .trip-dates i,
 .trip-location i {
-    color: #a0aec0;
+    color: #0066cc;
     width: 16px;
 }
 
@@ -341,9 +341,9 @@ body {
     display: flex;
     gap: 1.5rem;
     padding-top: 1.25rem;
-    border-top: 2px solid #f7fafc;
+    border-top: 2px solid #f8fafc;
     font-size: 0.9rem;
-    color: #718096;
+    color: #64748b;
     font-weight: 500;
 }
 
@@ -354,7 +354,7 @@ body {
 }
 
 .trip-stats i {
-    color: #a0aec0;
+    color: #0066cc;
 }
 
 /* Empty State */
@@ -363,32 +363,32 @@ body {
     padding: 5rem 2rem;
     background: white;
     border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
 }
 
 .empty-icon {
     width: 120px;
     height: 120px;
     margin: 0 auto 2rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3.5rem;
-    color: white;
+    color: #0066cc;
 }
 
 .empty-state h2 {
     font-size: 2rem;
     font-weight: 700;
-    color: #1a202c;
+    color: #1a2332;
     margin-bottom: 1rem;
 }
 
 .empty-state p {
     font-size: 1.1rem;
-    color: #718096;
+    color: #64748b;
     margin-bottom: 2rem;
 }
 
@@ -407,8 +407,8 @@ body {
     width: 60px;
     height: 60px;
     margin: 0 auto 1.5rem;
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
+    border: 4px solid #e0f2fe;
+    border-top-color: #0066cc;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -418,7 +418,7 @@ body {
 }
 
 .loading-state p {
-    color: white;
+    color: #64748b;
     font-size: 1.1rem;
     font-weight: 500;
 }
@@ -444,6 +444,10 @@ body {
 @media (max-width: 768px) {
     .trips-container {
         padding: 1.5rem;
+    }
+
+    .page-header {
+        padding: 2rem;
     }
 
     .header-content h1 {
@@ -485,15 +489,15 @@ body {
 }
 
 @media (max-width: 480px) {
+    .page-header {
+        padding: 1.5rem;
+    }
+
     .header-content h1 {
         font-size: 1.75rem;
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
-    }
-
-    .header-content p {
-        font-size: 1rem;
     }
 
     .stats-section {
@@ -514,11 +518,6 @@ body {
         font-size: 1.25rem;
     }
 
-    .trip-stats {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
     .empty-icon {
         width: 100px;
         height: 100px;
@@ -527,11 +526,5 @@ body {
 
     .empty-state h2 {
         font-size: 1.5rem;
-    }
-
-    /* Show delete button on mobile without hover */
-    .delete-trip-btn {
-        opacity: 0.9;
-        transform: scale(1);
     }
 }
