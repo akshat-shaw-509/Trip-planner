@@ -1,5 +1,5 @@
-const path = require('path')
 
+const path = require('path')
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
@@ -18,6 +18,18 @@ const recommendationRoutes = require('./routes/recommendation.routes')
 
 // Import middleware
 const { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
+
+console.log('ROUTE TYPES:', {
+  authRoutes: typeof authRoutes,
+  tripRoutes: typeof tripRoutes,
+  placeRoutes: typeof placeRoutes,
+  activityRoutes: typeof activityRoutes,
+  expenseRoutes: typeof expenseRoutes,
+  uploadRoutes: typeof uploadRoutes,
+  recommendationRoutes: typeof recommendationRoutes,
+  notFoundHandler: typeof notFoundHandler,
+  errorHandler: typeof errorHandler
+})
 
 const app = express()
 
@@ -118,3 +130,4 @@ app.use(notFoundHandler)
 app.use(errorHandler)
 
 module.exports = app
+
