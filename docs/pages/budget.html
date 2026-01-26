@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -282,4 +283,290 @@
     <script src="../js/toast.js"></script>
     <script src="../js/budget.js"></script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Tracker - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/budget.css">
+</head>
+<body>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
+        <a href="../index.html">Home</a>
+        <a href="./trips.html">My Trips</a>
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
+    </div>
+</nav>
+
+    <div class="breadcrumb">
+        <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="trip-overview.html">Trip Overview</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Budget</span>
+    </div>
+
+    <div class="budget-container">
+        <!-- Budget Header -->
+        <div class="budget-header">
+            <div class="header-content">
+                <h1><i class="fas fa-wallet"></i> Budget Tracker</h1>
+                <p id="tripName">Loading trip details...</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-add-expense" id="addExpenseBtn">
+                    <i class="fas fa-plus"></i>
+                    Add Expense
+                </button>
+            </div>
+        </div>
+
+        <!-- Budget Overview Cards -->
+        <div class="overview-section">
+            <div class="overview-card budget-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <span class="card-label">Total Budget</span>
+                </div>
+                <div class="card-value" id="totalBudget">₹0</div>
+                <div class="card-footer">
+                    <span class="card-subtitle">Allocated for trip</span>
+                </div>
+            </div>
+
+            <div class="overview-card spent-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <span class="card-label">Total Spent</span>
+                </div>
+                <div class="card-value" id="totalSpent">₹0</div>
+                <div class="card-footer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="spentProgress"></div>
+                    </div>
+                    <span class="card-subtitle" id="spentPercentage">0% of budget</span>
+                </div>
+            </div>
+
+            <div class="overview-card remaining-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <span class="card-label">Remaining</span>
+                </div>
+                <div class="card-value" id="remaining">₹0</div>
+                <div class="card-footer">
+                    <span class="card-subtitle" id="remainingDays">For remaining days</span>
+                </div>
+            </div>
+
+            <div class="overview-card average-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span class="card-label">Daily Average</span>
+                </div>
+                <div class="card-value" id="dailyAverage">₹0</div>
+                <div class="card-footer">
+                    <span class="card-subtitle">Per day spending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Left: Expenses List -->
+            <div class="expenses-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-receipt"></i> Expenses</h2>
+                    <div class="filter-group">
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="all">All Categories</option>
+                            <option value="accommodation">Accommodation</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="activities">Activities</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="miscellaneous">Miscellaneous</option>
+                        </select>
+                        <select id="sortFilter" class="filter-select">
+                            <option value="date-desc">Latest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="amount-desc">Highest Amount</option>
+                            <option value="amount-asc">Lowest Amount</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="expenses-list" id="expensesList">
+                    <!-- Expenses will be loaded here -->
+                </div>
+
+                <div class="empty-state" style="display: none;">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h3>No expenses yet</h3>
+                    <p>Start tracking your spending</p>
+                    <button class="btn-add-expense">
+                        <i class="fas fa-plus"></i>
+                        Add First Expense
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Charts & Analytics -->
+            <div class="analytics-section">
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-pie"></i> Spending by Category</h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-bar"></i> Daily Spending Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="category-breakdown">
+                    <h3><i class="fas fa-list"></i> Category Breakdown</h3>
+                    <div class="breakdown-list" id="categoryBreakdown">
+                        <!-- Category items will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Expense Modal -->
+    <div class="modal" id="expenseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Expense
+                </h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDescription">
+                            <i class="fas fa-align-left"></i>
+                            Description *
+                        </label>
+                        <input type="text" id="expenseDescription" placeholder="e.g., Dinner at restaurant" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expenseAmount">
+                                <i class="fas fa-rupee-sign"></i>
+                                Amount (₹) *
+                            </label>
+                            <input type="number" id="expenseAmount" min="0" step="0.01" placeholder="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseCategory">
+                                <i class="fas fa-tag"></i>
+                                Category *
+                            </label>
+                            <select id="expenseCategory" required>
+                                <option value="">Select category</option>
+                                <option value="accommodation">Accommodation</option>
+                                <option value="food">Food</option>
+                                <option value="transport">Transport</option>
+                                <option value="activities">Activities</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expenseDate">
+                                <i class="far fa-calendar"></i>
+                                Date *
+                            </label>
+                            <input type="date" id="expenseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expensePaymentMethod">
+                                <i class="far fa-credit-card"></i>
+                                Payment Method
+                            </label>
+                            <select id="expensePaymentMethod">
+                                <option value="cash">Cash</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="debit_card">Debit Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="wallet">Wallet</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expensePaidBy">
+                            <i class="fas fa-user"></i>
+                            Paid By
+                        </label>
+                        <input type="text" id="expensePaidBy" placeholder="Person name (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expenseNotes">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes
+                        </label>
+                        <textarea id="expenseNotes" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelBtn">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check"></i>
+                            Save Expense
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/nav.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/budget.js"></script>
+</body>
+>>>>>>> 0007615a5a7317e8689fc9727726ee86c5585786
 </html>
