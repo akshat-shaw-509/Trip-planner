@@ -1,53 +1,54 @@
-// auth.js - FIXED VERSION
-
-const authHandler = {
+// ===================== Auth State & Helpers =====================
+let authHandler = {
   isAuthenticated() {
-    const token = localStorage.getItem('accessToken')
-    return !!token
+    return !!sessionStorage.getItem('accessToken')
   },
 
   getCurrentUser() {
-    const userStr = localStorage.getItem('user')
+    const userStr = sessionStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null
   },
 
   storeAuthData(accessToken, refreshToken, user) {
-    localStorage.setItem('accessToken', accessToken)
+    sessionStorage.setItem('accessToken', accessToken)
     if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken)
+      sessionStorage.setItem('refreshToken', refreshToken)
     }
-    localStorage.setItem('user', JSON.stringify(user))
+    sessionStorage.setItem('user', JSON.stringify(user))
   },
 
   clearAuthData() {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
+    sessionStorage.removeItem('accessToken')
+    sessionStorage.removeItem('refreshToken')
+    sessionStorage.removeItem('user')
   },
 
+  // ===================== Login =====================
   async handleLogin(email, password) {
     try {
       const response = await apiService.auth.login({ email, password })
 
-      if (response.success) {
-        const dataPayload = response.data || response
-        const accessToken = dataPayload.accessToken || dataPayload.token
-        const refreshToken = dataPayload.refreshToken || null
-        const user = dataPayload.user
-
-        if (!accessToken) {
-          throw new Error('No access token received from server')
-        }
-
-        this.storeAuthData(accessToken, refreshToken, user)
-        showToast('Login successful! Redirecting...', 'success')
-        setTimeout(() => window.location.href = 'trips.html', 1000)
-
-        return { success: true, user }
+      if (!response.success) {
+        throw new Error(response.message || 'Login failed')
       }
 
-      throw new Error(response.message || 'Login failed')
+      const data = response.data || response
+      const accessToken = data.accessToken || data.token
+      const refreshToken = data.refreshToken || null
+      const user = data.user
 
+      if (!accessToken) {
+        throw new Error('Missing access token')
+      }
+
+      this.storeAuthData(accessToken, refreshToken, user)
+      showToast('Login successful', 'success')
+
+      setTimeout(() => {
+        window.location.href = 'trips.html'
+      }, 1000)
+
+      return { success: true, user }
     } catch (error) {
       console.error('Login error:', error)
       showToast(error.message || 'Login failed', 'error')
@@ -55,39 +56,42 @@ const authHandler = {
     }
   },
 
+  // ===================== Register =====================
   async handleRegister(name, email, password) {
     try {
       const response = await apiService.auth.register({ name, email, password })
 
-      if (response.success) {
-        const dataPayload = response.data || response
-        const accessToken = dataPayload.accessToken || dataPayload.token
-        const refreshToken = dataPayload.refreshToken || null
-        const user = dataPayload.user
-
-        this.storeAuthData(accessToken, refreshToken, user)
-        showToast('Registration successful! Redirecting...', 'success')
-        setTimeout(() => window.location.href = 'trips.html', 1000)
-
-        return { success: true, user }
+      if (!response.success) {
+        throw new Error(response.message || 'Registration failed')
       }
 
-      throw new Error(response.message || 'Registration failed')
+      const data = response.data || response
+      const accessToken = data.accessToken || data.token
+      const refreshToken = data.refreshToken || null
+      const user = data.user
 
+      this.storeAuthData(accessToken, refreshToken, user)
+      showToast('Account created', 'success')
+
+      setTimeout(() => {
+        window.location.href = 'trips.html'
+      }, 1000)
+
+      return { success: true, user }
     } catch (error) {
       console.error('Registration error:', error)
 
       if (error.backendErrors && Array.isArray(error.backendErrors)) {
-        const errorList = error.backendErrors.map(e => `• ${e.message}`).join('\n')
-        showToast(`Registration Failed:\n${errorList}`, 'error')
+        const messages = error.backendErrors.map(e => `• ${e.message}`).join('\n')
+        showToast(`Registration failed:\n${messages}`, 'error')
       } else {
         showToast(error.message || 'Registration failed', 'error')
       }
-
       return { success: false, error: error.message }
     }
   },
 
+  // ===================== Logout =====================
   async handleLogout() {
     try {
       await apiService.auth.logout()
@@ -99,36 +103,35 @@ const authHandler = {
     }
   },
 
+  // ===================== Token Refresh =====================
   async refreshToken() {
     try {
-      const refreshToken = localStorage.getItem('refreshToken')
+      const refreshToken = sessionStorage.getItem('refreshToken')
       if (!refreshToken) return false
 
       const response = await apiService.auth.refreshToken(refreshToken)
-
       if (response.success) {
-        const { accessToken } = response.data
-        localStorage.setItem('accessToken', accessToken)
+        sessionStorage.setItem('accessToken', response.data.accessToken)
         return true
       }
-
       return false
     } catch (error) {
-      console.warn('Token refresh failed, staying logged in')
+      console.warn('Token refresh failed')
       return false
     }
   },
 
+  // ===================== Route Guard =====================
   requireAuth() {
     if (!this.isAuthenticated()) {
       window.location.href = 'index.html'
       return false
     }
     return true
-  },
+  }
 }
 
-// Login form handler
+// ===================== Login Form =====================
 if (document.getElementById('loginForm')) {
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -138,7 +141,7 @@ if (document.getElementById('loginForm')) {
   })
 }
 
-// Signup form handler
+// ===================== Signup Form =====================
 if (document.getElementById('signupForm')) {
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -153,26 +156,24 @@ if (document.getElementById('signupForm')) {
       return
     }
 
-    const requirements = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[@$!%*?&]/.test(password)
-    }
+    const isStrongPassword =
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /[0-9]/.test(password) &&
+      /[@$!%*?&]/.test(password)
 
-    if (!Object.values(requirements).every(Boolean)) {
-      showToast('Please meet all password requirements', 'error')
+    if (!isStrongPassword) {
+      showToast('Password does not meet requirements', 'error')
       return
     }
 
     const submitBtn = document.getElementById('signupBtn')
     const originalText = submitBtn.innerHTML
     submitBtn.disabled = true
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...'
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'
 
     const result = await authHandler.handleRegister(name, email, password)
-
     if (!result.success) {
       submitBtn.disabled = false
       submitBtn.innerHTML = originalText
@@ -180,47 +181,58 @@ if (document.getElementById('signupForm')) {
   })
 }
 
+// ===================== UI Helpers =====================
 function togglePassword(inputId) {
   const input = document.getElementById(inputId)
   if (!input) return
 
-  const button = input.nextElementSibling
-  const icon = button?.querySelector('i')
+  const icon = input.nextElementSibling?.querySelector('i')
+  const isHidden = input.type === 'password'
 
-  if (input.type === 'password') {
-    input.type = 'text'
-    if (icon) icon.classList.replace('fa-eye', 'fa-eye-slash')
-  } else {
-    input.type = 'password'
-    if (icon) icon.classList.replace('fa-eye-slash', 'fa-eye')
+  input.type = isHidden ? 'text' : 'password'
+  if (icon) {
+    icon.classList.toggle('fa-eye')
+    icon.classList.toggle('fa-eye-slash')
   }
 }
 
-// ✅ FIXED: Google OAuth Handler - USE ONLY .env CLIENT_ID
+// ===================== Google OAuth =====================
+// Load Google Client ID from backend
+async function loadGoogleClientId() {
+  try {
+    const baseURL = apiService.baseURL || 'http://localhost:5000/api'
+    const response = await fetch(`${baseURL}/auth/google-client-id`)
+    const data = await response.json()
+    
+    if (data.success && data.clientId) {
+      window.GOOGLE_CLIENT_ID = data.clientId
+      initializeGoogleSignIn()
+    } else {
+      console.error('Failed to load Google Client ID')
+    }
+  } catch (error) {
+    console.error('Error loading Google Client ID:', error)
+  }
+}
+
 async function handleGoogleLogin(response) {
   try {
-    console.log('🔵 Google login callback triggered', response)
-    
-    if (!response || !response.credential) {
-      showToast('Google login failed - no credential received', 'error')
+    if (!response?.credential) {
+      showToast('Google login failed', 'error')
       return
     }
 
     const baseURL = apiService.baseURL || 'http://localhost:5000/api'
-    showToast('Authenticating with Google...', 'info')
+    showToast('Signing in with Google...', 'info')
 
     const res = await fetch(`${baseURL}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({
-        idToken: response.credential
-      })
+      body: JSON.stringify({ idToken: response.credential })
     })
 
     const data = await res.json()
-    console.log('🔵 Google auth response:', data)
-
     if (!data.success) {
       showToast(data.message || 'Google login failed', 'error')
       return
@@ -229,59 +241,45 @@ async function handleGoogleLogin(response) {
     const { accessToken, user } = data.data
     authHandler.storeAuthData(accessToken, null, user)
 
-    showToast('Google login successful! Redirecting...', 'success')
+    showToast('Login successful', 'success')
     setTimeout(() => {
       window.location.href = 'trips.html'
     }, 1000)
-
   } catch (error) {
-    console.error('❌ Google login error:', error)
-    showToast('Google login error: ' + error.message, 'error')
+    console.error('Google login error:', error)
+    showToast('Google login failed', 'error')
   }
 }
 
-// ✅ FIXED: Google SDK Initialization - SINGLE CLIENT_ID
+// ===================== Google SDK Init =====================
 let googleInitialized = false
 
 function initializeGoogleSignIn() {
-  if (googleInitialized || !window.google) return
-
-  const clientId = '971566670592-c4v3bk1u8oe7ejv51bvmnc2nvg8729jo.apps.googleusercontent.com'
+  if (googleInitialized || !window.google || !window.GOOGLE_CLIENT_ID) return
 
   google.accounts.id.initialize({
-    client_id: clientId,
+    client_id: window.GOOGLE_CLIENT_ID,
     callback: handleGoogleLogin,
     ux_mode: 'popup'
   })
 
-  // ✅ THIS is the key fix
-  google.accounts.id.renderButton(
-    document.getElementById('googleLoginBtn'),
-    {
-      theme: 'outline',
-      size: 'large',
-      text: 'continue_with'
-    }
-  )
+  const googleBtn = document.getElementById('googleLoginBtn')
+  if (googleBtn) {
+    google.accounts.id.renderButton(
+      googleBtn,
+      { theme: 'outline', size: 'large', text: 'continue_with' }
+    )
+  }
 
   googleInitialized = true
-  console.log('✅ Google Sign-In button rendered')
 }
 
-
-// ✅ Called when Google SDK loads
 function onGoogleScriptLoad() {
-  console.log('✅ Google SDK loaded')
-  initializeGoogleSignIn()
+  loadGoogleClientId() // Changed: now loads client ID from backend first
 }
 
-
-
-
-
+// ===================== Expose Globals =====================
 window.authHandler = authHandler
 window.togglePassword = togglePassword
 window.handleGoogleLogin = handleGoogleLogin
 window.onGoogleScriptLoad = onGoogleScriptLoad
-
-console.log('✅ Auth module loaded')

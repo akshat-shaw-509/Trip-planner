@@ -1,147 +1,174 @@
-document.addEventListener('DOMContentLoaded', () => {
-  if (!authHandler.requireAuth()) {
-    return
-  }
-  initializePlanningForm()
-  
-  let prefilledDestination = sessionStorage.getItem('prefilledDestination')
-  if (prefilledDestination) {
-    document.getElementById('destination').value = prefilledDestination
-    sessionStorage.removeItem('prefilledDestination')
-  }
-})
+// Handles trip creation, validation, authentication guard, and destination map preview
 
+// ===================== Page Initialization =====================
+document.addEventListener('DOMContentLoaded', () => {
+  // Ensure user is authenticated before allowing trip creation
+  if (!authHandler.requireAuth()) {
+    return;
+  }
+
+  initializePlanningForm();
+
+  // Pre-fill destination if coming from another page (e.g. recommendations)
+  const prefilledDestination = sessionStorage.getItem('prefilledDestination');
+  if (prefilledDestination) {
+    document.getElementById('destination').value = prefilledDestination;
+    sessionStorage.removeItem('prefilledDestination');
+  }
+});
+
+// ===================== Form Setup =====================
 function initializePlanningForm() {
-  let form = document.getElementById('createTripForm')
-  if (!form) return
-  
-  let today = new Date().toISOString().split('T')[0]
-  document.getElementById('startDate').min = today
-  document.getElementById('endDate').min = today
-  document.getElementById('startDate').addEventListener('change', (e) => {
-    let startDate = e.target.value
-    document.getElementById('endDate').min = startDate
-    
-    let endDate = document.getElementById('endDate').value
-    if (endDate && endDate < startDate) {
-      document.getElementById('endDate').value = ''
+  const form = document.getElementById('createTripForm');
+  if (!form) return;
+
+  // Prevent selecting past dates
+  const today = new Date().toISOString().split('T')[0];
+  const startDateInput = document.getElementById('startDate');
+  const endDateInput = document.getElementById('endDate');
+
+  startDateInput.min = today;
+  endDateInput.min = today;
+
+  // Ensure end date is never before start date
+  startDateInput.addEventListener('change', (e) => {
+    const startDate = e.target.value;
+    endDateInput.min = startDate;
+
+    if (endDateInput.value && endDateInput.value < startDate) {
+      endDateInput.value = '';
     }
-  })
-  
-  form.addEventListener('submit', handleTripCreation)
+  });
+
+  // Handle form submission
+  form.addEventListener('submit', handleTripCreation);
 }
 
+// ===================== Trip Creation =====================
 async function handleTripCreation(e) {
-  e.preventDefault()
-  let formData = new FormData(e.target)
-  
-  // Parse tags properly
-  let tagsInput = formData.get('tags')
-  let tagsArray = []
-  if (tagsInput) {
-    tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean)
-  }
+  e.preventDefault();
 
-  let tripData = {
+  const formData = new FormData(e.target);
+
+  // Parse comma-separated tags into an array
+  const tagsInput = formData.get('tags');
+  const tagsArray = tagsInput
+    ? tagsInput.split(',').map(tag => tag.trim()).filter(Boolean)
+    : [];
+
+  // Construct payload for API
+  const tripData = {
     title: formData.get('title'),
     destination: formData.get('destination'),
     startDate: formData.get('startDate'),
     endDate: formData.get('endDate'),
-    budget: formData.get('budget') ? parseFloat(formData.get('budget')) : null, // Use null instead of undefined if empty
+    budget: formData.get('budget')
+      ? parseFloat(formData.get('budget'))
+      : null,
     description: formData.get('description'),
-    travelers: parseInt(formData.get('travelers')) || 1, // <--- ADD THIS LINE (Reads travelers from form)
-    tags: tagsArray, // <--- ADD THIS LINE (Pass the array)
+    travelers: parseInt(formData.get('travelers')) || 1,
+    tags: tagsArray,
     isPublic: formData.get('isPublic') === 'on',
-    status: 'planning',
-  }
+    status: 'planning'
+  };
 
-  // DEBUGGING: Log what we are sending
-  console.log('Sending Trip Data:', tripData)
+  console.log('Creating trip:', tripData);
 
-  let submitBtn = document.getElementById('createTripBtn')
-  let originalText = submitBtn.innerHTML
-  
+  const submitBtn = document.getElementById('createTripBtn');
+  const originalText = submitBtn.innerHTML;
+
   try {
-    submitBtn.disabled = true
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...'
-    
-    let response = await apiService.trips.create(tripData)
-    
-    if (response.success) {
-      showToast('Trip created successfully!', 'success')
-      setTimeout(() => {
-        window.location.href = `trip-overview.html?id=${response.data._id}`
-      }, 1000)
-    } else {
-      throw new Error(response.message || 'Failed to create trip')
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+    const response = await apiService.trips.create(tripData);
+
+    if (!response?.success) {
+      throw new Error(response?.message || 'Trip creation failed');
     }
+
+    showToast('Trip created successfully!', 'success');
+
+    // Redirect to trip overview after short delay
+    setTimeout(() => {
+      window.location.href = `trip-overview.html?id=${response.data._id}`;
+    }, 1000);
+
   } catch (error) {
-    console.error('Error creating trip:', error)
-    console.error('Full error object:', error) // Check console for more details
-    showToast(error.message || 'Failed to create trip', 'error')
-    submitBtn.disabled = false
-    submitBtn.innerHTML = originalText
+    console.error('Trip creation error:', error);
+    showToast(error.message || 'Failed to create trip', 'error');
+
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
   }
 }
 
-let map
+// ===================== Map Preview =====================
+let map = null;
+
+/**
+ * Initialize Leaflet map for destination preview
+ */
 function initializeMap() {
-  if (typeof L !== 'undefined') {
-    map = L.map('map').setView([20.5937, 78.9629], 5)
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map)
-    
-    let destinationInput = document.getElementById('destination')
-    if (destinationInput) {
-      destinationInput.addEventListener('change', updateMapLocation)
-    }
+  if (typeof L === 'undefined') return;
+
+  map = L.map('map').setView([20.5937, 78.9629], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Update map when destination changes
+  const destinationInput = document.getElementById('destination');
+  if (destinationInput) {
+    destinationInput.addEventListener('change', updateMapLocation);
   }
 }
 
+/**
+ * Fetch coordinates for destination and update map
+ */
 async function updateMapLocation() {
-  let destination = document.getElementById('destination').value
-  if (!destination || !map) return
+  const destination = document.getElementById('destination').value;
+  if (!destination || !map) return;
 
   try {
-    // CHANGED: Use Open-Meteo instead of Nominatim (No API key needed, No CORS issues)
-    let response = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1&language=en&format=json`
-    )
-    let data = await response.json()
+    const response = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+        destination
+      )}&count=1&language=en&format=json`
+    );
 
-    // Open-Meteo returns { results: [...] } instead of just [...]
-    if (data.results && data.results.length > 0) {
-      // Open-Meteo uses 'latitude' and 'longitude'
-      let { latitude, latitude: lat, longitude, longitude: lon, name, country } = data.results[0]
-      
-      // Destructure safely
-      lat = latitude
-      lon = longitude
+    const data = await response.json();
 
-      map.setView([lat, lon], 10)
-
-      // Remove existing markers
-      map.eachLayer(layer => {
-        if (layer instanceof L.Marker) {
-          map.removeLayer(layer)
-        }
-      })
-
-      // Add new marker
-      L.marker([lat, lon])
-        .addTo(map)
-        .bindPopup(`${name}, ${country}`)
-        .openPopup()
-    } else {
-      console.log('Location not found')
+    if (!data.results || data.results.length === 0) {
+      console.warn('Destination not found');
+      return;
     }
+
+    const { latitude, longitude, name, country } = data.results[0];
+
+    map.setView([latitude, longitude], 10);
+
+    // Remove existing markers
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+
+    // Add marker for destination
+    L.marker([latitude, longitude])
+      .addTo(map)
+      .bindPopup(`${name}, ${country}`)
+      .openPopup();
+
   } catch (error) {
-    console.error('Geocoding failed:', error)
+    console.error('Failed to update map location:', error);
   }
 }
-// Initialize map if Leaflet is loaded
+
+// Initialize map after Leaflet loads
 if (typeof L !== 'undefined') {
-  setTimeout(initializeMap, 100)
+  setTimeout(initializeMap, 100);
 }

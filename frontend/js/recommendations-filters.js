@@ -1,372 +1,303 @@
-// ============================================================================
-// FILE: recommendations-filters.js (UPDATED with Loading State Management)
-// ============================================================================
-
-let recFiltersState = {
-  selectedCategory: 'all',
-  allRecommendations: [],
-  filteredRecommendations: [],
-  isLoading: false,
-  loadingSteps: []
+// ===================== STATE =====================
+let recommendationsState = {
+  currentTripId: null,
+  tripData: null,
+  recommendations: [],
+  userPreferences: null,
+  isLoading: false
 };
 
-/**
- * Initialize - AUTO-LOAD all categories via AI
- */
-function initRecommendationFilters(recommendations) {
-  console.log('🤖 AI Recommendations System Initialized');
+// ===================== INITIALIZATION =====================
+async function initRecommendations(tripId, tripData) { 
+  recommendationsState.currentTripId = tripId;
+  recommendationsState.tripData = tripData;  
   
-  recFiltersState.allRecommendations = [...recommendations];
-  recFiltersState.filteredRecommendations = [...recommendations];
+  console.log('initRecommendations called with:', { tripId, tripData });
   
-  if (!document.querySelector('.recommendations-filters')) {
-    renderFilterUI();
-    attachFilterListeners();
+  // Initialize trip center selector with trip data
+  if (typeof initTripCenterSelector === 'function' && tripData) {
+    await initTripCenterSelector(tripData);
   }
   
-  updateDisplay();
+  await loadRecommendations();
 }
 
-/**
- * Render filter UI
- */
-function renderFilterUI() {
-  const section = document.querySelector('.recommendations-section');
-  if (!section) return;
-
-  const filtersHTML = `
-    <div class="recommendations-filters">
-      <div class="filters-header">
-        <h4>
-          <i class="fas fa-brain"></i>
-          AI-Powered Recommendations
-        </h4>
-        <div class="ai-status-badge" id="aiStatusBadge">
-          <span class="ai-pulse"></span>
-          AI Ready
-        </div>
-      </div>
-
-      <!-- Category Pills - Each triggers AI -->
-      <div class="category-pills" id="categoryPills">
-        <button class="category-pill all active" data-category="all">
-          <i class="fas fa-globe"></i>
-          <span>Show All</span>
-        </button>
-        <button class="category-pill restaurant" data-category="restaurant">
-          <i class="fas fa-utensils"></i>
-          <span>Famous Restaurants</span>
-          <div class="ai-indicator">🤖</div>
-        </button>
-        <button class="category-pill attraction" data-category="attraction">
-          <i class="fas fa-landmark"></i>
-          <span>Tourist Attractions</span>
-          <div class="ai-indicator">🤖</div>
-        </button>
-        <button class="category-pill accommodation" data-category="accommodation">
-          <i class="fas fa-hotel"></i>
-          <span>Famous Hotels</span>
-          <div class="ai-indicator">🤖</div>
-        </button>
-      </div>
-
-      <!-- Summary -->
-      <div class="filter-summary" id="recFilterSummary">
-        <i class="fas fa-info-circle"></i>
-        Showing <strong id="recFilterCount">${recFiltersState.allRecommendations.length}</strong> AI recommendations
-      </div>
-    </div>
-  `;
-
-  const grid = document.getElementById('recommendationsGrid');
-  if (grid) {
-    grid.insertAdjacentHTML('beforebegin', filtersHTML);
-  }
-}
-
-/**
- * Attach event listeners
- */
-function attachFilterListeners() {
-  document.querySelectorAll('.category-pill').forEach(pill => {
-    pill.addEventListener('click', () => handleCategoryClick(pill));
-  });
-}
-
-/**
- * Handle category click - AUTOMATICALLY FETCH AI
- * NOW WITH LOADING STATE PREVENTION
- */
-async function handleCategoryClick(pill) {
-  // PREVENT CLICKS DURING LOADING
-  if (recFiltersState.isLoading || recommendationsState.isLoading) {
-    showToast('Please wait, AI is still working...', 'info');
-    return;
-  }
-
-  const category = pill.dataset.category;
-  
-  // Update active state
-  document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
-  pill.classList.add('active');
-  
-  recFiltersState.selectedCategory = category;
-  recommendationsState.lastCategory = category; // Save for retry
-
-  if (category === 'all') {
-    // Show all existing recommendations
-    updateDisplay();
-  } else {
-    // AUTOMATICALLY FETCH AI RECOMMENDATIONS
-    await fetchAIRecommendations(category);
-  }
-}
-
-/**
- * Fetch AI recommendations with loading state management
- */
-async function fetchAIRecommendations(category) {
+// ===================== LOAD RECOMMENDATIONS =====================
+async function loadRecommendations(options = {}) {
   try {
-    // SET LOADING STATE
-    recFiltersState.isLoading = true;
-    
-    // DISABLE ALL FILTER BUTTONS
-    disableFilterButtons();
-    
-    // UPDATE STATUS BADGE
-    updateStatusBadge('loading', 'AI Processing...');
-    
-    console.log(`🤖 AI is analyzing ${category}...`);
-    
-    // CALL THE MAIN LOADING FUNCTION
-    // This will show the full loading UI with steps
-    await loadRecommendations({
-      category: category,
-      limit: 50
-    });
-    
-    // SUCCESS - Update status
-    updateStatusBadge('success', 'AI Ready');
-    
+    recommendationsState.isLoading = true;
+    showRecommendationsLoading();
+
+    const res = await apiService.recommendations.getForTrip(
+      recommendationsState.currentTripId,
+      options
+    );
+
+    const responseData = res.data || {};
+
+    // Normalize backend response
+    recommendationsState.recommendations = Array.isArray(responseData)
+      ? responseData
+      : responseData.places || [];
+
+    console.log(
+      'Loaded recommendations:',
+      recommendationsState.recommendations.length
+    );
+
+    displayRecommendations();
   } catch (err) {
-    console.error('❌ AI fetch failed:', err);
-    
-    // ERROR STATE
-    updateStatusBadge('error', 'AI Error');
-    showToast('AI recommendations failed to load. Please try again.', 'error');
-    
+    console.error('Error loading recommendations:', err);
+    showRecommendationsError();
   } finally {
-    // ALWAYS RE-ENABLE BUTTONS
-    recFiltersState.isLoading = false;
-    enableFilterButtons();
+    recommendationsState.isLoading = false;
   }
 }
 
-/**
- * Disable all filter buttons during loading
- */
-function disableFilterButtons() {
-  document.querySelectorAll('.category-pill').forEach(pill => {
-    pill.classList.add('disabled');
-    pill.style.cursor = 'not-allowed';
-    pill.style.opacity = '0.5';
-  });
-  
-  // Also disable any other filter controls if they exist
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.add('disabled');
-    btn.disabled = true;
-  });
-}
-
-/**
- * Enable all filter buttons after loading
- */
-function enableFilterButtons() {
-  document.querySelectorAll('.category-pill').forEach(pill => {
-    pill.classList.remove('disabled');
-    pill.style.cursor = 'pointer';
-    pill.style.opacity = '1';
-  });
-  
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.remove('disabled');
-    btn.disabled = false;
-  });
-}
-
-/**
- * Update status badge
- */
-function updateStatusBadge(state, text) {
-  const badge = document.getElementById('aiStatusBadge');
-  if (!badge) return;
-  
-  // Remove all state classes
-  badge.classList.remove('loading', 'success', 'error');
-  
-  // Add new state class
-  badge.classList.add(state);
-  
-  // Update content
-  let icon = '';
-  switch (state) {
-    case 'loading':
-      icon = '<i class="fas fa-spinner fa-spin"></i>';
-      break;
-    case 'success':
-      icon = '<span class="ai-pulse"></span>';
-      break;
-    case 'error':
-      icon = '<i class="fas fa-exclamation-circle"></i>';
-      break;
+// ===================== LOAD USER PREFERENCES =====================
+async function loadUserPreferences() {
+  try {
+    const res = await apiService.preferences.get();
+    recommendationsState.userPreferences = res.data;
+    return res.data;
+  } catch (err) {
+    console.error('Error loading preferences:', err);
+    showToast('Failed to load preferences', 'error');
+    return null;
   }
-  
-  badge.innerHTML = `${icon} ${text}`;
 }
 
-/**
- * Display filtered recommendations with stagger animation
- */
-function displayFilteredRecommendations() {
+// ===================== DISPLAY RECOMMENDATIONS =====================
+function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
 
-  const recs = recFiltersState.filteredRecommendations;
+  const recs = recommendationsState.recommendations;
 
   if (recs.length === 0) {
     container.innerHTML = `
       <div class="recommendations-empty">
-        <i class="fas fa-robot"></i>
-        <h3>No AI recommendations found</h3>
-        <p>Try selecting a different category</p>
+        <i class="fas fa-compass"></i>
+        <h3>No recommendations yet</h3>
+        <p>Try another category or add more places</p>
       </div>
     `;
     return;
   }
 
-  // Fade transition
-  container.style.opacity = '0';
-  
-  setTimeout(() => {
-    // Create cards with stagger delay for animation
-    container.innerHTML = recs.map((rec, index) => {
-      const card = createRecommendationCard(rec);
-      return `<div class="rec-card-wrapper" style="animation-delay: ${index * 0.05}s">${card}</div>`;
-    }).join('');
-    
-    container.style.opacity = '1';
+  container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
 
-    // Reattach listeners after slight delay
-    setTimeout(() => {
-      if (typeof attachRecommendationListeners === 'function') {
-        attachRecommendationListeners(recs);
-      }
-      
-      if (typeof updateMapMarkers === 'function') {
-        updateMapMarkers(recs);
-      }
-      
-      addAIBadges();
-    }, 100);
-  }, 200);
+  // Attach card listeners
+  recs.forEach((rec, index) => {
+    const card = container.children[index];
+    const addBtn = card.querySelector('.btn-add-to-trip');
+    const detailsBtn = card.querySelector('.btn-view-details');
+    
+    if (addBtn) {
+      addBtn.onclick = () => addRecommendationToTrip(rec);
+    }
+    if (detailsBtn) {
+      detailsBtn.onclick = () => showRecommendationDetails(rec);
+    }
+  });
 }
 
-/**
- * Add AI badges to cards
- */
-function addAIBadges() {
-  setTimeout(() => {
-    const cards = document.querySelectorAll('.recommendation-card');
-    
-    cards.forEach((card, index) => {
-      const rec = recFiltersState.filteredRecommendations[index];
-      
-      if (rec && rec.source === 'groq_ai') {
-        const badge = document.createElement('div');
-        badge.className = 'ai-badge-card';
-        badge.innerHTML = '<i class="fas fa-brain"></i> AI';
-        card.insertBefore(badge, card.firstChild);
-        card.classList.add('ai-powered-card');
-      }
-    });
-  }, 100);
+// ===================== RECOMMENDATION CARD =====================
+function createRecommendationCard(rec) {
+  const icon = getCategoryIcon(rec.category);
+
+  const reasonsHTML = (rec.reasons || []).map(reason => `
+    <span class="reason-tag">
+      <i class="fas fa-check-circle"></i>
+      ${escapeHtml(reason)}
+    </span>
+  `).join('');
+
+  return `
+    <div class="recommendation-card">
+      <div class="rec-header">
+        <div class="rec-title">
+          <h3>${escapeHtml(rec.name)}</h3>
+          <span class="rec-category">
+            <i class="fas fa-fa-${icon}"></i>
+            ${escapeHtml(rec.category)}
+          </span>
+        </div>
+        <div class="rec-score">
+          <i class="fas fa-star"></i>
+          ${(rec.recommendationScore || rec.rating || 0).toFixed(1)}
+        </div>
+      </div>
+
+      <div class="rec-meta">
+        <div class="rec-rating">
+          <i class="fas fa-star"></i>
+          ${(rec.rating || 0).toFixed(1)}
+        </div>
+        ${rec.distanceFromCenter ? `
+          <div class="rec-distance">
+            <i class="fas fa-map-marker-alt"></i>
+            ${rec.distanceFromCenter.toFixed(1)} km away
+          </div>
+        ` : ''}
+      </div>
+
+      ${reasonsHTML ? `
+        <div class="rec-reasons">
+          <div class="rec-reasons-title">Why we recommend this</div>
+          ${reasonsHTML}
+        </div>
+      ` : ''}
+
+      ${rec.address ? `
+        <div class="rec-address">
+          <i class="fas fa-map-pin"></i>
+          ${escapeHtml(rec.address)}
+        </div>
+      ` : ''}
+
+      <div class="rec-actions">
+        <button class="btn-add-to-trip">
+          <i class="fas fa-plus"></i> Add to Trip
+        </button>
+        <button class="btn-view-details">
+          <i class="fas fa-info"></i>
+        </button>
+      </div>
+    </div>
+  `;
 }
 
-/**
- * Update display (for "Show All")
- */
-function updateDisplay() {
-  let filtered = [...recFiltersState.allRecommendations];
-  
-  if (recFiltersState.selectedCategory !== 'all') {
-    filtered = filtered.filter(rec => 
-      rec.category.toLowerCase() === recFiltersState.selectedCategory.toLowerCase()
+// ===================== ADD TO TRIP =====================
+async function addRecommendationToTrip(rec) {
+  try {
+    const placeData = {
+      name: rec.name,
+      category: rec.category,
+      address: rec.address || '',
+      location: rec.location,
+      rating: rec.rating || 0,
+      priceLevel: rec.priceLevel || 0,
+      description: rec.description || '',
+      notes: (rec.reasons || []).join('. ')
+    };
+
+    await apiService.places.create(
+      recommendationsState.currentTripId,
+      placeData
     );
-  }
-  
-  recFiltersState.filteredRecommendations = filtered;
-  
-  displayFilteredRecommendations();
-  updateSummary();
-}
 
-/**
- * Update summary
- */
-function updateSummary() {
-  const count = document.getElementById('recFilterCount');
-  if (!count) return;
+    showToast('Place added to your trip!', 'success');
 
-  const total = recFiltersState.filteredRecommendations.length;
-  count.textContent = total;
-  
-  const summary = document.getElementById('recFilterSummary');
-  if (summary) {
-    const categoryText = recFiltersState.selectedCategory === 'all' 
-      ? 'AI recommendations' 
-      : `${getCategoryName(recFiltersState.selectedCategory)}`;
-    
-    summary.innerHTML = `
-      <i class="fas fa-robot"></i>
-      Showing <strong>${total}</strong> ${categoryText}
-      <span class="ai-badge-inline">🤖 AI</span>
-    `;
+    await trackPlaceAdded(rec.category);
+
+    // Refresh only added places (NOT AI again)
+    if (typeof loadPlaces === 'function') {
+      await loadPlaces();
+    }
+
+    // Remove added item from recommendations UI
+    recommendationsState.recommendations =
+      recommendationsState.recommendations.filter(r => r.name !== rec.name);
+
+    displayRecommendations();
+  } catch (err) {
+    console.error('Error adding place:', err);
+    showToast('Failed to add place', 'error');
   }
 }
 
-/**
- * Get category display name
- */
-function getCategoryName(category) {
-  const names = {
-    restaurant: 'restaurants',
-    attraction: 'tourist attractions',
-    accommodation: 'hotels',
-    all: 'places'
+// ===================== DETAILS MODAL =====================
+function showRecommendationDetails(rec) {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>${escapeHtml(rec.name)}</h3>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
+        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)}</p>
+        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
+        <p><strong>Address:</strong> ${escapeHtml(rec.address || 'N/A')}</p>
+        ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+        <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+          <i class="fas fa-plus"></i> Add to Trip
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+// Modal helper
+window.addRecommendationToTripFromModal = async function(rec) {
+  await addRecommendationToTrip(rec);
+  document.querySelector('.modal')?.remove();
+};
+
+// ===================== PREFERENCES TRACKING =====================
+async function trackPlaceAdded(category) {
+  try {
+    await apiService.preferences.trackSearch({
+      category,
+      query: '',
+      location: null
+    });
+  } catch (err) {
+    console.warn('Preference tracking failed:', err);
+  }
+}
+
+// ===================== LOADING & ERROR UI =====================
+function showRecommendationsLoading() {
+  const container = document.getElementById('recommendationsGrid');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="recommendations-loading">
+      <div class="loading-spinner"></div>
+      <p>Finding personalized recommendations...</p>
+    </div>
+  `;
+}
+
+function showRecommendationsError() {
+  const container = document.getElementById('recommendationsGrid');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="recommendations-empty">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Failed to load recommendations</h3>
+      <button class="btn-primary" onclick="loadRecommendations()">Retry</button>
+    </div>
+  `;
+}
+
+// ===================== HELPERS =====================
+function getCategoryIcon(category) {
+  const icons = {
+    restaurant: 'utensils',
+    attraction: 'landmark',
+    accommodation: 'bed',
+    transport: 'bus',
+    other: 'map-marker-alt'
   };
-  return names[category] || 'places';
+  return icons[category?.toLowerCase()] || 'map-marker-alt';
 }
 
-/**
- * Get filtered recommendations
- */
-function getFilteredRecommendations() {
-  return recFiltersState.filteredRecommendations;
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-/**
- * Reset filters
- */
-function resetAllFilters() {
-  // Don't allow reset during loading
-  if (recFiltersState.isLoading || recommendationsState.isLoading) {
-    showToast('Please wait until loading is complete', 'info');
-    return;
-  }
-  
-  recFiltersState.selectedCategory = 'all';
-  document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
-  document.querySelector('.category-pill[data-category="all"]')?.classList.add('active');
-  updateDisplay();
-}
+// Export for use in other modules
+window.loadRecommendations = loadRecommendations;

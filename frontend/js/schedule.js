@@ -1,169 +1,165 @@
 // SCHEDULE.JS - FRESH COPY - DELETE OLD FILE FIRST
 (function() {
-    'use strict';
-    
-    // Prevent double loading
+    'use strict'
+
     if (window.schedulePageLoaded) {
-        console.warn('Schedule page already loaded, skipping...');
-        return;
+        console.warn('Schedule already loaded, skipping...')
+        return
     }
-    window.schedulePageLoaded = true;
 
-    let tripId = null;
-    let tripData = null;
-    let selectedDate = new Date();
-    let activities = [];
-    let currentActivityId = null;
-    let calendar = null;
+    window.schedulePageLoaded = true
 
-    // Initialize on DOM ready
+    let tripId = null
+    let tripData = null
+    let selectedDate = new Date()
+    let activities = []
+    let currentActivityId = null
+    let calendar = null
+
     document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Schedule page initializing...');
-        
+        console.log('Schedule page initializing...')
+
         // Check authentication
-        const token = localStorage.getItem('accessToken');
+        let token = sessionStorage.getItem('accessToken')
         if (!token) {
-            showAlert('Please log in to continue', 'error');
-            setTimeout(() => window.location.href = 'index.html', 1500);
-            return;
+            showAlert('Please log in to continue', 'error')
+            setTimeout(() => window.location.href = 'index.html', 1500)
+            return
         }
 
         // Get trip ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        tripId = urlParams.get('id');
+        let urlParams = new URLSearchParams(window.location.search)
+        tripId = urlParams.get('id')
 
         if (!tripId) {
-    showAlert('Trip not found. Please select a trip first.', 'error');
-    setTimeout(() => window.location.href = 'trips.html', 1500);
-    return;
-}
+            showAlert('Trip not found. Please select a trip first.', 'error')
+            setTimeout(() => window.location.href = 'trips.html', 1500)
+            return
+        }
 
-        console.log('📍 Loading trip:', tripId);
+        console.log('Loading trip:', tripId)
 
         try {
-            await loadTripData();
-            await loadActivities();
-            initializeCalendar();
-            generateTimeGrid();
-            updateStats();
-            setupEventListeners();
-            
+            await loadTripData()
+            await loadActivities()
+            initializeCalendar()
+            generateTimeGrid()
+            updateStats()
+            setupEventListeners()
+
             // Set user name
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const userName = document.getElementById('userName');
+            let user = JSON.parse(sessionStorage.getItem('user') || '{}')
+            let userName = document.getElementById('userName')
             if (userName) {
-                userName.textContent = user.name || 'User';
+                userName.textContent = user.name || 'User'
             }
-            
-            console.log('✅ Schedule page loaded successfully');
+
+            console.log('Schedule page loaded successfully')
         } catch (error) {
-            console.error('❌ Initialization error:', error);
-            showAlert('Failed to initialize page: ' + error.message, 'error');
+            console.error('Initialization error:', error)
+            showAlert('Failed to initialize page: ' + error.message, 'error')
         }
-    });
+    })
 
     // Setup all event listeners
     function setupEventListeners() {
         // Add activity buttons
-        const addActivityBtn = document.getElementById('addActivityBtn');
-        const addActivityEmptyBtn = document.getElementById('addActivityEmptyBtn');
-        if (addActivityBtn) addActivityBtn.onclick = openAddActivityModal;
-        if (addActivityEmptyBtn) addActivityEmptyBtn.onclick = openAddActivityModal;
+        let addActivityBtn = document.getElementById('addActivityBtn')
+        let addActivityEmptyBtn = document.getElementById('addActivityEmptyBtn')
+        if (addActivityBtn) addActivityBtn.onclick = openAddActivityModal
+        if (addActivityEmptyBtn) addActivityEmptyBtn.onclick = openAddActivityModal
 
         // Modal buttons
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const saveActivityBtn = document.getElementById('saveActivityBtn');
-        
-        if (closeModalBtn) closeModalBtn.onclick = closeActivityModal;
-        if (cancelBtn) cancelBtn.onclick = closeActivityModal;
-        if (saveActivityBtn) saveActivityBtn.onclick = saveActivity;
+        let closeModalBtn = document.getElementById('closeModalBtn')
+        let cancelBtn = document.getElementById('cancelBtn')
+        let saveActivityBtn = document.getElementById('saveActivityBtn')
+
+        if (closeModalBtn) closeModalBtn.onclick = closeActivityModal
+        if (cancelBtn) cancelBtn.onclick = closeActivityModal
+        if (saveActivityBtn) saveActivityBtn.onclick = saveActivity
 
         // Other buttons
-        const todayBtn = document.getElementById('todayBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        
-        if (todayBtn) todayBtn.onclick = goToToday;
-        if (exportBtn) exportBtn.onclick = exportSchedule;
+        let todayBtn = document.getElementById('todayBtn')
+        let logoutBtn = document.getElementById('logoutBtn')
+
+        if (todayBtn) todayBtn.onclick = goToToday
         if (logoutBtn) {
             logoutBtn.onclick = () => {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('user');
-                window.location.href = 'index.html';
-            };
+                sessionStorage.removeItem('accessToken')
+                sessionStorage.removeItem('user')
+                window.location.href = 'index.html'
+            }
         }
 
         // Close modal on outside click
-        const activityModal = document.getElementById('activityModal');
+        let activityModal = document.getElementById('activityModal')
         if (activityModal) {
             activityModal.onclick = (e) => {
                 if (e.target.id === 'activityModal') {
-                    closeActivityModal();
+                    closeActivityModal()
                 }
-            };
+            }
         }
     }
 
     // Load trip data
     async function loadTripData() {
         try {
-            console.log('📥 Fetching trip data...');
-            const response = await window.apiService.trips.getById(tripId);
-            
+            console.log('Fetching trip data...')
+            let response = await window.apiService.trips.getById(tripId)
+
             if (!response || !response.data) {
-                throw new Error('Invalid response from server');
+                throw new Error('Invalid response from server')
             }
-            
-            tripData = response.data;
-            console.log('📦 Trip data loaded:', tripData.title);
-            
+
+            tripData = response.data
+            console.log('Trip data loaded:', tripData.title)
+
             // Update UI
-            const tripTitle = document.getElementById('tripTitle');
-            const tripBreadcrumb = document.getElementById('tripBreadcrumb');
-            const tripDates = document.getElementById('tripDates');
-            
-            if (tripTitle) tripTitle.textContent = tripData.title + ' Schedule';
-            if (tripBreadcrumb) tripBreadcrumb.textContent = tripData.title;
-            
-            const startDate = new Date(tripData.startDate).toLocaleDateString('en-US', {
+            let tripTitle = document.getElementById('tripTitle')
+            let tripBreadcrumb = document.getElementById('tripBreadcrumb')
+            let tripDates = document.getElementById('tripDates')
+
+            if (tripTitle) tripTitle.textContent = tripData.title + ' Schedule'
+            if (tripBreadcrumb) tripBreadcrumb.textContent = tripData.title
+
+            let startDate = new Date(tripData.startDate).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
-            });
-            const endDate = new Date(tripData.endDate).toLocaleDateString('en-US', {
+            })
+
+            let endDate = new Date(tripData.endDate).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
-            });
-            
-            if (tripDates) tripDates.textContent = `${startDate} - ${endDate}`;
-            
+            })
+
+            if (tripDates) tripDates.textContent = `${startDate} - ${endDate}`
         } catch (error) {
-            console.error('❌ Error loading trip:', error);
-            throw new Error('Failed to load trip data: ' + (error.message || 'Unknown error'));
+            console.error('Error loading trip:', error)
+            throw new Error('Failed to load trip data: ' + (error.message || 'Unknown error'))
         }
     }
 
     // Load activities
     async function loadActivities() {
         try {
-            console.log('📥 Fetching activities...');
-            const response = await window.apiService.activities.getByTrip(tripId);
-            
-            console.log('📦 Activities response:', response);
-            
+            console.log('Fetching activities...')
+            let response = await window.apiService.activities.getByTrip(tripId)
+
+            console.log('Activities response:', response)
+
             // Handle both response.data and direct array
-            activities = response.data || response || [];
-            
-            console.log(`✅ Activities loaded: ${activities.length}`);
-            renderActivities();
-            
+            activities = response.data || response || []
+
+            console.log(`Activities loaded: ${activities.length}`)
+            renderActivities()
         } catch (error) {
-            console.error('⚠️ Error loading activities:', error);
-            
+            console.error('Error loading activities:', error)
+
             // Don't throw - just show empty state
-            activities = [];
-            renderActivities();
-            
+            activities = []
+            renderActivities()
+
             if (error.statusCode !== 404) {
-                showAlert('Could not load activities', 'warning');
+                showAlert('Could not load activities', 'warning')
             }
         }
     }
@@ -171,16 +167,16 @@
     // Initialize Flatpickr Calendar
     function initializeCalendar() {
         if (!tripData) {
-            console.error('❌ Cannot initialize calendar: trip data not loaded');
-            return;
+            console.error('Cannot initialize calendar: trip data not loaded')
+            return
         }
 
-        console.log('📅 Initializing calendar...');
-        
-        const calendarEl = document.getElementById('calendar');
+        console.log('Initializing calendar...')
+        let calendarEl = document.getElementById('calendar')
+
         if (!calendarEl) {
-            console.error('❌ Calendar element not found');
-            return;
+            console.error('Calendar element not found')
+            return
         }
 
         try {
@@ -191,126 +187,132 @@
                 defaultDate: selectedDate,
                 onChange: function(selectedDates) {
                     if (selectedDates.length > 0) {
-                        selectedDate = selectedDates[0];
-                        updateSelectedDate();
-                        renderActivities();
+                        selectedDate = selectedDates[0]
+                        updateSelectedDate()
+                        renderActivities()
                     }
                 },
-                onDayCreate: function(dObj, dStr, fp, dayElem) {
-                    const date = dayElem.dateObj;
-                    const dateStr = formatDate(date);
-                    const dayActivities = activities
-    .map(a => splitActivityByDay(a)).flat()
-    .filter(a => formatDate(a.startTime) === dateStr);
+                onDayCreate: function(daysElem, dObj, fp, dayElem) {
+                    // Flatpickr passes dayElem.dateObj which is already a Date object
+                    let date = dayElem.dateObj
+                    
+                    // Validate the date
+                    if (!date || isNaN(date.getTime())) {
+                        return
+                    }
+                    
+                    let dateStr = formatDate(date)
 
+                    let dayActivities = activities
+                        .map(a => splitActivityByDay(a)).flat()
+                        .filter(a => formatDate(a.startTime) === dateStr)
 
                     if (dayActivities.length > 0) {
-                        const indicator = document.createElement('span');
-                        indicator.className = 'event-indicator';
-                        indicator.style.cssText = 'background: #4CAF50; width: 6px; height: 6px; border-radius: 50%; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);';
-                        dayElem.appendChild(indicator);
+                        let indicator = document.createElement('span')
+                        indicator.className = 'event-indicator'
+                        indicator.style.cssText = 'background: #4CAF50; width: 6px; height: 6px; border-radius: 50%; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);'
+                        dayElem.appendChild(indicator)
                     }
                 }
-            });
-            
-            updateSelectedDate();
-            console.log('✅ Calendar initialized');
-            
+            })
+
+            updateSelectedDate()
+            console.log('Calendar initialized')
         } catch (error) {
-            console.error('❌ Calendar initialization error:', error);
-            showAlert('Calendar failed to load', 'warning');
+            console.error('Calendar initialization error:', error)
+            showAlert('Calendar failed to load', 'warning')
         }
     }
 
     // Generate time grid (7 AM to 11 PM)
     function generateTimeGrid() {
-        const timeGrid = document.querySelector('.time-grid');
-        if (!timeGrid) return;
-        
-        timeGrid.innerHTML = '';
+        let timeGrid = document.querySelector('.time-grid')
+        if (!timeGrid) return
+
+        timeGrid.innerHTML = ''
 
         for (let hour = 0; hour < 24; hour++) {
-            const timeSlot = document.createElement('div');
-            timeSlot.className = 'time-slot';
-            
-            const timeLabel = document.createElement('div');
-            timeLabel.className = 'time-label';
-            timeLabel.textContent = formatHour(hour);
-            
-            timeSlot.appendChild(timeLabel);
-            timeGrid.appendChild(timeSlot);
+            let timeSlot = document.createElement('div')
+            timeSlot.className = 'time-slot'
+
+            let timeLabel = document.createElement('div')
+            timeLabel.className = 'time-label'
+            timeLabel.textContent = formatHour(hour)
+
+            timeSlot.appendChild(timeLabel)
+            timeGrid.appendChild(timeSlot)
         }
     }
 
     // Render activities on timeline
     function renderActivities() {
-    const timeline = document.getElementById('activitiesTimeline');
-    const emptyState = document.getElementById('emptyTimeline');
-    if (!timeline || !emptyState) return;
+        let timeline = document.getElementById('activitiesTimeline')
+        let emptyState = document.getElementById('emptyTimeline')
+        if (!timeline || !emptyState) return
 
-    const dateStr = formatDate(selectedDate);
+        let dateStr = formatDate(selectedDate)
 
-    const dayActivities = activities
-        .map(a => splitActivityByDay(a)).flat()
-        .filter(a => formatDate(a.startTime) === dateStr)
-        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        let dayActivities = activities
+            .map(a => splitActivityByDay(a)).flat()
+            .filter(a => formatDate(a.startTime) === dateStr)
+            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
 
-    console.log('Render:', dateStr, dayActivities);
+        console.log('Render:', dateStr, dayActivities)
 
-    if (dayActivities.length === 0) {
-        timeline.innerHTML = '';
-        emptyState.style.display = 'flex';
-        return;
+        if (dayActivities.length === 0) {
+            timeline.innerHTML = ''
+            emptyState.style.display = 'flex'
+            return
+        }
+
+        emptyState.style.display = 'none'
+        timeline.innerHTML = ''
+        dayActivities.forEach(a => timeline.appendChild(createActivityBlock(a)))
     }
-
-    emptyState.style.display = 'none';
-    timeline.innerHTML = '';
-    dayActivities.forEach(a => timeline.appendChild(createActivityBlock(a)));
-}
-
-
 
     // Create activity block element
     function createActivityBlock(activity) {
-  const block = document.createElement('div');
-  block.className = 'activity-block';
+        let block = document.createElement('div')
+        block.className = 'activity-block'
 
-  const startTime = new Date(activity.startTime);
-  const endTime = activity.endTime
-    ? new Date(activity.endTime)
-    : new Date(startTime.getTime() + 60 * 60 * 1000);
+        let startTime = new Date(activity.startTime)
 
-  const midnight = new Date(startTime);
-  midnight.setHours(24, 0, 0, 0);
-  const effectiveEnd = endTime > midnight ? midnight : endTime;
+        let endTime = activity.endTime
+            ? new Date(activity.endTime)
+            : new Date(startTime.getTime() + 60 * 60 * 1000)
 
-  const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
-  const endMinutes = effectiveEnd.getHours() * 60 + effectiveEnd.getMinutes();
+        let midnight = new Date(startTime)
+        midnight.setHours(24, 0, 0, 0)
 
-  const duration = Math.max(endMinutes - startMinutes, 15);
+        let effectiveEnd = endTime > midnight ? midnight : endTime
 
-  const PX_PER_MIN = 80 / 60;     // same scale as grid
-  const MAX_HEIGHT = 320;         // visually safe max
+        let startMinutes = startTime.getHours() * 60 + startTime.getMinutes()
+        let endMinutes = effectiveEnd.getHours() * 60 + effectiveEnd.getMinutes()
 
-  const height = Math.min(duration * PX_PER_MIN, MAX_HEIGHT);
+        let duration = Math.max(endMinutes - startMinutes, 15)
 
-  block.style.top = `${startMinutes * PX_PER_MIN}px`;
-  block.style.height = `${height}px`;
+        let PX_PER_MIN = 80 / 60     // same scale as grid
+        let MAX_HEIGHT = 320         // visually safe max
 
-  const colors = {
-    flight: '#2196F3',
-    accommodation: '#9C27B0',
-    restaurant: '#FF9800',
-    attraction: '#4CAF50',
-    transport: '#607D8B',
-    shopping: '#E91E63',
-    entertainment: '#00BCD4',
-    other: '#795548'
-  };
+        let height = Math.min(duration * PX_PER_MIN, MAX_HEIGHT)
 
-  block.style.borderLeftColor = colors[activity.type] || colors.other;
+        block.style.top = `${startMinutes * PX_PER_MIN}px`
+        block.style.height = `${height}px`
 
-  block.innerHTML = `
+        let colors = {
+            flight: '#2196F3',
+            accommodation: '#9C27B0',
+            restaurant: '#FF9800',
+            attraction: '#4CAF50',
+            transport: '#607D8B',
+            shopping: '#E91E63',
+            entertainment: '#00BCD4',
+            other: '#795548'
+        }
+
+        block.style.borderLeftColor = colors[activity.type] || colors.other
+
+        block.innerHTML = `
     <div class="activity-title">
       <i class="fas fa-${getActivityIcon(activity.type)}"></i>
       ${activity.title}${activity._segmentOf ? ' (continued)' : ''}
@@ -320,15 +322,15 @@
       <i class="fas fa-clock"></i>
       ${formatTime(startTime)} - ${formatTime(effectiveEnd)}
     </div>
-  `;
+  `
 
-  block.onclick = () => editActivity(activity);
-  return block;
-}
+        block.onclick = () => editActivity(activity)
+        return block
+    }
 
     // Get icon for activity type
     function getActivityIcon(type) {
-        const icons = {
+        let icons = {
             flight: 'plane',
             accommodation: 'bed',
             restaurant: 'utensils',
@@ -337,216 +339,225 @@
             shopping: 'shopping-bag',
             entertainment: 'ticket',
             other: 'circle'
-        };
-        return icons[type] || icons.other;
+        }
+
+        return icons[type] || icons.other
     }
 
     // Update selected date display
     function updateSelectedDate() {
-        if (!tripData) return;
-        
-        const dateStr = selectedDate.toLocaleDateString('en-US', {
+        if (!tripData) return
+
+        let dateStr = selectedDate.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
             year: 'numeric'
-        });
-        
-        const selectedDateEl = document.getElementById('selectedDate');
-        const dayInfoEl = document.getElementById('dayInfo');
-        
-        if (selectedDateEl) selectedDateEl.textContent = dateStr;
-        
-        const tripStart = new Date(tripData.startDate);
-        const tripStartMidnight = new Date(tripStart.toDateString());
-const selectedMidnight = new Date(selectedDate.toDateString());
+        })
 
-const dayNumber = Math.floor(
-  (selectedMidnight - tripStartMidnight) / (1000 * 60 * 60 * 24)
-) + 1;
+        let selectedDateEl = document.getElementById('selectedDate')
+        let dayInfoEl = document.getElementById('dayInfo')
 
-        
-        if (dayInfoEl) dayInfoEl.textContent = `Day ${dayNumber} of your trip`;
+        if (selectedDateEl) selectedDateEl.textContent = dateStr
+
+        let tripStart = new Date(tripData.startDate)
+        let tripStartMidnight = new Date(tripStart.toDateString())
+        let selectedMidnight = new Date(selectedDate.toDateString())
+
+        let dayNumber = Math.floor(
+            (selectedMidnight - tripStartMidnight) / (1000 * 60 * 60 * 24)
+        ) + 1
+
+        if (dayInfoEl) dayInfoEl.textContent = `Day ${dayNumber} of your trip`
     }
 
     // Update statistics
     function updateStats() {
-        const total = activities.length;
-        const completed = activities.filter(a => a.status === 'completed').length;
-        const pending = activities.filter(a => a.status === 'planned').length;
-        
-        const totalEl = document.getElementById('totalActivities');
-        const completedEl = document.getElementById('completedActivities');
-        const pendingEl = document.getElementById('pendingActivities');
-        
-        if (totalEl) totalEl.textContent = total;
-        if (completedEl) completedEl.textContent = completed;
-        if (pendingEl) pendingEl.textContent = pending;
+        let total = activities.length
+        let completed = activities.filter(a => a.status === 'completed').length
+        let pending = activities.filter(a => a.status === 'planned').length
+
+        let totalEl = document.getElementById('totalActivities')
+        let completedEl = document.getElementById('completedActivities')
+        let pendingEl = document.getElementById('pendingActivities')
+
+        if (totalEl) totalEl.textContent = total
+        if (completedEl) completedEl.textContent = completed
+        if (pendingEl) pendingEl.textContent = pending
     }
 
     // Open add activity modal
     function openAddActivityModal() {
-        currentActivityId = null;
-        const modalTitle = document.getElementById('modalTitle');
-        const form = document.getElementById('activityForm');
-        
-        if (modalTitle) modalTitle.textContent = 'Add Activity';
-        if (form) form.reset();
-        
+        currentActivityId = null
+
+        let modalTitle = document.getElementById('modalTitle')
+        let form = document.getElementById('activityForm')
+
+        if (modalTitle) modalTitle.textContent = 'Add Activity'
+        if (form) form.reset()
+
         // Set default date and time
-        const dateTime = new Date(selectedDate);
-        dateTime.setHours(9, 0, 0, 0);
-        const startTimeInput = document.getElementById('activityStartTime');
+        let dateTime = new Date(selectedDate)
+        dateTime.setHours(9, 0, 0, 0)
+
+        let startTimeInput = document.getElementById('activityStartTime')
         if (startTimeInput) {
-            startTimeInput.value = formatDateTime(dateTime);
+            startTimeInput.value = formatDateTime(dateTime)
         }
-        
-        const modal = document.getElementById('activityModal');
-        if (modal) modal.classList.add('active');
+
+        let modal = document.getElementById('activityModal')
+        if (modal) modal.classList.add('active')
     }
 
     // Close activity modal
     function closeActivityModal() {
-        const modal = document.getElementById('activityModal');
-        if (modal) modal.classList.remove('active');
-        currentActivityId = null;
+        let modal = document.getElementById('activityModal')
+        if (modal) modal.classList.remove('active')
+        currentActivityId = null
     }
 
     // Edit activity
     function editActivity(activity) {
-        currentActivityId = activity._id;
-        
-        const modalTitle = document.getElementById('modalTitle');
-        if (modalTitle) modalTitle.textContent = 'Edit Activity';
-        
-        document.getElementById('activityTitle').value = activity.title;
-        document.getElementById('activityDescription').value = activity.description || '';
-        document.getElementById('activityStartTime').value = formatDateTime(new Date(activity.startTime));
-        document.getElementById('activityEndTime').value = activity.endTime ? formatDateTime(new Date(activity.endTime)) : '';
-        document.getElementById('activityType').value = activity.type;
-        document.getElementById('activityCost').value = activity.cost || '';
-        document.getElementById('activityLocation').value = activity.location || '';
-        document.getElementById('activityNotes').value = activity.notes || '';
-        
-        const modal = document.getElementById('activityModal');
-        if (modal) modal.classList.add('active');
+        currentActivityId = activity._id
+
+        let modalTitle = document.getElementById('modalTitle')
+        if (modalTitle) modalTitle.textContent = 'Edit Activity'
+
+        document.getElementById('activityTitle').value = activity.title
+        document.getElementById('activityDescription').value = activity.description || ''
+        document.getElementById('activityStartTime').value = formatDateTime(new Date(activity.startTime))
+        document.getElementById('activityEndTime').value = activity.endTime ? formatDateTime(new Date(activity.endTime)) : ''
+        document.getElementById('activityType').value = activity.type
+        document.getElementById('activityCost').value = activity.cost || ''
+        document.getElementById('activityLocation').value = activity.location || ''
+        document.getElementById('activityNotes').value = activity.notes || ''
+
+        let modal = document.getElementById('activityModal')
+        if (modal) modal.classList.add('active')
     }
 
     function formatDateTime(date) {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
+        let d = new Date(date)
+        let year = d.getFullYear()
+        let month = String(d.getMonth() + 1).padStart(2, '0')
+        let day = String(d.getDate()).padStart(2, '0')
+        let hours = String(d.getHours()).padStart(2, '0')
+        let minutes = String(d.getMinutes()).padStart(2, '0')
+        return `${year}-${month}-${day}T${hours}:${minutes}`
+    }
 
     // Save activity
     async function saveActivity() {
-        const title = document.getElementById('activityTitle').value.trim();
-        const description = document.getElementById('activityDescription').value.trim();
-        const startTime = document.getElementById('activityStartTime').value;
-        const endTime = document.getElementById('activityEndTime').value;
-        const type = document.getElementById('activityType').value;
-        const cost = parseFloat(document.getElementById('activityCost').value) || 0;
-        const location = document.getElementById('activityLocation').value.trim();
-        const notes = document.getElementById('activityNotes').value.trim();
+        let title = document.getElementById('activityTitle').value.trim()
+        let description = document.getElementById('activityDescription').value.trim()
+        let startTime = document.getElementById('activityStartTime').value
+        let endTime = document.getElementById('activityEndTime').value
+        let type = document.getElementById('activityType').value
+        let cost = parseFloat(document.getElementById('activityCost').value) || 0
+        let location = document.getElementById('activityLocation').value.trim()
+        let notes = document.getElementById('activityNotes').value.trim()
 
         if (!title || !startTime || !type) {
-            showAlert('Please fill in all required fields', 'error');
-            return;
+            showAlert('Please fill in all required fields', 'error')
+            return
         }
 
+        let activityDate = startTime.split('T')[0]
 
-const activityDate = startTime.split('T')[0];
+        let activityData = {
+            title,
+            type,                        // MUST be called "type"
+            startTime: new Date(startTime).toISOString(),
+            endTime: endTime ? new Date(endTime).toISOString() : null,
+            visitStatus: 'planned',
+            notes: notes || ''
+        }
 
-  const activityData = {
-    title,
-    type,                       // MUST be called "type"
-    startTime: new Date(startTime).toISOString(),
-    endTime: endTime ? new Date(endTime).toISOString() : null,
-    visitStatus: 'planned',
-    notes: notes || ''
-};
-
-console.log('📤 Sending activity payload:', activityData);
-
-
+        console.log('Sending activity payload:', activityData)
 
         try {
             if (currentActivityId) {
-                await window.apiService.activities.update(currentActivityId, activityData);
-                showAlert('Activity updated successfully', 'success');
+                await window.apiService.activities.update(currentActivityId, activityData)
+                showAlert('Activity updated successfully', 'success')
             } else {
-                await window.apiService.activities.create(tripId, activityData);
-                showAlert('Activity created successfully', 'success');
+                await window.apiService.activities.create(tripId, activityData)
+                showAlert('Activity created successfully', 'success')
             }
-            
-            closeActivityModal();
-            await loadActivities();
-            updateStats();
-            
+
+            closeActivityModal()
+            await loadActivities()
+            updateStats()
+
             if (calendar) {
-                calendar.redraw();
+                calendar.redraw()
             }
         } catch (error) {
-            console.error('❌ Error saving activity:', error);
-            showAlert(error.message || 'Failed to save activity', 'error');
+            console.error('Error saving activity:', error)
+            showAlert(error.message || 'Failed to save activity', 'error')
         }
     }
 
     // Go to today
     function goToToday() {
-        if (!tripData) return;
-        
-        const today = new Date();
-        const tripStart = new Date(tripData.startDate);
-        const tripEnd = new Date(tripData.endDate);
-        
+        if (!tripData) return
+
+        let today = new Date()
+        let tripStart = new Date(tripData.startDate)
+        let tripEnd = new Date(tripData.endDate)
+
         if (today >= tripStart && today <= tripEnd) {
-            selectedDate = today;
+            selectedDate = today
             if (calendar) {
-                calendar.setDate(today);
+                calendar.setDate(today)
             }
-            updateSelectedDate();
-            renderActivities();
+            updateSelectedDate()
+            renderActivities()
         } else {
-            showAlert('Today is outside the trip dates', 'info');
+            showAlert('Today is outside the trip dates', 'info')
         }
     }
 
     // Export schedule
     function exportSchedule() {
-        showAlert('Export feature coming soon!', 'info');
+        showAlert('Export feature coming soon!', 'info')
     }
 
     // Utility functions
-  
     function formatTime(date) {
-        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
     }
 
     function formatHour(hour) {
-        const period = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-        return `${displayHour}:00 ${period}`;
+        let period = hour >= 12 ? 'PM' : 'AM'
+        let displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+        return `${displayHour}:00 ${period}`
     }
 
     function formatDate(input) {
-    const d = new Date(input);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 10);
-}
+        // Handle both Date objects and date strings
+        let d = input instanceof Date ? input : new Date(input)
+        
+        // Validate the date
+        if (isNaN(d.getTime())) {
+            console.error('Invalid date:', input)
+            return '1970-01-01' // Fallback
+        }
+        
+        // Get year, month, day in local timezone
+        let year = d.getFullYear()
+        let month = String(d.getMonth() + 1).padStart(2, '0')
+        let day = String(d.getDate()).padStart(2, '0')
+        
+        return `${year}-${month}-${day}`
+    }
 
     function showAlert(message, type = 'info') {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-        
+        console.log(`[${type.toUpperCase()}] ${message}`)
+
         // Create toast notification
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
+        let toast = document.createElement('div')
+        toast.className = `toast toast-${type}`
+        toast.textContent = message
         toast.style.cssText = `
             position: fixed;
             top: 20px;
@@ -559,54 +570,53 @@ console.log('📤 Sending activity payload:', activityData);
             z-index: 10000;
             animation: slideIn 0.3s ease;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        `;
-        
-        document.body.appendChild(toast);
-        
+        `
+
+        document.body.appendChild(toast)
+
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+            toast.style.animation = 'slideOut 0.3s ease'
+            setTimeout(() => toast.remove(), 300)
+        }, 3000)
     }
 
-function splitActivityByDay(activity) {
-    const segments = [];
+    function splitActivityByDay(activity) {
+        let segments = []
 
-    const start = new Date(activity.startTime);
-    const end = activity.endTime
-        ? new Date(activity.endTime)
-        : new Date(start.getTime() + 60 * 60 * 1000);
+        let start = new Date(activity.startTime)
+        let end = activity.endTime
+            ? new Date(activity.endTime)
+            : new Date(start.getTime() + 60 * 60 * 1000)
 
-    let current = new Date(start);
-    let isFirst = true;
+        let current = new Date(start)
+        let isFirst = true
 
-    while (current < end) {
-        const segmentStart = new Date(current);
-        const nextMidnight = new Date(current);
-        nextMidnight.setHours(24, 0, 0, 0);
-        const segmentEnd = end < nextMidnight ? end : nextMidnight;
+        while (current < end) {
+            let segmentStart = new Date(current)
+            let nextMidnight = new Date(current)
+            nextMidnight.setHours(24, 0, 0, 0)
+            let segmentEnd = end < nextMidnight ? end : nextMidnight
 
-        segments.push({
-            _id: activity._id,
-            title: activity.title,
-            description: activity.description,
-            type: activity.type,
-            status: activity.status,
-            startTime: segmentStart.toISOString(),
-            endTime: segmentEnd.toISOString(),
-            _segmentOf: isFirst ? null : activity._id   // 👈 only mark continued if NOT first
-        });
+            segments.push({
+                _id: activity._id,
+                title: activity.title,
+                description: activity.description,
+                type: activity.type,
+                status: activity.status,
+                startTime: segmentStart.toISOString(),
+                endTime: segmentEnd.toISOString(),
+                _segmentOf: isFirst ? null : activity._id   // only mark continued if NOT first
+            })
 
-        isFirst = false;
-        current = nextMidnight;
+            isFirst = false
+            current = nextMidnight
+        }
+
+        return segments
     }
-
-    return segments;
-}
-
 
     // Add CSS for toast animations
-    const style = document.createElement('style');
+    let style = document.createElement('style')
     style.textContent = `
         @keyframes slideIn {
             from {
@@ -628,8 +638,8 @@ function splitActivityByDay(activity) {
                 opacity: 0;
             }
         }
-    `;
-    document.head.appendChild(style);
+    `
+    document.head.appendChild(style)
 
-    console.log('✅ Schedule module loaded (no duplicates)');
-})();
+    console.log('Schedule module loaded (no duplicates)')
+})()

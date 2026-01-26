@@ -1,8 +1,7 @@
-// activities.js - Frontend Activities Manager
 (function() {
     'use strict';
     
-    // Prevent double loading
+    // Prevent script from running multiple times
     if (window.activitiesPageLoaded) {
         console.warn('Activities page already loaded, skipping...');
         return;
@@ -14,19 +13,18 @@
     let currentActivityId = null;
     let currentFilter = 'all';
 
-    // Initialize on DOM ready
+    // Main initialization - runs when DOM is ready
     document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Activities page initializing...');
+        console.log('Activities page initializing...');
         
-        // Check authentication
-        const token = localStorage.getItem('accessToken');
+        const token = sessionStorage.getItem('accessToken');
         if (!token) {
             showToast('Please log in to continue', 'error');
             setTimeout(() => window.location.href = 'login.html', 1500);
             return;
         }
 
-        // Get trip ID from URL
+        // Extract trip ID from URL (?id=xxx)
         const urlParams = new URLSearchParams(window.location.search);
         tripId = urlParams.get('id');
 
@@ -35,19 +33,18 @@
             return;
         }
 
-        console.log('📍 Loading activities for trip:', tripId);
+        console.log('Loading activities for trip:', tripId);
 
         try {
             await loadActivities();
             setupEventListeners();
-            console.log('✅ Activities page loaded successfully');
+            console.log('Activities page loaded successfully');
         } catch (error) {
-            console.error('❌ Initialization error:', error);
+            console.error('Initialization error:', error);
             showToast('Failed to initialize page: ' + error.message, 'error');
         }
     });
 
-    // Setup event listeners
     function setupEventListeners() {
         // Add activity buttons
         const addActivityBtns = document.querySelectorAll('.btn-add-activity');
@@ -65,7 +62,7 @@
         if (cancelBtn) cancelBtn.onclick = closeActivityModal;
         if (activityForm) activityForm.onsubmit = handleSubmitActivity;
 
-        // Close modal on outside click
+        // Close modal on backdrop click
         if (activityModal) {
             activityModal.onclick = (e) => {
                 if (e.target.id === 'activityModal') {
@@ -87,24 +84,18 @@
         }
     }
 
-    // Load activities from backend
+    // Fetch activities from API for current trip
     async function loadActivities() {
         try {
-            console.log('📥 Fetching activities...');
+            console.log('Fetching activities...');
             const response = await window.apiService.activities.getByTrip(tripId);
             
-            console.log('📦 Activities response:', response);
-            
-            // Handle both response.data and direct array
             activities = response.data || response || [];
-            
-            console.log(`✅ Loaded ${activities.length} activities`);
+            console.log(`Loaded ${activities.length} activities`);
             renderActivities();
             
         } catch (error) {
-            console.error('⚠️ Error loading activities:', error);
-            
-            // Don't throw - just show empty state
+            console.error('Error loading activities:', error);
             activities = [];
             renderActivities();
             
@@ -114,25 +105,23 @@
         }
     }
 
-    // Render activities grid
+    // Render filtered activities to grid
     function renderActivities() {
         const grid = document.getElementById('activitiesGrid');
         const emptyState = document.querySelector('.empty-state');
         
         if (!grid) {
-            console.error('❌ Activities grid element not found');
+            console.error('Activities grid element not found');
             return;
         }
 
-        // Filter activities
-        let filteredActivities = activities.filter(activity => {
+        const filteredActivities = activities.filter(activity => {
             if (currentFilter === 'all') return true;
             return activity.status === currentFilter;
         });
 
-        console.log(`📊 Rendering ${filteredActivities.length} activities (filter: ${currentFilter})`);
+        console.log(`Rendering ${filteredActivities.length} activities (filter: ${currentFilter})`);
 
-        // Show empty state if no activities
         if (filteredActivities.length === 0) {
             grid.innerHTML = '';
             if (emptyState) emptyState.style.display = 'flex';
@@ -141,17 +130,15 @@
 
         if (emptyState) emptyState.style.display = 'none';
 
-        // Render activity cards
         grid.innerHTML = filteredActivities.map(activity => createActivityCard(activity)).join('');
 
-        // Add click handlers to cards
+        // Attach event listeners to rendered cards
         filteredActivities.forEach(activity => {
             const card = document.querySelector(`[data-activity-id="${activity._id}"]`);
             if (card) {
                 card.onclick = () => editActivity(activity);
             }
 
-            // Add delete button handler
             const deleteBtn = card?.querySelector('.btn-delete-activity');
             if (deleteBtn) {
                 deleteBtn.onclick = (e) => {
@@ -160,7 +147,6 @@
                 };
             }
 
-            // Add status toggle handler
             const statusBtn = card?.querySelector('.btn-toggle-status');
             if (statusBtn) {
                 statusBtn.onclick = (e) => {
@@ -171,7 +157,7 @@
         });
     }
 
-    // Create activity card HTML
+    // Generate HTML for single activity card
     function createActivityCard(activity) {
         const startDate = new Date(activity.startTime);
         const endDate = activity.endTime ? new Date(activity.endTime) : null;
@@ -259,7 +245,7 @@
         `;
     }
 
-    // Open add activity modal
+    // Open add activity modal with form reset
     function openAddActivityModal() {
         currentActivityId = null;
         const modalTitle = document.getElementById('modalTitle');
@@ -268,7 +254,6 @@
         if (modalTitle) modalTitle.textContent = 'Add Activity';
         if (form) form.reset();
         
-        // Set default date to today
         const today = new Date();
         const dateInput = document.getElementById('activityDate');
         if (dateInput) {
@@ -279,14 +264,13 @@
         if (modal) modal.classList.add('active');
     }
 
-    // Edit activity
+    // Populate form for editing existing activity
     function editActivity(activity) {
         currentActivityId = activity._id;
         
         const modalTitle = document.getElementById('modalTitle');
         if (modalTitle) modalTitle.textContent = 'Edit Activity';
 
-        // Fill form with activity data
         document.getElementById('activityTitle').value = activity.title;
         document.getElementById('activityDescription').value = activity.description || '';
         document.getElementById('activityType').value = activity.type || 'other';
@@ -301,7 +285,7 @@
 
         if (activity.endTime) {
             const endDate = new Date(activity.endTime);
-            const duration = (endDate - startDate) / (1000 * 60 * 60); // hours
+            const duration = (endDate - startDate) / (1000 * 60 * 60);
             document.getElementById('activityDuration').value = duration.toFixed(1);
         }
 
@@ -309,14 +293,13 @@
         if (modal) modal.classList.add('active');
     }
 
-    // Close activity modal
     function closeActivityModal() {
         const modal = document.getElementById('activityModal');
         if (modal) modal.classList.remove('active');
         currentActivityId = null;
     }
 
-    // Handle submit activity
+    // Create or update activity via API
     async function handleSubmitActivity(e) {
         e.preventDefault();
 
@@ -335,7 +318,6 @@
             return;
         }
 
-        // Combine date and time
         const startTime = new Date(`${date}T${time || '09:00'}`);
         const endTime = new Date(startTime.getTime() + duration * 60 * 60 * 1000);
 
@@ -363,12 +345,12 @@
             closeActivityModal();
             await loadActivities();
         } catch (error) {
-            console.error('❌ Error saving activity:', error);
+            console.error('Error saving activity:', error);
             showToast(error.message || 'Failed to save activity', 'error');
         }
     }
 
-    // Delete activity
+    // Delete activity with confirmation
     async function deleteActivity(activityId) {
         if (!confirm('Are you sure you want to delete this activity?')) {
             return;
@@ -379,13 +361,13 @@
             showToast('Activity deleted successfully', 'success');
             await loadActivities();
         } catch (error) {
-            console.error('❌ Error deleting activity:', error);
+            console.error('Error deleting activity:', error);
             showToast(error.message || 'Failed to delete activity', 'error');
         }
     }
 
-    // Toggle activity status
-    function toggleActivityStatus(activity) {
+    // Cycle through activity status states
+    async function toggleActivityStatus(activity) {
         const statusCycle = {
             planned: 'in_progress',
             in_progress: 'completed',
@@ -395,20 +377,18 @@
         const newStatus = statusCycle[activity.status] || 'planned';
 
         try {
-            window.apiService.activities.updateStatus(activity._id, newStatus);
+            await window.apiService.activities.updateStatus(activity._id, newStatus);
             showToast(`Status updated to ${newStatus}`, 'success');
-            loadActivities();
+            await loadActivities();
         } catch (error) {
-            console.error(' Error updating status:', error);
+            console.error('Error updating status:', error);
             showToast(error.message || 'Failed to update status', 'error');
         }
     }
 
-    // Handle filter change
     function handleFilterChange(filter) {
         currentFilter = filter;
 
-        // Update active button
         const filterBtns = document.querySelectorAll('.filter-btn');
         filterBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
@@ -417,7 +397,7 @@
         renderActivities();
     }
 
-    // Handle search
+    // Live search filtering
     function handleSearch(e) {
         const searchTerm = e.target.value.toLowerCase().trim();
 
@@ -447,7 +427,6 @@
         if (emptyState) emptyState.style.display = 'none';
         grid.innerHTML = filteredActivities.map(activity => createActivityCard(activity)).join('');
 
-        // Re-attach event listeners
         filteredActivities.forEach(activity => {
             const card = document.querySelector(`[data-activity-id="${activity._id}"]`);
             if (card) {
@@ -470,7 +449,7 @@
         });
     }
 
-    // Utility functions
+    // Formatters
     function formatDate(date) {
         return date.toLocaleDateString('en-US', {
             month: 'short',
@@ -519,5 +498,5 @@
         }
     }
 
-    console.log('✅ Activities module loaded');
+    console.log('Activities module loaded');
 })();
