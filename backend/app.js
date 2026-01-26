@@ -42,6 +42,9 @@ app.use(
 /* =========================
    3. CORS CONFIG (FIXED)
 ========================= */
+/* =========================
+   3. CORS CONFIG (FIXED)
+========================= */
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : [
@@ -53,18 +56,26 @@ const allowedOrigins = process.env.CORS_ORIGIN
       'http://127.0.0.1:8000'
     ];
 
-// Log for debugging (you can remove this later)
-console.log('Allowed CORS origins:', allowedOrigins);
+console.log('🌐 CORS Configuration:');
+console.log('   NODE_ENV:', process.env.NODE_ENV);
+console.log('   CORS_ORIGIN env var:', process.env.CORS_ORIGIN);
+console.log('   Allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('📍 Request from origin:', origin);
+    
     // allow server-to-server & Postman
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('   ✅ Allowed (no origin header)');
+      return callback(null, true);
+    }
 
     if (allowedOrigins.includes(origin)) {
+      console.log('   ✅ Allowed');
       callback(null, true);
     } else {
-      console.warn(`❌ Blocked origin: ${origin}`);
+      console.log('   ❌ Blocked - not in allowed list');
       callback(new Error(`CORS blocked for origin: ${origin}`));
     }
   },
