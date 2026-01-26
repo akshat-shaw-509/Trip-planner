@@ -42,14 +42,19 @@ app.use(
 /* =========================
    3. CORS CONFIG (FIXED)
 ========================= */
-const allowedOrigins = [
-  'https://akshat-shaw-509.github.io',
-  'https://trip-planner-n1g3.onrender.com',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:8000',
-  'http://127.0.0.1:8000'
-];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : [
+      'https://akshat-shaw-509.github.io',
+      'https://trip-planner-n1g3.onrender.com',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:8000',
+      'http://127.0.0.1:8000'
+    ];
+
+// Log for debugging (you can remove this later)
+console.log('Allowed CORS origins:', allowedOrigins);
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -59,6 +64,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`❌ Blocked origin: ${origin}`);
       callback(new Error(`CORS blocked for origin: ${origin}`));
     }
   },
