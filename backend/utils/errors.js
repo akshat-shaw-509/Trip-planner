@@ -1,4 +1,3 @@
-// utils/errors.js
 let createAppError = (message, statusCode) => {
   let error = new Error(message)
   error.statusCode = statusCode
