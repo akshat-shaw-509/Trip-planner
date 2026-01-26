@@ -1,72 +1,77 @@
-// services/userPreference.service.js
-let UserPreference = require('../models/UserPreference.model');
-let Place = require('../models/Place.model');
+let UserPreference = require('../models/UserPreference.model')
+let Place = require('../models/Place.model')
 
 /**
- * Get user preferences
+ * -------------------- Get User Preferences --------------------
+ * Creates preferences document if not exists
  */
 let getUserPreferences = async (userId) => {
-  return UserPreference.getOrCreate(userId);
-};
+  return UserPreference.getOrCreate(userId)
+}
 
 /**
- * Update preferences when user adds a place
+ * -------------------- Track Place Added --------------------
+ * Boosts category & price preference when user adds a place
  */
 let trackPlaceAdded = async (userId, place) => {
-  const pref = await UserPreference.getOrCreate(userId);
-  return pref.trackPlaceAdded(place);
-};
+  let pref = await UserPreference.getOrCreate(userId)
+  return pref.trackPlaceAdded(place)
+}
 
 /**
- * Update preferences when user favorites a place
+ * -------------------- Track Favorite Place --------------------
+ * Strong signal for category preference
  */
 let trackFavorite = async (userId, placeId) => {
-  const place = await Place.findById(placeId).lean();
-  if (!place) return null;
-  
-  const pref = await UserPreference.getOrCreate(userId);
-  return pref.trackFavorite(placeId, place.category);
-};
+  let place = await Place.findById(placeId).lean()
+  if (!place) return null
+
+  let pref = await UserPreference.getOrCreate(userId)
+  return pref.trackFavorite(placeId, place.category)
+}
 
 /**
- * Track search behavior
+ * -------------------- Track Search Behavior --------------------
+ * Keeps last 50 searches
+ * Slightly boosts searched category
  */
 let trackSearch = async (userId, searchData) => {
-  const pref = await UserPreference.getOrCreate(userId);
-  
+  let pref = await UserPreference.getOrCreate(userId)
+
   // Keep only last 50 searches
   if (pref.recentSearches.length >= 50) {
-    pref.recentSearches = pref.recentSearches.slice(-49);
+    pref.recentSearches = pref.recentSearches.slice(-49)
   }
-  
+
   pref.recentSearches.push({
     query: searchData.query,
     category: searchData.category,
     location: searchData.location,
     timestamp: new Date()
-  });
-  
-  // Update category preference if category was searched
+  })
+
+  // Soft signal: category interest
   if (searchData.category) {
-    await pref.updateCategoryPreference(searchData.category, 0.5);
+    await pref.updateCategoryPreference(searchData.category, 0.5)
   }
-  
-  return pref.save();
-};
+
+  return pref.save()
+}
 
 /**
- * Get user's preference summary
+ * -------------------- Preference Summary --------------------
+ * Used by recommendation engine & analytics
  */
 let getPreferenceSummary = async (userId) => {
-  const pref = await UserPreference.getOrCreate(userId);
-  
-  const topCategories = pref.getTopCategories(5);
-  const categoryScores = {};
-  
-  topCategories.forEach(cat => {
-    categoryScores[cat] = pref.categoryPreferences.get(cat) || 0;
-  });
-  
+  let pref = await UserPreference.getOrCreate(userId)
+
+  let topCategories = pref.getTopCategories(5)
+  let categoryScores = {}
+
+  topCategories.forEach(category => {
+    categoryScores[category] = pref.categoryPreferences.get(category) || 0
+  })
+
   return {
     topCategories,
     categoryScores,
@@ -78,39 +83,42 @@ let getPreferenceSummary = async (userId) => {
     ratingThreshold: pref.ratingThreshold,
     stats: pref.stats,
     recentSearches: pref.recentSearches.slice(-10).reverse()
-  };
-};
+  }
+}
 
 /**
- * Update rating threshold based on user behavior
+ * -------------------- Update Rating Threshold --------------------
+ * Dynamically adapts recommendation strictness
  */
 let updateRatingThreshold = async (userId, threshold) => {
-  const pref = await UserPreference.getOrCreate(userId);
-  pref.ratingThreshold = Math.max(0, Math.min(5, threshold));
-  return pref.save();
-};
+  let pref = await UserPreference.getOrCreate(userId)
+  pref.ratingThreshold = Math.max(0, Math.min(5, threshold))
+  return pref.save()
+}
 
 /**
- * Reset user preferences
+ * -------------------- Reset Preferences --------------------
+ * Used for user reset / cold-start scenarios
  */
 let resetPreferences = async (userId) => {
-  const pref = await UserPreference.findOne({ userId });
-  if (!pref) return null;
-  
+  let pref = await UserPreference.findOne({ userId })
+  if (!pref) return null
+
   pref.categoryPreferences = new Map([
     ['restaurant', 0],
     ['attraction', 0],
     ['accommodation', 0],
     ['transport', 0],
     ['other', 0]
-  ]);
-  pref.recentSearches = [];
-  pref.favoritePlaceIds = [];
-  pref.pricePreference = { min: 0, max: 5, avg: 2.5 };
-  pref.ratingThreshold = 3.0;
-  
-  return pref.save();
-};
+  ])
+
+  pref.recentSearches = []
+  pref.favoritePlaceIds = []
+  pref.pricePreference = { min: 0, max: 5, avg: 2.5 }
+  pref.ratingThreshold = 3.0
+
+  return pref.save()
+}
 
 module.exports = {
   getUserPreferences,
@@ -120,4 +128,4 @@ module.exports = {
   getPreferenceSummary,
   updateRatingThreshold,
   resetPreferences
-};
+}

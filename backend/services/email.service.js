@@ -1,37 +1,59 @@
+// Nodemailer -> used for sending emails
 let nodemailer = require('nodemailer')
+
+// Environment configuration (email credentials, frontend URL, etc.)
 let config = require('../config/env')
 
+/**
+ * -------------------- Transporter Helper --------------------
+ * Creates and returns a Nodemailer transporter
+ */
 const getTransporter = () => {
+  // If email credentials are missing, disable email functionality
   if (!config.email.user || !config.email.password) {
     console.warn('Email service not configured. Email functionality will be disabled.')
     return null
   }
+
+  // Create SMTP transporter
   return nodemailer.createTransport({
-    service:config.email.service,
-    auth:{
-        user:config.email.user,
-        pass:config.email.password
+    service: config.email.service,
+    auth: {
+      user: config.email.user,
+      pass: config.email.password
     }
   })
-  }
+}
 
+/**
+ * -------------------- Core Email Sender --------------------
+ * Sends a generic email
+ */
 let sendEmail = async (to, subject, html, text = null) => {
-    let transporter=getTransporter()
+  let transporter = getTransporter()
+
+  // Gracefully exit if email service is disabled
   if (!transporter) {
     console.warn('Email not sent - service not configured')
-    return {messageId:null,success:false}
+    return { messageId: null, success: false }
   }
 
   try {
+    // Mail configuration
     let mailOptions = {
       from: `Planora <${config.email.from}>`,
       to,
       subject,
       html,
+
+      // Fallback plain-text version
       text: text || html.replace(/<[^>]*>/g, ''),
     }
+
+    // Send email
     let info = await transporter.sendMail(mailOptions)
     console.log('Email sent:', info.messageId)
+
     return info
   } catch (error) {
     console.error('Email send error:', error.message)
@@ -39,6 +61,13 @@ let sendEmail = async (to, subject, html, text = null) => {
   }
 }
 
+/**
+ * -------------------- Template-Based Emails --------------------
+ */
+
+/**
+ * Send welcome email after successful registration
+ */
 let sendWelcomeEmail = async (user) => {
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px;">
@@ -53,11 +82,16 @@ let sendWelcomeEmail = async (user) => {
       <p>Happy travels!<br>The Planora Team</p>
     </div>
   `
-  return sendEmail(user.email,'Welcome to Planora!', html);
-};
 
+  return sendEmail(user.email, 'Welcome to Planora!', html)
+}
+
+/**
+ * Send password reset email
+ */
 const sendPasswordResetEmail = async (user, resetToken) => {
   const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}`
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px;">
       <h1 style="color: #3b82f6;">Reset Your Password</h1>
@@ -72,9 +106,13 @@ const sendPasswordResetEmail = async (user, resetToken) => {
       <p>The Planora Team</p>
     </div>
   `
+
   return sendEmail(user.email, 'Password Reset', html)
 }
 
+/**
+ * Send trip invitation email
+ */
 const sendTripInvitation = async (trip, inviterName, inviteeEmail) => {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px;">
@@ -82,7 +120,10 @@ const sendTripInvitation = async (trip, inviterName, inviteeEmail) => {
       <p><strong>${inviterName}</strong> invited you to:</p>
       <h2>${trip.title}</h2>
       <p><strong>Destination:</strong> ${trip.destination}</p>
-      <p><strong>Dates:</strong> ${new Date(trip.startDate).toLocaleDateString()} - ${new Date(trip.endDate).toLocaleDateString()}</p>
+      <p><strong>Dates:</strong> 
+        ${new Date(trip.startDate).toLocaleDateString()} - 
+        ${new Date(trip.endDate).toLocaleDateString()}
+      </p>
       <a href="${config.frontendUrl}/trips/${trip._id}" 
          style="display: inline-block; padding: 12px 24px; background: #3b82f6; 
                 color: white; text-decoration: none; border-radius: 6px;">
@@ -90,11 +131,16 @@ const sendTripInvitation = async (trip, inviterName, inviteeEmail) => {
       </a>
     </div>
   `
-  return sendEmail(inviteeEmail, `Join "${trip.title}"`, html);
+
+  return sendEmail(inviteeEmail, `Join "${trip.title}"`, html)
 }
 
+/**
+ * Send email verification link
+ */
 const sendVerificationEmail = async (user, verifyToken) => {
   const verifyUrl = `${config.frontendUrl}/verify-email?token=${verifyToken}`
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px;">
       <h1 style="color: #3b82f6;">Verify Your Email</h1>
@@ -109,14 +155,17 @@ const sendVerificationEmail = async (user, verifyToken) => {
       <p>The Planora Team</p>
     </div>
   `
+
   return sendEmail(user.email, 'Verify your email', html)
 }
 
-
+/**
+ * Export email service functions
+ */
 module.exports = {
   sendEmail,
   sendVerificationEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendTripInvitation,
-};
+}

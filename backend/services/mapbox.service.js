@@ -1,9 +1,16 @@
+// HTTP client for calling external geocoding APIs
 let axios = require('axios')
+
+// Custom error helper
 let { BadRequestError } = require('../utils/errors')
 
-// Using Nominatim (OpenStreetMap's geocoding service)
+// Base URL for Nominatim (OpenStreetMap geocoding service)
 let NOMINATIM_BASE = 'https://nominatim.openstreetmap.org'
 
+/**
+ * -------------------- Forward Geocoding --------------------
+ * Converts a human-readable address into coordinates
+ */
 let geocodeAddress = async (address) => {
   try {
     let response = await axios.get(`${NOMINATIM_BASE}/search`, {
@@ -14,19 +21,25 @@ let geocodeAddress = async (address) => {
         addressdetails: 1
       },
       headers: {
-        'User-Agent': 'Planora/1.0'  // Required by Nominatim
+        // Required by Nominatim usage policy
+        'User-Agent': 'Planora/1.0'
       }
     })
 
+    // No results found
     if (!response.data || response.data.length === 0) {
       throw BadRequestError('Address not found')
     }
 
+    // Normalize response
     return response.data.map(place => ({
       name: place.display_name,
       coordinates: {
         type: 'Point',
-        coordinates: [parseFloat(place.lon), parseFloat(place.lat)]
+        coordinates: [
+          parseFloat(place.lon),
+          parseFloat(place.lat)
+        ]
       },
       address: place.display_name,
       boundingBox: place.boundingbox
@@ -37,6 +50,10 @@ let geocodeAddress = async (address) => {
   }
 }
 
+/**
+ * -------------------- Reverse Geocoding --------------------
+ * Converts coordinates into a human-readable address
+ */
 let reverseGeocode = async (longitude, latitude) => {
   try {
     let response = await axios.get(`${NOMINATIM_BASE}/reverse`, {
@@ -59,7 +76,10 @@ let reverseGeocode = async (longitude, latitude) => {
       address: response.data.display_name,
       coordinates: {
         type: 'Point',
-        coordinates: [parseFloat(response.data.lon), parseFloat(response.data.lat)]
+        coordinates: [
+          parseFloat(response.data.lon),
+          parseFloat(response.data.lat)
+        ]
       }
     }
   } catch (error) {
@@ -68,50 +88,69 @@ let reverseGeocode = async (longitude, latitude) => {
   }
 }
 
-// Get route using OpenRouteService (free alternative)
+/**
+ * -------------------- Route Calculation --------------------
+ * Lightweight routing fallback (direct distance)
+ * NOTE: Can be replaced with OpenRouteService or Mapbox later
+ */
 let getRoute = async (coordinates, profile = 'driving-car') => {
   if (!coordinates || coordinates.length < 2) {
     throw BadRequestError('Need at least 2 coordinates')
   }
 
-  // Note: You can use OpenRouteService for routing
-  // Sign up at https://openrouteservice.org/ for free API key
-  // For now, return a simple direct line
-  
+  // Calculate total distance using Haversine formula
   let totalDistance = 0
   for (let i = 0; i < coordinates.length - 1; i++) {
     let from = coordinates[i]
     let to = coordinates[i + 1]
+
     totalDistance += calculateDistance(
-      from.latitude, from.longitude,
-      to.latitude, to.longitude
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude
     )
   }
 
   return {
     distance: totalDistance * 1000, // meters
-    duration: (totalDistance / 50) * 3600, // rough estimate (50km/h avg)
-    coordinates: coordinates.map(c => [c.longitude, c.latitude]),
+    duration: (totalDistance / 50) * 3600, // rough estimate (50 km/h)
+    coordinates: coordinates.map(c => [
+      c.longitude,
+      c.latitude
+    ]),
     profile
   }
 }
 
-// Haversine formula for distance calculation
+/**
+ * -------------------- Distance Calculation --------------------
+ * Haversine formula to calculate distance between two coordinates
+ */
 let calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371 // Earth's radius in km
+  const R = 6371 // Earth radius in kilometers
+
   let dLat = toRad(lat2 - lat1)
   let dLon = toRad(lon2 - lon1)
+
   let a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2
+
   let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
+// Convert degrees to radians
 let toRad = (deg) => deg * (Math.PI / 180)
 
-// Search places using Nominatim
+/**
+ * -------------------- Place Search --------------------
+ * Searches places using Nominatim
+ * Optionally biased by proximity
+ */
 let searchPlaces = async (query, proximity) => {
   try {
     let params = {
@@ -121,6 +160,7 @@ let searchPlaces = async (query, proximity) => {
       addressdetails: 1
     }
 
+    // Bias search around a given location
     if (proximity) {
       params.lat = proximity.latitude
       params.lon = proximity.longitude
@@ -139,7 +179,10 @@ let searchPlaces = async (query, proximity) => {
       placeName: place.display_name,
       coordinates: {
         type: 'Point',
-        coordinates: [parseFloat(place.lon), parseFloat(place.lat)]
+        coordinates: [
+          parseFloat(place.lon),
+          parseFloat(place.lat)
+        ]
       },
       category: place.type,
       address: place.display_name
@@ -150,6 +193,9 @@ let searchPlaces = async (query, proximity) => {
   }
 }
 
+/**
+ * Export geocoding & mapping helpers
+ */
 module.exports = {
   geocodeAddress,
   reverseGeocode,

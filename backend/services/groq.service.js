@@ -1,250 +1,276 @@
-// services/groq.service.js
-const axios = require('axios');
-const geoapifyService = require('./geoapify.service');
-const { calculateDistance } = require('../utils/helpers');
+// HTTP client for calling OpenRouter (Groq-compatible) API
+const axios = require('axios')
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat-v3.1';
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// Geoapify service for geocoding AI-suggested places
+const geoapifyService = require('./geoapify.service')
 
-async function getAIRecommendations(category, destination, tripContext = {}) {
-  console.log('🔥 OPENROUTER CALLED:', category, destination);
-  
+// Helper to calculate distance between two coordinates
+const { calculateDistance } = require('../utils/helpers')
+
+// OpenRouter / Groq configuration
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free'
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+
+/**
+ * AI Recommendations Entry Point
+ * Generates place recommendations using LLM
+ */
+const getAIRecommendations = async (category, destination, tripContext = {}) => {
+  console.log('OPENROUTER CALLED:', category, destination)
+
+  // Ensure API key is present
   if (!OPENROUTER_API_KEY) {
-    throw new Error('OPENROUTER_API_KEY missing');
+    console.error('OPENROUTER_API_KEY missing in environment')
+    throw new Error('OPENROUTER_API_KEY missing')
   }
 
+  console.log('API Key present:', OPENROUTER_API_KEY.substring(0, 15) + '...')
+
+  /**
+   * Extract trip context
+   */
   const {
     budget,
     duration,
     peopleCount,
     currency = 'INR'
-  } = tripContext;
+  } = tripContext
 
-  const prompt = `
-You are a professional travel cost analyst and trip planner.
+  /**
+   * Simple, focused prompt for better results
+   */
+  const prompt = `List exactly 10 popular ${category} places in ${destination}.
 
-Trip details:
-- Destination: ${destination}
-- Category: ${category}
-- User's Budget: ${budget ? `${currency} ${budget}` : 'Not specified'}
-- Trip Duration: ${duration || 'Not specified'} days
-- Number of People: ${peopleCount || 1}
+For each place, provide:
+- NAME: [name]
+- DESCRIPTION: [brief description]
+- RATING: [number from 3.5 to 5.0]
+- PRICE: [1=budget, 2=moderate, 3=expensive, 4=luxury]
+- WHY: [one reason to visit]
+- LOCATION: [specific area/neighborhood]
 
-CRITICAL INSTRUCTIONS:
-1. First, calculate the REALISTIC minimum budget needed for this trip
-2. Calculate the AVERAGE budget range for a comfortable trip
-3. Compare user's budget to these benchmarks
-4. Classify budget level accurately
+Format each place with "---" separator.
+Start immediately with the first place.`
 
-BUDGET CLASSIFICATION:
-- IMPOSSIBLE: User budget < minimum required (cannot afford basic necessities)
-- LOW: User budget >= minimum but < average (tight budget, limited options)
-- AVERAGE: User budget within typical range (comfortable trip)
-- HIGH: User budget > average range (luxury options available)
-
-MANDATORY RESPONSE FORMAT:
-
-===BUDGET_ANALYSIS===
-USER_BUDGET_LEVEL: [IMPOSSIBLE|LOW|AVERAGE|HIGH]
-MINIMUM_REQUIRED: ${currency} [number]
-AVERAGE_RANGE: ${currency} [min]–[max]
-EXPLANATION: [Clear explanation of budget feasibility]
-===END_ANALYSIS===
-
-RULES:
-- If USER_BUDGET_LEVEL is IMPOSSIBLE: STOP HERE. Do NOT suggest any places.
-- If LOW/AVERAGE/HIGH: After budget analysis, suggest EXACTLY 10 ${category}s
-
----
-
-FOR EACH PLACE (only if budget allows):
-NAME: [exact name]
-DESCRIPTION: [brief description]
-RATING: [1-5]
-PRICE: [1=cheap, 2=moderate, 3=expensive, 4=luxury]
-WHY: [why it fits user's budget level]
-LOCATION: [area/neighborhood, city]
-
-Separate each place with ---
-`;
-
-  const response = await axios.post(
-    OPENROUTER_URL,
-    {
-      model: MODEL,
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are a realistic travel budget analyst. Be honest about budget constraints. Never suggest places if budget is insufficient.'
+  try {
+    /**
+     * OpenRouter API Call
+     */
+    console.log('Making OpenRouter request...')
+    console.log('Model:', MODEL)
+    
+    const response = await axios.post(
+      OPENROUTER_URL,
+      {
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful travel guide. Provide accurate, real place recommendations.'
+          },
+          { 
+            role: 'user', 
+            content: prompt 
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:5000',
+          'X-Title': 'Planora Trip Planner'
         },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.6,
-      max_tokens: 3000
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:5000',
-        'X-Title': 'Planora Trip Planner'
+        timeout: 30000
+      }
+    )
+
+    console.log('OpenRouter response received')
+    console.log('Response status:', response.status)
+
+    const aiText = response.data?.choices?.[0]?.message?.content
+    
+    if (!aiText) {
+      console.error('No AI response content')
+      console.log('Full response:', JSON.stringify(response.data, null, 2))
+      return {
+        budgetAnalysis: null,
+        places: [],
+        message: 'AI returned no content'
       }
     }
-  );
 
-  const aiText = response.data?.choices?.[0]?.message?.content;
-  if (!aiText) throw new Error('No AI response');
+    console.log('AI response length:', aiText.length)
+    console.log('AI response preview:', aiText.substring(0, 200))
 
-  // Parse budget analysis first
-  const budgetAnalysis = parseBudgetAnalysis(aiText);
-  
-  // If budget is impossible, return early with analysis only
-  if (budgetAnalysis.budgetLevel === 'IMPOSSIBLE') {
-    console.log('❌ Budget insufficient - no places suggested');
+    /**
+     * Parse AI response into structured places
+     */
+    const places = parseAIResponse(aiText, category)
+    console.log('Parsed', places.length, 'places from AI')
+
+    if (places.length === 0) {
+      console.warn('AI response parsing resulted in 0 places')
+      console.log('Full AI text:', aiText)
+      return {
+        budgetAnalysis: null,
+        places: [],
+        message: 'Could not parse AI recommendations'
+      }
+    }
+
+    /**
+     * Geocode the places
+     */
+    console.log('Starting geocoding for', places.length, 'places...')
+    const geocodedPlaces = await geocodePlaces(places, destination)
+    console.log('Geocoded', geocodedPlaces.length, 'places successfully')
+
     return {
-      budgetAnalysis,
+      budgetAnalysis: {
+        budgetLevel: budget ? 'AVERAGE' : 'NOT_SPECIFIED',
+        minimumRequired: null,
+        averageRange: null,
+        explanation: `Found ${geocodedPlaces.length} recommendations for ${category} in ${destination}`
+      },
+      places: geocodedPlaces,
+      message: `Found ${geocodedPlaces.length} ${category} recommendations`
+    }
+
+  } catch (error) {
+    console.error('OpenRouter API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    })
+
+    // Return empty results instead of throwing
+    return {
+      budgetAnalysis: null,
       places: [],
-      message: budgetAnalysis.explanation
-    };
+      message: `API Error: ${error.message}`
+    }
+  }
+}
+
+/**
+ * AI Place Parser
+ * Converts AI free-text response into structured place objects
+ */
+const parseAIResponse = (text, category) => {
+  console.log('Parsing AI response...')
+  
+  const places = []
+  const sections = text.split('---').filter(s => s.trim())
+
+  console.log('Found', sections.length, 'sections in response')
+
+  for (const section of sections) {
+    try {
+      const get = (regex) => {
+        const match = section.match(regex)
+        return match ? match[1].trim() : null
+      }
+
+      const name = get(/NAME:\s*(.+)/i)
+      
+      if (!name) {
+        console.log('Skipping section - no name found')
+        continue
+      }
+
+      const place = {
+        category,
+        source: 'groq_ai',
+        name,
+        description: get(/DESCRIPTION:\s*(.+)/i) || `A popular ${category} in the area`,
+        rating: parseFloat(get(/RATING:\s*([\d.]+)/i)) || 4.0,
+        priceLevel: parseInt(get(/PRICE:\s*(\d+)/i)) || 2,
+        whyVisit: get(/WHY:\s*(.+)/i) || 'Highly recommended',
+        addressHint: get(/LOCATION:\s*(.+)/i) || ''
+      }
+
+      places.push(place)
+      console.log('Parsed place:', place.name)
+
+    } catch (err) {
+      console.error('Error parsing section:', err.message)
+    }
   }
 
-  // Otherwise, parse and geocode places
-  const places = parseAIResponse(aiText, category);
-  const geocodedPlaces = await geocodePlaces(places, destination);
-  
-  return {
-    budgetAnalysis,
-    places: geocodedPlaces,
-    message: budgetAnalysis.explanation
-  };
+  return places
 }
 
-function parseBudgetAnalysis(text) {
-  const analysisMatch = text.match(/===BUDGET_ANALYSIS===([\s\S]*?)===END_ANALYSIS===/);
-  
-  if (!analysisMatch) {
-    console.warn('⚠️ Budget analysis not found in AI response');
-    return {
-      budgetLevel: 'AVERAGE',
-      minimumRequired: null,
-      averageRange: null,
-      explanation: 'Budget analysis unavailable'
-    };
-  }
+/**
+ * Geocode AI Places
+ * Converts AI-generated place names into coordinates
+ */
+const geocodePlaces = async (places, destination) => {
+  const results = []
 
-  const section = analysisMatch[1];
-  const getField = (regex) => section.match(regex)?.[1]?.trim();
-
-  const budgetLevel = getField(/USER_BUDGET_LEVEL:\s*(\w+)/i);
-  const minimumRequired = getField(/MINIMUM_REQUIRED:\s*(.+)/i);
-  const averageRange = getField(/AVERAGE_RANGE:\s*(.+)/i);
-  const explanation = getField(/EXPLANATION:\s*(.+)/i);
-
-  console.log('📊 Budget Analysis:', {
-    budgetLevel,
-    minimumRequired,
-    averageRange
-  });
-
-  return {
-    budgetLevel: budgetLevel || 'AVERAGE',
-    minimumRequired,
-    averageRange,
-    explanation: explanation || 'Budget analysis complete'
-  };
-}
-
-function parseAIResponse(text, category) {
-  // Remove budget analysis section before parsing places
-  const placesText = text.replace(/===BUDGET_ANALYSIS===[\s\S]*?===END_ANALYSIS===/, '');
-  
-  return placesText.split('---').map(section => {
-    const get = r => section.match(r)?.[1]?.trim();
-    const name = get(/NAME:\s*(.+)/i);
-    
-    if (!name) return null;
-    
-    return {
-      category,
-      source: 'groq_ai',
-      name,
-      description: get(/DESCRIPTION:\s*(.+)/i),
-      rating: Number(get(/RATING:\s*(.+)/i)) || 4.2,
-      priceLevel: Number(get(/PRICE:\s*(.+)/i)) || 2,
-      whyVisit: get(/WHY:\s*(.+)/i),
-      addressHint: get(/LOCATION:\s*(.+)/i)
-    };
-  }).filter(p => p !== null);
-}
-
-async function geocodePlaces(places, destination) {
-  const results = [];
   for (const p of places) {
     try {
-      const q = `${p.name}, ${p.addressHint || ''}, ${destination}`;
-      const geo = await geoapifyService.geocodeLocation(q);
+      const query = `${p.name}, ${p.addressHint || ''}, ${destination}`.replace(/,\s*,/g, ',').trim()
+      
+      console.log('Geocoding:', query)
+      const geo = await geoapifyService.geocodeLocation(query)
 
       if (geo?.lat && geo?.lon) {
         results.push({
           ...p,
           location: { type: 'Point', coordinates: [geo.lon, geo.lat] },
           address: geo.formatted,
-          confidence: geo.confidence,
-          popularity: geo.popularity
-        });
+          confidence: geo.rank?.confidence || 0,
+          popularity: geo.rank?.popularity || 0
+        })
+        console.log('✓ Geocoded:', p.name)
+      } else {
+        console.warn('✗ Geocoding failed for:', p.name)
       }
     } catch (err) {
-      console.warn('Geocoding failed for:', p.name);
+      console.error('Geocoding error for', p.name, ':', err.message)
     }
   }
-  return results;
+
+  return results
 }
 
-function scoreAndRankPlaces(places, centerLocation) {
-  console.log('📊 Scoring', places.length, 'places...');
-  
-  return places.map(place => {
-    let score = 0;
+/**
+ * Scoring & Ranking
+ * Assigns recommendation score based on rating, distance, popularity
+ */
+const scoreAndRankPlaces = (places, centerLocation) => {
+  return places
+    .map(place => {
+      let score = (place.rating || 4) * 2
 
-    // Rating score
-    score += (place.rating || 4) * 2;
-    
-    // Popularity score
-    if (place.popularity) score += Math.min(5, place.popularity);
-    
-    // Confidence score
-    if (place.confidence) score += place.confidence * 5;
+      if (place.popularity) score += Math.min(5, place.popularity * 10)
+      if (place.confidence) score += place.confidence * 5
 
-    // Distance score
-    if (centerLocation && place.location?.coordinates?.length === 2) {
-      const dist = calculateDistance(
-        centerLocation.lat,
-        centerLocation.lon,
-        place.location.coordinates[1],
-        place.location.coordinates[0]
-      );
-      
-      place.distanceFromCenter = dist;
-      score += Math.max(0, 20 - dist);
-    } else {
-      place.distanceFromCenter = 0;
-    }
+      if (centerLocation && place.location?.coordinates) {
+        const dist = calculateDistance(
+          centerLocation.lat,
+          centerLocation.lon,
+          place.location.coordinates[1],
+          place.location.coordinates[0]
+        )
+        place.distanceFromCenter = dist
+        score += Math.max(0, 20 - dist)
+      }
 
-    // Add reasons
-    if (!place.reasons || place.reasons.length === 0) {
-      place.reasons = [];
-      if (place.rating >= 4.5) place.reasons.push('Highly rated');
-      if (place.distanceFromCenter < 3) place.reasons.push('Close to center');
-      if (place.popularity > 5) place.reasons.push('Popular destination');
-      if (place.whyVisit) place.reasons.push(place.whyVisit);
-    }
-
-    return { ...place, recommendationScore: Math.round(score * 10) / 10 };
-  }).sort((a, b) => b.recommendationScore - a.recommendationScore);
+      return {
+        ...place,
+        recommendationScore: Math.round(score * 10) / 10
+      }
+    })
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
 }
 
 module.exports = {
   getAIRecommendations,
   scoreAndRankPlaces
-};
+}

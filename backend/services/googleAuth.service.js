@@ -1,50 +1,81 @@
-const { OAuth2Client } = require('google-auth-library')
-const User = require('../models/User.model')
-const { generateAccessToken, generateRefreshToken } = require('../utils/jwt')
+// Google OAuth client for verifying ID tokens
+let { OAuth2Client } = require('google-auth-library')
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+// User model
+let User = require('../models/User.model')
 
-const googleLogin = async (idToken, accessToken = null) => {
+// JWT helpers for generating access & refresh tokens
+let { generateAccessToken, generateRefreshToken } = require('../utils/jwt')
+
+// Initialize Google OAuth client
+let client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
+/**
+ * -------------------- Google Login Service --------------------
+ * Supports login via:
+ * 1) Google ID Token (recommended)
+ * 2) Google Access Token (fallback)
+ */
+let googleLogin = async (idToken, accessToken = null) => {
   let payload
 
   try {
+    /**
+     * -------------------- Token Verification --------------------
+     */
+
+    // Case 1: Verify Google ID token
     if (idToken) {
-      // Verify ID token (preferred method)
-      const ticket = await client.verifyIdToken({
+      let ticket = await client.verifyIdToken({
         idToken,
         audience: process.env.GOOGLE_CLIENT_ID,
       })
       payload = ticket.getPayload()
-    } else if (accessToken) {
-      // Alternative: verify access token
-      const userInfoResponse = await fetch(
+    }
+
+    // Case 2: Fetch user info using Google access token
+    else if (accessToken) {
+      let userInfoResponse = await fetch(
         `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
       )
-      
+
       if (!userInfoResponse.ok) {
         throw new Error('Failed to fetch user info from Google')
       }
-      
+
       payload = await userInfoResponse.json()
+
+      // Normalize payload fields
       payload.sub = payload.sub || payload.id
       payload.email_verified = payload.email_verified !== false
-    } else {
+    }
+
+    // No valid token provided
+    else {
       throw new Error('Either idToken or accessToken must be provided')
     }
 
-    const { sub, email, name, email_verified } = payload
+    /**
+     * -------------------- Payload Validation --------------------
+     */
+    let { sub, email, name, email_verified } = payload
 
+    // Ensure Google account email is verified
     if (!email_verified) {
       throw new Error('Google email not verified')
     }
 
-    // Find existing user or create new one
+    /**
+     * -------------------- User Lookup / Creation --------------------
+     */
+
+    // Try to find existing user by Google ID or email
     let user = await User.findOne({
       $or: [{ googleId: sub }, { email }]
     })
 
+    // New Google user
     if (!user) {
-      // Create new user
       user = await User.create({
         name,
         email,
@@ -52,37 +83,50 @@ const googleLogin = async (idToken, accessToken = null) => {
         isVerified: true,
         authProvider: 'google'
       })
-      console.log('✅ New Google user created:', email)
-    } else if (!user.googleId) {
-      // Link existing email account to Google
+      console.log('New Google user created:', email)
+    }
+
+    // Existing user without Google linked
+    else if (!user.googleId) {
       user.googleId = sub
       user.authProvider = 'google'
       user.isVerified = true
       await user.save()
-      console.log('✅ Linked existing user to Google:', email)
-    } else {
-      console.log('✅ Existing Google user logged in:', email)
+      console.log('Linked existing user to Google:', email)
     }
 
-    // Generate tokens
-    const jwtAccessToken = generateAccessToken(user._id)
-    const jwtRefreshToken = generateRefreshToken(user._id)
+    // Existing Google-linked user
+    else {
+      console.log('Existing Google user logged in:', email)
+    }
 
-    return { 
+    /**
+     * -------------------- Token Generation --------------------
+     */
+    let jwtAccessToken = generateAccessToken(user._id)
+    let jwtRefreshToken = generateRefreshToken(user._id)
+
+    /**
+     * -------------------- Response --------------------
+     */
+    return {
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         authProvider: user.authProvider,
         isVerified: user.isVerified
-      }, 
-      accessToken: jwtAccessToken, 
-      refreshToken: jwtRefreshToken 
+      },
+      accessToken: jwtAccessToken,
+      refreshToken: jwtRefreshToken
     }
   } catch (error) {
-    console.error('❌ Google auth error:', error)
+    console.error('Google auth error:', error)
     throw new Error(error.message || 'Google authentication failed')
   }
 }
 
+/**
+ * Export Google authentication service
+ */
 module.exports = { googleLogin }
