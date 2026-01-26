@@ -58,36 +58,11 @@ const devOrigins = [
 
 allowedOrigins = [...new Set([...allowedOrigins, ...devOrigins])]
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow same-origin, Postman, server-side
-    if (!origin) return callback(null, true)
-
-    // ✅ Allow ALL localhost (FedCM-safe)
-    if (
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1')
-    ) {
-      return callback(null, true)
-    }
-
-    // Optional production frontend
-    const allowed = process.env.CORS_ORIGIN
-      ?.split(',')
-      .map(o => o.trim())
-
-    if (allowed?.includes(origin)) {
-      return callback(null, true)
-    }
-
-    // 🚨 NEVER block OAuth requests
-    return callback(null, true)
-  },
+  origin: 'https://akshat-shaw-509.github.io',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
-
-
 
 /* =========================
    4. Rate limiting
