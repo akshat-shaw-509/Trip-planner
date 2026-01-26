@@ -9,28 +9,23 @@
     <link rel="stylesheet" href="../css/activities.css">
 </head>
 <body>
-    <nav>
-        <div class="logo">
-            <img src="../Svg/Logo.png" alt="Logo">
-        </div>
-        <a href="index.html">Dashboard</a>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
+        <a href="index.html">Home</a>
+        <a href="trips.html">My Trips</a>
         <div class="search-bar">
-            <i class="fa fa-search"></i>
-            <input type="search" id="searchInput" placeholder="Search Activities...">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
+            <i class="fa fa-search search-icon"></i>
         </div>
-        <div class="cta-container">
-            <button class="cta-button">Start Planning</button>
-            <div class="dropdown">
-                <a href="planning.html">Planning</a>
-                <a href="schedule.html">Schedule</a>
-                <a href="budget.html">Budget</a>
-            </div>
-        </div>
-        <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
-        </div>
-    </nav>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+    </div>
+</nav>
 
 <div class="breadcrumb">
         <a href="trips.html">Trips</a>

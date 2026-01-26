@@ -3,28 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planora - Your Ultimate Travel Companion</title>
+    <title>Planora - Plan Your Perfect Trip Effortlessly</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <nav>
+    <!-- Navigation -->
+    <nav id="mainNav">
         <div class="logo">
-           <img src="../Svg/Logo.png" alt="Planora Logo">
+           <img src="../Svg/Logo.png" alt="Planora">
         </div>
-        <a href="trips.html">My Trips</a>
-        <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search destinations...">
-            <i class="fa fa-search search-icon"></i>
-        </div>
-        <div class="cta-container">
-            <button class="cta-button">Quick Access</button>
-            <div class="dropdown">
-                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
-                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
-                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
-                <a href="activities.html"><i class="fas fa-list-check"></i> Activities</a>
+        <div class="nav-center">
+            <a href="trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
             </div>
         </div>
         <div class="auth-buttons">
@@ -36,99 +30,165 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <h1>Plan Your Perfect Group Adventure</h1>
-            <p>Streamline group travel planning with expert insights, real-time collaboration, and integrated bookings - all in one beautiful platform</p>
-            <div class="hero-buttons">
-                <button class="btn-primary" onclick="handleAddTrip()">
-                    <i class="fas fa-plus"></i>
-                    Start Planning
-                </button>
-                <button class="btn-secondary" onclick="window.location.href='trips.html'">
-                    <i class="fas fa-suitcase-rolling"></i>
-                    View My Trips
-                </button>
+            <div class="hero-text">
+                <h1>Plan Your Perfect Trip Effortlessly</h1>
+                <p>Transform complex travel planning into a seamless experience. Collaborate with friends, manage budgets, and create unforgettable journeys—all in one beautiful platform.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="handleAddTrip()">
+                        <i class="fas fa-plus"></i>
+                        Start Planning
+                    </button>
+                    <button class="btn-secondary" onclick="window.location.href='trips.html'">
+                        <i class="fas fa-suitcase-rolling"></i>
+                        View My Trips
+                    </button>
+                </div>
             </div>
-        </div>
-        <div class="hero-stats">
-            <div class="stat-card">
-                <i class="fas fa-globe"></i>
-                <h3>200+</h3>
-                <p>Destinations</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-users"></i>
-                <h3>10K+</h3>
-                <p>Happy Travelers</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-star"></i>
-                <h3>4.9/5</h3>
-                <p>User Rating</p>
+            <div class="hero-visual">
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-globe-americas"></i>
+                        <h3>200+</h3>
+                        <p>Destinations</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3>10K+</h3>
+                        <p>Happy Travelers</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <h3>4.9/5</h3>
+                        <p>User Rating</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <h3>50K+</h3>
+                        <p>Trips Planned</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features">
+    <!-- How It Works Section -->
+    <section class="how-it-works">
         <div class="section-header">
-            <h2>Everything You Need for Perfect Travel</h2>
-            <p>Powerful features to make group travel planning effortless</p>
+            <h2>How It Works</h2>
+            <p>Planning your dream trip is simple with Planora. Follow these easy steps to create memorable experiences.</p>
         </div>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-route"></i>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-content">
+                    <div class="step-number">1</div>
+                    <h3>Create Your Trip</h3>
+                    <p>Start by choosing your destination and travel dates. Add your travel companions and set your preferences. Our intuitive interface makes setup a breeze.</p>
+                    <div class="step-features">
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Quick trip setup in minutes</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Invite friends and family</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Set budget and preferences</span>
+                        </div>
+                    </div>
                 </div>
-                <h3>Smart Itinerary</h3>
-                <p>Create detailed day-by-day plans with AI-powered suggestions</p>
+                <div class="step-visual">
+                    <img src="../Svg/create-trip.png" alt="">
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-calendar-check"></i>
+
+            <div class="step">
+                <div class="step-content">
+                    <div class="step-number">2</div>
+                    <h3>Build Your Itinerary</h3>
+                    <p>Discover activities, restaurants, and attractions. Organize your days with our smart scheduling tools and get AI-powered suggestions tailored to your interests.</p>
+                    <div class="step-features">
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Smart activity recommendations</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Visual timeline planning</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Real-time collaboration</span>
+                        </div>
+                    </div>
                 </div>
-                <h3>Schedule Management</h3>
-                <p>Organize activities with visual timeline and reminders</p>
+                <div class="step-visual">
+                    <img src="../Svg/Build-your-itirenary.png" alt="">
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-coins"></i>
+
+            <div class="step">
+                <div class="step-content">
+                    <div class="step-number">3</div>
+                    <h3>Manage & Track</h3>
+                    <p>Keep everything organized with budget tracking, shared checklists, and important documents in one place. Make changes on the go and stay coordinated with your group.</p>
+                    <div class="step-features">
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Expense tracking & splitting</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Shared packing lists</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Mobile access anywhere</span>
+                        </div>
+                    </div>
                 </div>
-                <h3>Budget Tracking</h3>
-                <p>Monitor expenses and split costs among group members</p>
+                <div class="step-visual">
+                    <img src="../Svg/Budget.png" alt="">
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-users"></i>
+
+            <div class="step">
+                <div class="step-content">
+                    <div class="step-number">4</div>
+                    <h3>Enjoy Your Journey</h3>
+                    <p>With everything planned and organized, all that's left is to enjoy your adventure. Access your itinerary offline and make lasting memories.</p>
+                    <div class="step-features">
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Offline access to plans</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Live trip updates</span>
+                        </div>
+                        <div class="step-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Photo sharing & memories</span>
+                        </div>
+                    </div>
                 </div>
-                <h3>Group Collaboration</h3>
-                <p>Share plans and make decisions together in real-time</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-map-marked-alt"></i>
+                <div class="step-visual">
+                    <img src="../Svg/enjoy-your-journey.png" alt="">
                 </div>
-                <h3>Interactive Maps</h3>
-                <p>Visualize your journey with location-based planning</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <h3>Mobile Ready</h3>
-                <p>Access your plans anywhere, anytime on any device</p>
             </div>
         </div>
     </section>
-    
+
     <!-- Destinations Section -->
     <section class="destinations">
         <div class="section-header">
-            <h2>Explore Top Destinations</h2>
-            <p>Get inspired by these popular travel spots</p>
+            <h2>Popular Destinations</h2>
+            <p>Get inspired by these amazing places and start planning your next adventure</p>
         </div>
         <div class="destinations-grid">
             <div class="destination-card" onclick="exploreDestination('Paris')">
-                <img src="../Svg/paris.jpg" alt="Paris, France">
+                <img src="../Svg/paris.png" alt="Paris, France">
                 <div class="destination-overlay">
                     <div class="destination-info">
                         <h3>Paris, France</h3>
@@ -140,7 +200,7 @@
                 </div>
             </div>
             <div class="destination-card" onclick="exploreDestination('Kyoto')">
-                <img src="../Svg/Japan.jpg" alt="Kyoto, Japan">
+                <img src="../Svg/Japan.png" alt="Kyoto, Japan">
                 <div class="destination-overlay">
                     <div class="destination-info">
                         <h3>Kyoto, Japan</h3>
@@ -152,7 +212,7 @@
                 </div>
             </div>
             <div class="destination-card" onclick="exploreDestination('Zurich')">
-                <img src="../Svg/zurich.jpg" alt="Zurich, Switzerland">
+                <img src="../Svg/zurich.png" alt="Zurich, Switzerland">
                 <div class="destination-overlay">
                     <div class="destination-info">
                         <h3>Zurich, Switzerland</h3>
@@ -170,10 +230,10 @@
     <section class="cta-section">
         <div class="cta-content">
             <h2>Ready to Start Your Journey?</h2>
-            <p>Join thousands of travelers planning their perfect trips</p>
+            <p>Join thousands of travelers who trust Planora to make their trips unforgettable</p>
             <button class="btn-large" onclick="handleAddTrip()">
-                <i class="fas fa-plane-departure"></i>
-                Create Your First Trip
+                <i class="fas fa-rocket"></i>
+                Get Started Free
             </button>
         </div>
     </section>
@@ -185,27 +245,29 @@
                 <div class="logo">
                     <img src="../Svg/Logo.png" alt="Planora">
                 </div>
-                <p>Your ultimate travel planning companion</p>
+                <p>Your ultimate travel planning companion. Make every journey memorable with effortless planning and collaboration.</p>
             </div>
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <a href="trips.html">My Trips</a>
                 <a href="planning.html">Plan New Trip</a>
                 <a href="#">Destinations</a>
+                <a href="#">Features</a>
             </div>
             <div class="footer-section">
                 <h4>Support</h4>
                 <a href="#">Help Center</a>
                 <a href="#">Contact Us</a>
                 <a href="#">FAQs</a>
+                <a href="#">Privacy Policy</a>
             </div>
             <div class="footer-section">
                 <h4>Connect</h4>
                 <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
                 </div>
             </div>
         </div>
@@ -220,6 +282,16 @@
     <script src="../js/toast.js"></script>
     
     <script>
+        // Add scroll effect to navigation
+        window.addEventListener('scroll', function() {
+            const nav = document.getElementById('mainNav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
         function handleAuthButton(type) {
             if (type === 'login') {
                 window.location.href = 'login.html';
@@ -240,7 +312,6 @@
                 }, 1500);
             }
         }
-        
 
         function exploreDestination(destination) {
             if (window.authHandler && window.authHandler.isAuthenticated()) {

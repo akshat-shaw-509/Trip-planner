@@ -10,29 +10,23 @@
     <link rel="stylesheet" href="../css/budget.css">
 </head>
 <body>
-    <nav>
-        <div class="logo">
-            <img src="../Svg/Logo.png" alt="Planora Logo">
-        </div>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
         <a href="index.html">Home</a>
         <a href="trips.html">My Trips</a>
         <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search expenses...">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
             <i class="fa fa-search search-icon"></i>
         </div>
-        <div class="cta-container">
-            <button class="cta-button">Quick Access</button>
-            <div class="dropdown">
-                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
-                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
-                <a href="places.html"><i class="fas fa-map-marker-alt"></i> Places</a>
-            </div>
-        </div>
-        <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
-        </div>
-    </nav>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+    </div>
+</nav>
 
     <div class="breadcrumb">
         <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
@@ -50,10 +44,6 @@
                 <p id="tripName">Loading trip details...</p>
             </div>
             <div class="header-actions">
-                <button class="btn-export">
-                    <i class="fas fa-download"></i>
-                    Export Report
-                </button>
                 <button class="btn-add-expense" id="addExpenseBtn">
                     <i class="fas fa-plus"></i>
                     Add Expense

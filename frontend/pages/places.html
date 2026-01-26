@@ -15,39 +15,30 @@
     <link rel="stylesheet" href="../css/recommendations.css">
     <link rel="stylesheet" href="../css/recommendations-filters.css">
     <link rel="stylesheet" href="../css/comparison.css">
-    <link rel="stylesheet" href="../css/day-builder.css">
     <link rel="stylesheet" href="../css/map-view.css">
     <link rel="stylesheet" href="../css/trip-center-selector.css">
 </head>
 <body>
-    <nav>
-        <div class="logo">
-            <img src="../Svg/Logo.png" alt="Planora Logo">
-        </div>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
         <a href="index.html">Home</a>
         <a href="trips.html">My Trips</a>
         <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search places...">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
             <i class="fa fa-search search-icon"></i>
         </div>
-        <div class="cta-container">
-            <button class="cta-button">Quick Access</button>
-            <div class="dropdown">
-                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
-                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
-                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
-            </div>
-        </div>
-        <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
-        </div>
-    </nav>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+    </div>
+</nav>
 
     <div class="breadcrumb">
         <a href="trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
-        <i class="fas fa-chevron-right"></i>
-        <a href="trip-overview.html?id=<%= currentTripId %>">Trip Overview</a>
         <i class="fas fa-chevron-right"></i>
         <span>Places</span>
     </div>
@@ -58,13 +49,13 @@
             <h1><i class="fas fa-map-marked-alt"></i> Places to Visit</h1>
             <p id="tripInfo">Loading trip details...</p>
         </div>
-        <button class="btn-add-place" id="addPlaceBtn"><i class="fas fa-plus"></i> Add Place</button>
     </div>
 
     <!-- Famous Places Recommendations Section -->
     <div class="recommendations-section">
         <div class="section-header">
-            <h2><i class="fas fa-star"></i> Famous Places in Your Destination</h2>
+            <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
+            <p>Personalized suggestions based on your destination</p>
         </div>
         
         <!-- Trip Center Banner will be inserted here by trip-center-selector.js -->
@@ -73,8 +64,6 @@
         
         <div class="recommendations-grid" id="recommendationsGrid"></div>
     </div>
-
-    <!-- Day Builder CTA will be inserted here by day-builder.js -->
     
     <!-- Enhanced Map View will be inserted here by map-view.js -->
 
@@ -82,13 +71,16 @@
     <div class="my-places-section">
         <div class="section-header">
             <h2><i class="fas fa-bookmark"></i> My Added Places</h2>
+            <button class="btn-add-place" id="addPlaceBtn">
+                <i class="fas fa-plus"></i> Add Place
+            </button>
         </div>
 
         <!-- Simple Filters for My Places -->
         <div class="filter-section">
             <button class="filter-btn active" data-filter="all">All Categories</button>
             <button class="filter-btn" data-filter="restaurant">🍴 Restaurants</button>
-            <button class="filter-btn" data-filter="attraction">🏛️ Attractions</button>
+            <button class="filter-btn" data-filter="attraction">🛕 Attractions</button>
             <button class="filter-btn" data-filter="accommodation">🏨 Hotels</button>
         </div>
 
@@ -97,16 +89,8 @@
         <div class="empty-state" id="emptyPlaces" style="display: none;">
             <i class="fas fa-map-marker-alt"></i>
             <h3>No places added yet</h3>
-            <p>Browse famous places above and add them to your trip</p>
+            <p>Browse AI recommendations above and add them to your trip</p>
         </div>
-    </div>
-
-    <!-- Day Plans Section -->
-    <div class="day-plans-section" style="display: none;" id="dayPlansSection">
-        <div class="section-header">
-            <h2><i class="fas fa-calendar-day"></i> Suggested Day Plans</h2>
-        </div>
-        <div id="dayPlansContainer"></div>
     </div>
 
     <!-- Add Place Modal -->
@@ -127,7 +111,7 @@
                         <select id="placeCategory" required>
                             <option value="">Select category</option>
                             <option value="restaurant">🍴 Restaurant</option>
-                            <option value="attraction">🏛️ Attraction</option>
+                            <option value="attraction">🛕 Attraction</option>
                             <option value="accommodation">🏨 Hotel</option>
                         </select>
                     </div>
@@ -166,27 +150,25 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="../js/api-service.js"></script>
-    <script src="../js/auth.js"></script>
-    <script src="../js/toast.js"></script>
-    <script src="../js/nav.js"></script>
-    
-    <!-- Feature Scripts -->
-    <script src="../js/comparison.js"></script>
-    <script src="../js/day-builder.js"></script>
-    <script src="../js/map-view.js"></script>
-    <script src="../js/trip-center-selector.js"></script>
-    
-    <!-- Recommendations System -->
-    <script src="../js/recommendations-enhanced.js"></script>
-    <script src="../js/recommendations-filters.js"></script>
-    
-    <!-- Main Places Script -->
-    <script src="../js/places.js"></script>
-    
-    <!-- Leaflet + Marker Cluster Plugin -->
+    <!-- External libraries FIRST -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <!-- Core utilities -->
+    <script src="../js/toast.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/nav.js"></script>
+
+    <!-- Feature modules (order matters!) -->
+    <script src="../js/trip-center-selector.js"></script>
+    <script src="../js/comparison.js"></script>
+    <script src="../js/map-view.js"></script>
+
+    <!-- Load recommendations-filters FIRST so recommendationsState exists -->
+<script src="../js/recommendations-filters.js"></script>
+<script src="../js/trip-center-selector.js"></script>
+<script src="../js/advanced-recommendations.js"></script>
+<script src="../js/places.js"></script>
 </body>
 </html>

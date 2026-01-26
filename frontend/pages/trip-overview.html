@@ -74,26 +74,23 @@
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">
-            <img src="../Svg/Logo.png" alt="Planora">
-        </div>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
+        <a href="index.html">Home</a>
+        <a href="trips.html">My Trips</a>
         <div class="search-bar">
-            <input type="text" placeholder="Search trips...">
-            <i class="fas fa-search"></i>
+            <input type="search" id="searchInput" placeholder="Search destinations...">
+            <i class="fa fa-search search-icon"></i>
         </div>
-        <div class="cta-container">
-            <button class="cta-button">
-                <i class="fas fa-user"></i>
-                <span id="userName">User</span>
-            </button>
-            <div class="dropdown">
-                <a href="index.html"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="trips.html"><i class="fas fa-suitcase"></i> My Trips</a>
-                <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
-        </div>
-    </nav>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+    </div>
+</nav>
 
     <!-- Breadcrumb -->
     <div class="breadcrumb">

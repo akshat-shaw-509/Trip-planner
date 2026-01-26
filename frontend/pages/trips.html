@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,23 +10,18 @@
     <link rel="stylesheet" href="../css/trips.css">
     <link rel="stylesheet" href="../css/toast.css">
 </head>
+
 <body>
-    <nav>
+    <nav id="mainNav">
         <div class="logo">
-            <img src="../Svg/Logo.png" alt="Planora Logo">
+            <img src="../Svg/Logo.png" alt="Planora">
         </div>
-        <a href="index.html">Home</a>
-        <a href="trips.html" class="active">My Trips</a>
-        <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search your trips...">
-            <i class="fa fa-search search-icon"></i>
-        </div>
-        <div class="cta-container">
-            <button class="cta-button">Quick Access</button>
-            <div class="dropdown">
-                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
-                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
-                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
+        <div class="nav-center">
+            <a href="index.html">Home</a>
+            <a href="trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
             </div>
         </div>
         <div class="auth-buttons">
@@ -149,11 +145,14 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Scripts - Load in correct order -->
-     <script src="../js/nav.js"></script>
+    <!-- Core dependencies FIRST -->
+    <script src="../js/toast.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/auth.js"></script>
-    <script src="../js/toast.js"></script>
+
+    <!-- Then dependent modules -->
+    <script src="../js/nav.js"></script>
     <script src="../js/trips.js"></script>
 </body>
+
 </html>

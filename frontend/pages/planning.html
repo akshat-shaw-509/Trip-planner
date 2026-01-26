@@ -12,29 +12,23 @@
 </head>
 
 <body>
-    <nav>
-        <div class="logo">
-            <img src="../Svg/Logo.png" alt="Planora Logo">
-        </div>
+   <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
         <a href="index.html">Home</a>
         <a href="trips.html">My Trips</a>
         <div class="search-bar">
             <input type="search" id="searchInput" placeholder="Search destinations...">
             <i class="fa fa-search search-icon"></i>
         </div>
-        <div class="cta-container">
-            <button class="cta-button">Quick Access</button>
-            <div class="dropdown">
-                <a href="planning.html"><i class="fas fa-route"></i> Plan Trip</a>
-                <a href="schedule.html"><i class="far fa-calendar-alt"></i> Schedule</a>
-                <a href="budget.html"><i class="fas fa-wallet"></i> Budget</a>
-            </div>
-        </div>
-        <div class="auth-buttons">
-            <button class="primary" onclick="window.location.href='login.html'">Login</button>
-            <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
-        </div>
-    </nav>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='signup.html'">Sign Up</button>
+    </div>
+</nav>
 
     <div class="planning-container">
         <!-- Progress Steps -->
@@ -137,7 +131,7 @@
                         <div class="form-group">
                             <label for="budget">
                                 <i class="fas fa-rupee-sign"></i>
-                                Budget (Optional)
+                                Budget
                             </label>
                             <input type="number" id="budget" name="budget" placeholder="₹ Enter your budget" min="0"
                                 step="100">
@@ -278,13 +272,14 @@
     </div>
 
     <div id="toast-container"></div>
+    
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="../js/toast.js"></script>
+<script src="../js/api-service.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/plan.js"></script>
 
-    <script src="../js/nav.js"></script>
-    <script src="../js/api-service.js"></script>
-    <script src="../js/auth.js"></script>
-    <script src="../js/toast.js"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="../js/plan.js"></script>
 
     <script>
         let currentStep = 1;
@@ -332,8 +327,8 @@
         });
 
         document.getElementById('budget')?.addEventListener('input', (e) => {
-            const value = e.target.value;
-            document.getElementById('previewBudget').textContent = value ? `₹${parseInt(value).toLocaleString()}` : '-';
+            let value = e.target.value;
+            document.getElementById('previewBudget').textContent = value ? `₹${parseInt(value).toLocaleString('en-IN')}` : '-';
         });
 
         document.getElementById('travelers')?.addEventListener('input', (e) => {
@@ -341,22 +336,19 @@
         });
 
         function updateDuration() {
-            const start = document.getElementById('startDate')?.value;
-            const end = document.getElementById('endDate')?.value;
-
+            let start = document.getElementById('startDate')?.value;
+            let end = document.getElementById('endDate')?.value;
             if (start && end) {
-                const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+                let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
                 document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
             }
         }
 
         function validateStep(currentStepNum, nextStepNum) {
-  const currentStepEl = document.getElementById(`step${currentStepNum}`);
-  
+  let currentStepEl = document.getElementById(`step${currentStepNum}`);
   // Check all inputs in the current step
-  const inputs = currentStepEl.querySelectorAll('input, select, textarea');
+  let inputs = currentStepEl.querySelectorAll('input, select, textarea');
   let isValid = true;
-  
   inputs.forEach(input => {
     if (!input.checkValidity()) {
       isValid = false;
