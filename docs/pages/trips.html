@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Trips - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/trips.css">
+    <link rel="stylesheet" href="../css/toast.css">
+</head>
+
+<body>
+    <nav id="mainNav">
+        <div class="logo">
+            <img src="../Svg/Logo.png" alt="Planora">
+        </div>
+        <div class="nav-center">
+            <a href="../index.html">Home</a>
+            <a href="./trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
+        </div>
+    </nav>
+
+    <div class="trips-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1><i class="fas fa-suitcase-rolling"></i> My Trips</h1>
+                <p>Manage and explore your travel adventures</p>
+            </div>
+            <button class="btn-create-trip" onclick="window.location.href='planning.html'">
+                <i class="fas fa-plus"></i>
+                Create New Trip
+            </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon upcoming">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="upcomingCount">0</span>
+                    <span class="stat-label">Upcoming Trips</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ongoing">
+                    <i class="fas fa-plane-departure"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="ongoingCount">0</span>
+                    <span class="stat-label">Ongoing Trips</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon completed">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="completedCount">0</span>
+                    <span class="stat-label">Completed Trips</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon countries">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countriesCount">0</span>
+                    <span class="stat-label">Countries Visited</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">
+                    <i class="fas fa-th"></i>
+                    All Trips
+                </button>
+                <button class="filter-tab" data-filter="planning">
+                    <i class="fas fa-calendar-plus"></i>
+                    Planning
+                </button>
+                <button class="filter-tab" data-filter="upcoming">
+                    <i class="fas fa-calendar-check"></i>
+                    Upcoming
+                </button>
+                <button class="filter-tab" data-filter="ongoing">
+                    <i class="fas fa-plane-departure"></i>
+                    Ongoing
+                </button>
+                <button class="filter-tab" data-filter="completed">
+                    <i class="fas fa-check-circle"></i>
+                    Completed
+                </button>
+            </div>
+            <div class="sort-section">
+                <select id="sortSelect" class="sort-select">
+                    <option value="date-desc">Latest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Trips Grid -->
+        <div class="trips-grid" id="tripsGrid">
+            <!-- Trip cards will be injected here by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" style="display: none;">
+            <div class="empty-icon">
+                <i class="fas fa-suitcase-rolling"></i>
+            </div>
+            <h2>No trips yet</h2>
+            <p>Start planning your next adventure by creating your first trip</p>
+            <button class="btn-create-trip" onclick="window.location.href='planning.html'">
+                <i class="fas fa-plus"></i>
+                Create Your First Trip
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <p>Loading your trips...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Core dependencies FIRST -->
+    <script src="../js/toast.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+
+    <!-- Then dependent modules -->
+    <script src="../js/nav.js"></script>
+    <script src="../js/trips.js"></script>
+</body>
+
+</html>
