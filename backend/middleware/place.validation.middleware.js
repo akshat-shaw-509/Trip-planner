@@ -139,3 +139,7 @@ const validatePlaceUpdate = [
   // Final validation error handler
   handleValidationErrors,
 ]
+module.exports = {
+  validatePlace,
+  validatePlaceUpdate
+}
