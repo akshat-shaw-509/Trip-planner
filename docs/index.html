@@ -15,7 +15,7 @@
            <img src="./Svg/Logo.png" alt="Planora">
         </div>
         <div class="nav-center">
-            <a href="trips.html">My Trips</a>
+            <a href="pages/trips.html">My Trips</a>
             <div class="search-bar">
                 <input type="search" id="searchInput" placeholder="Search destinations...">
                 <i class="fa fa-search search-icon"></i>
@@ -38,7 +38,7 @@
                         <i class="fas fa-plus"></i>
                         Start Planning
                     </button>
-                    <button class="btn-secondary" onclick="window.location.href='trips.html'">
+                    <button class="btn-secondary" onclick="window.location.href='pages/trips.html'">
                         <i class="fas fa-suitcase-rolling"></i>
                         View My Trips
                     </button>
@@ -250,7 +250,7 @@
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <a href="trips.html">My Trips</a>
-                <a href="planning.html">Plan New Trip</a>
+                <a href="pages/planning.html">Plan New Trip</a>
                 <a href="#">Destinations</a>
                 <a href="#">Features</a>
             </div>
@@ -294,21 +294,21 @@
 
         function handleAuthButton(type) {
             if (type === 'login') {
-                window.location.href = 'login.html';
+                window.location.href = 'pages/login.html';
             } else {
-                window.location.href = 'signup.html';
+                window.location.href = 'pages/signup.html';
             }
         }
         
         function handleAddTrip() {
             if (window.authHandler && window.authHandler.isAuthenticated()) {
-                window.location.href = 'planning.html';
+                window.location.href = 'pages/planning.html';
             } else {
                 if (window.showToast) {
                     showToast('Please login to create a trip', 'info');
                 }
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'pages/login.html';
                 }, 1500);
             }
         }
@@ -316,13 +316,13 @@
         function exploreDestination(destination) {
             if (window.authHandler && window.authHandler.isAuthenticated()) {
                 sessionStorage.setItem('prefilledDestination', destination);
-                window.location.href = 'planning.html';
+                window.location.href = 'pages/planning.html';
             } else {
                 if (window.showToast) {
                     showToast('Please login to plan your trip', 'info');
                 }
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'pages/login.html';
                 }, 1500);
             }
         }
