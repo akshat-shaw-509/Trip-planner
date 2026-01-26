@@ -200,7 +200,7 @@ function togglePassword(inputId) {
 // Load Google Client ID from backend
 async function loadGoogleClientId() {
   try {
-    const baseURL = apiService.baseURL || 'http://localhost:5000/api'
+    const baseURL = apiService.baseURL
     const response = await fetch(`${baseURL}/auth/google-client-id`)
     const data = await response.json()
     
@@ -222,7 +222,7 @@ async function handleGoogleLogin(response) {
       return
     }
 
-    const baseURL = apiService.baseURL || 'http://localhost:5000/api'
+    const baseURL = apiService.baseURL
     showToast('Signing in with Google...', 'info')
 
     const res = await fetch(`${baseURL}/auth/google`, {
