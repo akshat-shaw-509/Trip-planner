@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Activities - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/activities.css">
+</head>
+<body>
+    <nav id="mainNav">
+    <div class="logo">
+        <img src="../Svg/Logo.png" alt="Planora">
+    </div>
+    <div class="nav-center">
+        <a href="../index.html">Home</a>
+        <a href="./trips.html">My Trips</a>
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="Search destinations...">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+    </div>
+    <div class="auth-buttons">
+        <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+        <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
+    </div>
+</nav>
+
+<div class="breadcrumb">
+        <a href="./trips.html">Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <a id="tripOverviewLink" href="./trip-overview.html">Trip Overview</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Activities</span>
+    </div>
+
+    <div class="activities-container">
+        <div class="activities-header">
+            <h1>Trip Activities</h1>
+            <button class="btn-add-activity" id="addActivityBtn"><i class="fas fa-plus"></i> Add Activity</button>
+        </div>
+        <div class="filter-section">
+            <button class="filter-btn active" data-filter="all"><i class="fas fa-th"></i> All Activities</button>
+            <button class="filter-btn" data-filter="planned"><i class="far fa-clock"></i> Planned</button>
+            <button class="filter-btn" data-filter="in_progress"><i class="fas fa-play"></i> In Progress</button>
+            <button class="filter-btn" data-filter="completed"><i class="fas fa-check"></i> Completed</button>
+        </div>
+        <div class="activities-grid" id="activitiesGrid"></div>
+        <div class="empty-state" style="display:none;">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No activities yet</h3>
+            <p>Start planning by adding your first activity</p>
+            <button class="btn-add-activity" id="addActivityEmptyBtn"><i class="fas fa-plus"></i> Add Your First Activity</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Activity Modal -->
+    <div class="modal" id="activityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Activity</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="activityForm">
+                    <div class="form-group">
+                        <label for="activityTitle">Activity Title *</label>
+                        <input type="text" id="activityTitle" placeholder="e.g., Visit Eiffel Tower" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityType">Type</label>
+                        <select id="activityType">
+                            <option value="sightseeing">Sightseeing</option>
+                            <option value="dining">Dining</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="relaxation">Relaxation</option>
+                            <option value="transportation">Transportation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="activityDate">Date *</label>
+                            <input type="date" id="activityDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="activityTime">Time</label>
+                            <input type="time" id="activityTime">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityLocation">Location</label>
+                        <input type="text" id="activityLocation" placeholder="Enter location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityDescription">Description</label>
+                        <textarea id="activityDescription" rows="3" placeholder="Add details about this activity..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="activityDuration">Duration (hours)</label>
+                            <input type="number" id="activityDuration" min="0" step="0.5" placeholder="2.5">
+                        </div>
+                        <div class="form-group">
+                            <label for="activityCost">Estimated Cost (₹)</label>
+                            <input type="number" id="activityCost" min="0" placeholder="1000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityNotes">Notes</label>
+                        <textarea id="activityNotes" rows="2" placeholder="Any special notes or reminders..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Activity</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/nav.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/activities.js"></script>
+</body>
+</html>

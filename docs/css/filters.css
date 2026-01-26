@@ -1,0 +1,244 @@
+/* css/filters.css - Smart Filter & Re-rank Panel Styles */
+
+.smart-filters-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 24px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filters-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters-header h3 i {
+  color: #6366f1;
+}
+
+.filter-reset-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-reset-btn:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.filter-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.filter-chip.active {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.filter-chip i {
+  font-size: 13px;
+}
+
+.filter-chip.active i {
+  color: white;
+}
+
+.filter-results-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  padding: 8px 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.filter-results-count strong {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Category-specific chip colors */
+.filter-chip[data-filter="restaurant"].active {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.filter-chip[data-filter="attraction"].active {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.filter-chip[data-filter="accommodation"].active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.filter-chip[data-filter="transport"].active {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+/* Advanced filters section */
+.advanced-filters {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.advanced-filters.show {
+  display: block;
+}
+
+.filter-group {
+  margin-bottom: 16px;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.filter-slider {
+  width: 100%;
+}
+
+.filter-range-values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.filter-toggle-advanced {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.filter-toggle-advanced:hover {
+  color: #4f46e5;
+}
+
+.filter-toggle-advanced i {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.filter-toggle-advanced.expanded i {
+  transform: rotate(180deg);
+}
+
+/* Active filters badge */
+.active-filters-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #6366f1;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 2px 8px;
+  margin-left: 8px;
+}
+
+/* Animation for filtered results */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recommendation-card.filtered-in {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.recommendation-card.filtered-out {
+  display: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .smart-filters-container {
+    padding: 16px;
+  }
+
+  .filter-chips-grid {
+    gap: 8px;
+  }
+
+  .filter-chip {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .filters-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
