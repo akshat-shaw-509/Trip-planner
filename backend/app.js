@@ -21,6 +21,13 @@ let recommendationRoutes = require('./routes/recommendation.routes')
 let { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
 
 let app = express()
+app.get('/__debug', (req, res) => {
+  res.json({
+    message: 'DEBUG OK',
+    cors: 'github-pages-only',
+    time: new Date().toISOString()
+  });
+});
 
 /* =========================
    1. Trust proxy
@@ -126,5 +133,6 @@ app.use('/api', recommendationRoutes)
 ========================= */
 app.use(notFoundHandler)
 app.use(errorHandler)
+
 
 module.exports = app
