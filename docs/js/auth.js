@@ -45,7 +45,7 @@ let authHandler = {
       showToast('Login successful', 'success')
 
       setTimeout(() => {
-        window.location.href = './trips.html'
+        window.location.href = '/Trip-planner/index.html'
       }, 1000)
 
       return { success: true, user }
@@ -74,7 +74,7 @@ let authHandler = {
       showToast('Account created', 'success')
 
       setTimeout(() => {
-        window.location.href = './trips.html'
+        window.location.href = 'trips.html'
       }, 1000)
 
       return { success: true, user }
@@ -99,7 +99,7 @@ let authHandler = {
       console.error('Logout error:', error)
     } finally {
       this.clearAuthData()
-      window.location.href = '../index.html'
+      window.location.href = '/Trip-planner/index.html'
     }
   },
 
@@ -124,7 +124,7 @@ let authHandler = {
   // ===================== Route Guard =====================
   requireAuth() {
     if (!this.isAuthenticated()) {
-      window.location.href = '../index.html'
+      window.location.href = '/Trip-planner/index.html'
       return false
     }
     return true

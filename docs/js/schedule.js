@@ -23,7 +23,7 @@
         let token = sessionStorage.getItem('accessToken')
         if (!token) {
             showAlert('Please log in to continue', 'error')
-            setTimeout(() => window.location.href = 'index.html', 1500)
+            setTimeout(() => window.location.href = '/Trip-planner/index.html', 1500)
             return
         }
 
@@ -87,7 +87,7 @@
             logoutBtn.onclick = () => {
                 sessionStorage.removeItem('accessToken')
                 sessionStorage.removeItem('user')
-                window.location.href = 'index.html'
+                window.location.href = '/Trip-planner/index.html'
             }
         }
 

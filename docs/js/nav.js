@@ -150,13 +150,13 @@
       sessionStorage.removeItem('user');
 
       window.showToast?.('Logged out successfully', 'success');
-      window.location.href = 'index.html';
+      window.location.href = '/Trip-planner/index.html';
     } catch (err) {
       console.error('Logout failed:', err);
 
       // Force cleanup even on error
       sessionStorage.clear();
-      window.location.href = 'index.html';
+      window.location.href = '/Trip-planner/index.html';
     }
   };
 

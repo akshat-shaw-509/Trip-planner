@@ -10,7 +10,7 @@ const initTripsPage = async () => {
     // Ensure authHandler exists
     if (typeof authHandler === 'undefined') {
       console.error('authHandler not loaded')
-      window.location.href = 'login.html'
+      window.location.href = './login.html'
       return
     }
 
@@ -73,7 +73,7 @@ const loadTrips = async () => {
         showToast('Cannot connect to server. Please check backend.', 'error')
       } else if (error.message.includes('Unauthorized')) {
         showToast('Session expired. Please login again.', 'error')
-        setTimeout(() => window.location.href = 'login.html', 2000)
+        setTimeout(() => window.location.href = './login.html', 2000)
       } else {
         showToast('Failed to load trips', 'error')
       }
