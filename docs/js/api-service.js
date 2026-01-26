@@ -1,9 +1,7 @@
 // ===================== API Service =====================
 const apiService = {
-  baseURL: window.location.hostname.includes('github.io')
-  ? 'https://trip-planner-backend.onrender.com/api'
-  : 'http://localhost:5000/api',
-
+ // ...existing code...
+  baseURL: window.config.API_BASE_URL,
   // ===================== Auth =====================
   auth: {
     login: (data) => apiService.post('/auth/login', data),
