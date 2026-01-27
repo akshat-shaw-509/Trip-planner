@@ -1,9 +1,43 @@
-
 let express = require('express')
 let router = express.Router()
 let placeController = require('../controllers/place.controller')
 let { authenticate } = require('../middleware/auth.middleware')
 let { validatePlace, validatePlaceUpdate } = require('../middleware/place.validation.middleware')
+let { geocodeLocation } = require('../services/geoapifyService') // ✅ ADD THIS
+
+// ✅ ADD THIS PUBLIC ENDPOINT (before authenticate middleware)
+router.post('/geocode', async (req, res) => {
+  try {
+    const { location } = req.body
+    
+    if (!location) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Location is required' 
+      })
+    }
+
+    const coords = await geocodeLocation(location)
+    
+    if (!coords) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Location not found' 
+      })
+    }
+
+    res.json({ 
+      success: true, 
+      data: coords 
+    })
+  } catch (error) {
+    console.error('Geocoding error:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: 'Geocoding failed' 
+    })
+  }
+})
 
 router.use(authenticate)
 
