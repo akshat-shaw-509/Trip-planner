@@ -1,6 +1,5 @@
 // =====================================================================
-// TRIP CENTER SELECTOR - FIXED VERSION
-// All functions defined before use to avoid hoisting issues
+// TRIP CENTER SELECTOR - FINAL VERSION WITH API KEY FALLBACKS
 // =====================================================================
 
 let tripCenterState = {
@@ -8,7 +7,7 @@ let tripCenterState = {
   searchResults: [],
   isSearching: false,
   selectedLocation: null,
-  geoapifyApiKey: null // Will be loaded from backend
+  geoapifyApiKey: null // Will be loaded from backend or config
 }
 
 // -------------------------------------------------------
@@ -21,9 +20,10 @@ function escapeHtml(text) {
 }
 
 // -------------------------------------------------------
-// API KEY LOADING
+// API KEY LOADING WITH MULTIPLE FALLBACK OPTIONS
 // -------------------------------------------------------
 async function loadGeoapifyApiKey() {
+  // Option 1: Try to load from backend endpoint
   try {
     const baseURL = apiService.baseURL || 'http://localhost:5000/api'
     const token = sessionStorage.getItem('accessToken')
@@ -35,25 +35,39 @@ async function loadGeoapifyApiKey() {
       }
     })
     
-    if (!response.ok) {
-      console.error('Failed to load Geoapify API key - Status:', response.status)
-      return false
-    }
-    
-    const data = await response.json()
-    
-    if (data.success && data.apiKey) {
-      tripCenterState.geoapifyApiKey = data.apiKey
-      console.log('✓ Geoapify API key loaded successfully')
-      return true
-    } else {
-      console.error('Failed to load Geoapify API key')
-      return false
+    if (response.ok) {
+      const data = await response.json()
+      
+      if (data.success && data.apiKey) {
+        tripCenterState.geoapifyApiKey = data.apiKey
+        console.log('✓ Geoapify API key loaded from backend')
+        return true
+      }
     }
   } catch (error) {
-    console.error('Error loading Geoapify API key:', error)
-    return false
+    console.warn('Backend API key endpoint not available:', error.message)
   }
+
+  // Option 2: Try to load from window config (if set in HTML)
+  if (window.GEOAPIFY_API_KEY) {
+    tripCenterState.geoapifyApiKey = window.GEOAPIFY_API_KEY
+    console.log('✓ Geoapify API key loaded from window config')
+    return true
+  }
+
+  // Option 3: Try to load from config.js if it exists
+  if (typeof CONFIG !== 'undefined' && CONFIG.GEOAPIFY_API_KEY) {
+    tripCenterState.geoapifyApiKey = CONFIG.GEOAPIFY_API_KEY
+    console.log('✓ Geoapify API key loaded from CONFIG')
+    return true
+  }
+
+  console.error('❌ Failed to load Geoapify API key from any source')
+  console.info('ℹ️  To fix this, add the API key in one of these ways:')
+  console.info('   1. Create backend endpoint: GET /api/config/geoapify-api-key')
+  console.info('   2. Add to HTML: <script>window.GEOAPIFY_API_KEY = "your_key"</script>')
+  console.info('   3. Add to config.js: CONFIG.GEOAPIFY_API_KEY = "your_key"')
+  return false
 }
 
 // -------------------------------------------------------
@@ -157,7 +171,7 @@ async function calculateTripCenter(tripData) {
 
   // Priority 1: Use saved coordinates if they exist
   if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
-    console.log('Using saved trip coordinates')
+    console.log('✓ Using saved trip coordinates')
     return {
       lat: tripData.destinationCoords[1],
       lon: tripData.destinationCoords[0],
@@ -167,7 +181,7 @@ async function calculateTripCenter(tripData) {
 
   // Priority 2: Geocode the destination automatically (only if API key is loaded)
   if (tripData.destination && tripCenterState.geoapifyApiKey) {
-    console.log('Auto-geocoding destination:', tripData.destination)
+    console.log('📍 Auto-geocoding destination:', tripData.destination)
     
     try {
       const geocoded = await geocodeDestination(tripData.destination)
@@ -188,7 +202,7 @@ async function calculateTripCenter(tripData) {
       console.error('Geocoding failed:', err.message)
     }
   } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
-    console.warn('Skipping geocoding - API key not available')
+    console.warn('⚠️  Skipping geocoding - API key not available')
   }
 
   // Priority 3: Calculate from added places
@@ -204,8 +218,8 @@ async function calculateTripCenter(tripData) {
     }
   }
 
-  // Fallback: Default location
-  console.warn('Using default location (India center)')
+  // Fallback: Default location (center of India)
+  console.warn('⚠️  Using default location - consider adding coordinates or enabling geocoding')
   return { 
     lat: 20.5937, 
     lon: 78.9629, 
@@ -273,7 +287,7 @@ function updateTripCenterBanner() {
 // MAIN INITIALIZATION FUNCTION
 // -------------------------------------------------------
 async function initTripCenterSelector(tripData) {
-  console.log('Initializing trip center with data:', tripData)
+  console.log('🚀 Initializing trip center with data:', tripData)
   
   // Load API key first
   await loadGeoapifyApiKey()
@@ -281,7 +295,7 @@ async function initTripCenterSelector(tripData) {
   // Calculate center automatically from trip destination
   tripCenterState.currentCenter = await calculateTripCenter(tripData)
   
-  console.log('Trip center calculated:', tripCenterState.currentCenter)
+  console.log('📍 Trip center calculated:', tripCenterState.currentCenter)
 
   // Render UI and attach events
   renderTripCenterUI()
@@ -292,6 +306,9 @@ async function initTripCenterSelector(tripData) {
 // MODAL FUNCTIONS
 // -------------------------------------------------------
 function openTripCenterModal() {
+  // Check if geocoding is available
+  const canSearch = tripCenterState.geoapifyApiKey !== null
+  
   const modal = document.createElement('div')
   modal.className = 'modal active'
   modal.id = 'tripCenterModal'
@@ -315,6 +332,7 @@ function openTripCenterModal() {
           </p>
         </div>
 
+        ${canSearch ? `
         <!-- Search -->
         <div class="trip-center-search">
           <div class="search-input-group">
@@ -331,12 +349,19 @@ function openTripCenterModal() {
           </div>
           <div id="searchResults" class="search-results"></div>
         </div>
+        ` : `
+        <div class="trip-center-warning" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+          <strong>Search unavailable</strong> - Geoapify API key not configured. 
+          You can still use the quick options below.
+        </div>
+        `}
 
         <!-- Quick Options -->
         <div class="trip-center-quick-options">
           <h4>Quick Options</h4>
           <div class="quick-options-grid">
-            <button onclick="useDestinationCenter()">
+            <button onclick="useDestinationCenter()" ${!canSearch ? 'disabled title="API key required"' : ''}>
               <i class="fas fa-city"></i> City Center
             </button>
             <button onclick="useFirstPlace()">
@@ -370,7 +395,10 @@ function openTripCenterModal() {
   `
 
   document.body.appendChild(modal)
-  setupSearchHandlers()
+  
+  if (canSearch) {
+    setupSearchHandlers()
+  }
 }
 
 function closeTripCenterModal() {
@@ -381,6 +409,8 @@ function setupSearchHandlers() {
   const input = document.getElementById('tripCenterSearch')
   const clearBtn = document.getElementById('btnSearchClear')
   const saveBtn = document.getElementById('btnSaveCenter')
+
+  if (!input) return
 
   let timeout
 
@@ -484,6 +514,11 @@ async function useDestinationCenter() {
   const tripData = recommendationsState?.tripData
   if (!tripData?.destination) {
     showToast('No destination set for this trip', 'error')
+    return
+  }
+
+  if (!tripCenterState.geoapifyApiKey) {
+    showToast('Geocoding unavailable - API key not configured', 'error')
     return
   }
 
