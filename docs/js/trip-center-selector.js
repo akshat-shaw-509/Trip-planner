@@ -7,6 +7,15 @@ let tripCenterState = {
 }
 
 // -------------------------------------------------------
+// Escape HTML (XSS safety) - Defined early as it's used everywhere
+// -------------------------------------------------------
+function escapeHtml(text) {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+// -------------------------------------------------------
 // Load Geoapify API Key from Backend
 // -------------------------------------------------------
 async function loadGeoapifyApiKey() {
@@ -25,90 +34,6 @@ async function loadGeoapifyApiKey() {
   } catch (error) {
     console.error('Error loading Geoapify API key:', error)
     return false
-  }
-}
-
-// -------------------------------------------------------
-// Initialize Trip Center Selector
-// -------------------------------------------------------
-async function initTripCenterSelector(tripData) {
-  console.log('Initializing trip center with data:', tripData)
-  
-  // Load API key first
-  await loadGeoapifyApiKey()
-  
-  // Calculate center automatically from trip destination
-  tripCenterState.currentCenter = await calculateTripCenter(tripData)
-  
-  console.log('Trip center calculated:', tripCenterState.currentCenter)
-
-  // Render UI and attach events
-  renderTripCenterUI()
-  attachTripCenterListeners()
-}
-
-// -------------------------------------------------------
-// Calculate Trip Center (AUTO)
-// -------------------------------------------------------
-async function calculateTripCenter(tripData) {
-  if (!tripData) {
-    console.warn('No trip data provided')
-    return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
-  }
-
-  // Priority 1: Use saved coordinates if they exist
-  if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
-    console.log('Using saved trip coordinates')
-    return {
-      lat: tripData.destinationCoords[1],
-      lon: tripData.destinationCoords[0],
-      formatted: tripData.destination || 'Trip Center'
-    }
-  }
-
-  // Priority 2: Geocode the destination automatically
-  if (tripData.destination) {
-    console.log('Auto-geocoding destination:', tripData.destination)
-    
-    try {
-      const geocoded = await geocodeDestination(tripData.destination)
-      
-      if (geocoded) {
-        console.log('✓ Geocoded successfully:', geocoded.formatted)
-        
-        // Save coordinates to trip for future use
-        await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
-        
-        return {
-          lat: geocoded.lat,
-          lon: geocoded.lon,
-          formatted: geocoded.formatted || tripData.destination
-        }
-      }
-    } catch (err) {
-      console.error('Geocoding failed:', err.message)
-    }
-  }
-
-  // Priority 3: Calculate from added places
-  if (tripData._id) {
-    try {
-      const center = await calculateCenterFromPlaces(tripData._id)
-      if (center) {
-        console.log('✓ Calculated center from places:', center)
-        return center
-      }
-    } catch (err) {
-      console.error('Failed to calculate from places:', err.message)
-    }
-  }
-
-  // Fallback: Default location
-  console.warn('Using default location (India center)')
-  return { 
-    lat: 20.5937, 
-    lon: 78.9629, 
-    formatted: tripData.destination || 'Default Location' 
   }
 }
 
@@ -203,6 +128,71 @@ async function calculateCenterFromPlaces(tripId) {
 }
 
 // -------------------------------------------------------
+// Calculate Trip Center (AUTO)
+// -------------------------------------------------------
+async function calculateTripCenter(tripData) {
+  if (!tripData) {
+    console.warn('No trip data provided')
+    return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
+  }
+
+  // Priority 1: Use saved coordinates if they exist
+  if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
+    console.log('Using saved trip coordinates')
+    return {
+      lat: tripData.destinationCoords[1],
+      lon: tripData.destinationCoords[0],
+      formatted: tripData.destination || 'Trip Center'
+    }
+  }
+
+  // Priority 2: Geocode the destination automatically
+  if (tripData.destination) {
+    console.log('Auto-geocoding destination:', tripData.destination)
+    
+    try {
+      const geocoded = await geocodeDestination(tripData.destination)
+      
+      if (geocoded) {
+        console.log('✓ Geocoded successfully:', geocoded.formatted)
+        
+        // Save coordinates to trip for future use
+        await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
+        
+        return {
+          lat: geocoded.lat,
+          lon: geocoded.lon,
+          formatted: geocoded.formatted || tripData.destination
+        }
+      }
+    } catch (err) {
+      console.error('Geocoding failed:', err.message)
+    }
+  }
+
+  // Priority 3: Calculate from added places
+  if (tripData._id) {
+    try {
+      const center = await calculateCenterFromPlaces(tripData._id)
+      if (center) {
+        console.log('✓ Calculated center from places:', center)
+        return center
+      }
+    } catch (err) {
+      console.error('Failed to calculate from places:', err.message)
+    }
+  }
+
+  // Fallback: Default location
+  console.warn('Using default location (India center)')
+  return { 
+    lat: 20.5937, 
+    lon: 78.9629, 
+    formatted: tripData.destination || 'Default Location' 
+  }
+}
+
+// -------------------------------------------------------
 // Render Banner UI (above recommendations)
 // -------------------------------------------------------
 function renderTripCenterUI() {
@@ -248,6 +238,25 @@ function renderTripCenterUI() {
 function attachTripCenterListeners() {
   const btn = document.getElementById('btnChangeCenter')
   if (btn) btn.onclick = openTripCenterModal
+}
+
+// -------------------------------------------------------
+// Initialize Trip Center Selector
+// -------------------------------------------------------
+async function initTripCenterSelector(tripData) {
+  console.log('Initializing trip center with data:', tripData)
+  
+  // Load API key first
+  await loadGeoapifyApiKey()
+  
+  // Calculate center automatically from trip destination
+  tripCenterState.currentCenter = await calculateTripCenter(tripData)
+  
+  console.log('Trip center calculated:', tripCenterState.currentCenter)
+
+  // Render UI and attach events
+  renderTripCenterUI()
+  attachTripCenterListeners()
 }
 
 // -------------------------------------------------------
@@ -628,15 +637,6 @@ function updateTripCenterBanner() {
 // -------------------------------------------------------
 function closeTripCenterModal() {
   document.getElementById('tripCenterModal')?.remove()
-}
-
-// -------------------------------------------------------
-// Escape HTML (XSS safety)
-// -------------------------------------------------------
-function escapeHtml(text) {
-  const div = document.createElement('div')
-  div.textContent = text
-  return div.innerHTML
 }
 
 // -------------------------------------------------------
