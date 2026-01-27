@@ -6,7 +6,7 @@ const API_BASE_URL = window.location.hostname.includes('github.io')
 const APP_NAME = 'Planora'
 
 // ✅ ADD THIS
-const GEOAPIFY_API_KEY = 133144445c81412f85c94c986b2c1831
+const GEOAPIFY_API_KEY = "133144445c81412f85c94c986b2c1831"
 
 // ✅ USE CAPITAL CONFIG (important)
 window.CONFIG = {
