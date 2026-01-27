@@ -1,32 +1,18 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/env');
 
-const transporter = nodemailer.createTransport({
-  service: config.email.service,
-  auth: {
-    user: config.email.user,
-    pass: config.email.password,
-  },
-});
-/**
- * -------------------- Transporter Helper --------------------
- * Creates and returns a Nodemailer transporter
- */
-const getTransporter = () => {
-  // If email credentials are missing, disable email functionality
-  if (!config.email.user || !config.email.password) {
-    console.warn('Email service not configured. Email functionality will be disabled.')
-    return null
-  }
+let transporter = null;
 
-  // Create SMTP transporter
-  return nodemailer.createTransport({
+if (config.email.user && config.email.password) {
+  transporter = nodemailer.createTransport({
     service: config.email.service,
     auth: {
       user: config.email.user,
-      pass: config.email.password
-    }
-  })
+      pass: config.email.password,
+    },
+  });
+} else {
+  console.warn('Email service not configured. Email functionality disabled.');
 }
 
 /**
@@ -34,18 +20,14 @@ const getTransporter = () => {
  * Sends a generic email
  */
 let sendEmail = async (to, subject, html, text = null) => {
-  let transporter = getTransporter()
-
-  // Gracefully exit if email service is disabled
   if (!transporter) {
-    console.warn('Email not sent - service not configured')
+    console.warn('Email not sent - transporter not configured')
     return { messageId: null, success: false }
   }
-
   try {
     // Mail configuration
     let mailOptions = {
-      from: `Planora <${config.email.from}>`,
+      from: `Planora <${config.email.user}>`,
       to,
       subject,
       html,
@@ -93,26 +75,57 @@ let sendWelcomeEmail = async (user) => {
 /**
  * Send password reset email
  */
-const sendPasswordResetEmail = async (user, resetToken) => {
-  const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}`
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px;">
-      <h1 style="color: #3b82f6;">Reset Your Password</h1>
-      <p>Hi <strong>${user.name}</strong>,</p>
-      <p>Click below to reset your password (expires in 1 hour):</p>
-      <a href="${resetUrl}" 
-         style="display: inline-block; padding: 12px 24px; background: #3b82f6; 
-                color: white; text-decoration: none; border-radius: 6px;">
-        Reset Password
-      </a>
-      <p>Ignore if you didn't request this.</p>
-      <p>The Planora Team</p>
-    </div>
-  `
-
-  return sendEmail(user.email, 'Password Reset', html)
+const sendPasswordResetEmail = async (email, resetToken) => {
+  if (!transporter) {
+  console.warn('Password reset email not sent - transporter not configured');
+  return;
 }
+  const resetURL = `${process.env.FRONTEND_URL}/pages/login.html?reset=${resetToken}`;
+
+  const mailOptions = {
+    from: `Planora <${config.email.user}>`,
+    to: email,
+    subject: 'Password Reset Request - Planora',
+    html: `<!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <p>Hi there,</p>
+            <p>We received a request to reset your password for your Planora account.</p>
+            <p>Click the button below to reset your password:</p>
+            <p style="text-align: center;">
+              <a href="${resetURL}" class="button">Reset My Password</a>
+            </p>
+            <p><strong>This link will expire in 1 hour.</strong></p>
+            <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
+            <p>For security reasons, we cannot reset your password without you clicking the link above.</p>
+          </div>
+          <div class="footer">
+            <p>© 2024 Planora. All rights reserved.</p>
+            <p>This is an automated email, please do not reply.</p>
+          </div>
+        </div>
+      </body>
+      </html>`
+  };
+  return transporter.sendMail(mailOptions);
+};
+
 
 /**
  * Send trip invitation email
@@ -167,9 +180,8 @@ const sendVerificationEmail = async (user, verifyToken) => {
  * Export email service functions
  */
 module.exports = {
-  sendEmail,
-  sendVerificationEmail,
-  sendWelcomeEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
+  sendVerificationEmail,
   sendTripInvitation,
 }
