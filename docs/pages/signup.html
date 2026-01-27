@@ -214,24 +214,10 @@
     </div>
 
     <div id="toast" class="toast hidden"></div>
-
-    <!-- ============================================
-         CRITICAL FIX: Scripts in correct order
-         ============================================ -->
-    
-    <!-- 1. Config MUST load first -->
     <script src="../js/config.js"></script>
-    
-    <!-- 2. API Service (depends on config) -->
     <script src="../js/api-service.js"></script>
-    
-    <!-- 3. Toast utility -->
     <script src="../js/toast.js"></script>
-    
-    <!-- 4. Auth handler -->
     <script src="../js/auth.js"></script>
-    
-    <!-- 5. Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGoogleScriptLoad()"></script>
 
     <script>
