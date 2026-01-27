@@ -148,9 +148,20 @@
     </div>
     <div id="toast" class="toast hidden"></div>
 
+    <!-- CRITICAL: Load scripts in this exact order -->
+    <!-- 1. Config MUST load first -->
+    <script src="../js/config.js"></script>
+    
+    <!-- 2. Then API service (depends on config) -->
     <script src="../js/api-service.js"></script>
+    
+    <!-- 3. Then toast utility -->
     <script src="../js/toast.js"></script>
+    
+    <!-- 4. Then auth (depends on api-service and toast) -->
     <script src="../js/auth.js"></script>
+    
+    <!-- 5. Finally Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGoogleScriptLoad()"></script>
     
     <script>
