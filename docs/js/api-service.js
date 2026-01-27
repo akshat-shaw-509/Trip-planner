@@ -153,7 +153,7 @@ const apiService = {
   },
 
   // Auth endpoints
-  auth: {
+    auth: {
     async register(data) {
       return await apiService.request('/auth/register', {
         method: 'POST',
@@ -166,14 +166,14 @@ const apiService = {
         method: 'POST',
         body: JSON.stringify(data)
       });
-      
+
       if (response.accessToken) {
         sessionStorage.setItem('accessToken', response.accessToken);
         if (response.refreshToken) {
           sessionStorage.setItem('refreshToken', response.refreshToken);
         }
       }
-      
+
       return response;
     },
 
@@ -185,8 +185,23 @@ const apiService = {
       } finally {
         sessionStorage.clear();
       }
+    },
+
+    async forgotPassword(email) {
+      return await apiService.request('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+      });
+    },
+
+    async resetPassword(token, password) {
+      return await apiService.request(`/auth/reset-password/${token}`, {
+        method: 'POST',
+        body: JSON.stringify({ password })
+      });
     }
   },
+
 
   // Trip endpoints
   trips: {
