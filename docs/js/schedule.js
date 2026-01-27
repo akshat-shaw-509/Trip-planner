@@ -1,4 +1,4 @@
-// SCHEDULE.JS - FRESH COPY - DELETE OLD FILE FIRST
+// SCHEDULE.JS - FIXED VERSION WITH API SERVICE CHECK
 (function() {
     'use strict'
 
@@ -18,6 +18,30 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('Schedule page initializing...')
+
+        // ✅ CRITICAL FIX: Check if apiService is loaded
+        if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined') {
+            console.error('apiService not loaded! Waiting...')
+            
+            // Wait up to 3 seconds for apiService to load
+            let retries = 0
+            while ((typeof window.apiService === 'undefined' && typeof apiService === 'undefined') && retries < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100))
+                retries++
+            }
+            
+            if (typeof window.apiService === 'undefined' && typeof apiService === 'undefined') {
+                showAlert('Failed to load API service. Please refresh the page.', 'error')
+                return
+            }
+            
+            console.log('apiService loaded after waiting')
+        }
+
+        // Make sure apiService is available globally
+        if (typeof window.apiService === 'undefined' && typeof apiService !== 'undefined') {
+            window.apiService = apiService
+        }
 
         // Check authentication
         let token = sessionStorage.getItem('accessToken')
@@ -106,7 +130,10 @@
     async function loadTripData() {
         try {
             console.log('Fetching trip data...')
-            let response = await window.apiService.trips.getById(tripId)
+            
+            // Use whichever apiService is available
+            const api = window.apiService || apiService
+            const response = await api.trips.getById(tripId)
 
             if (!response || !response.data) {
                 throw new Error('Invalid response from server')
@@ -142,7 +169,10 @@
     async function loadActivities() {
         try {
             console.log('Fetching activities...')
-            let response = await window.apiService.activities.getByTrip(tripId)
+            
+            // Use whichever apiService is available
+            const api = window.apiService || apiService
+            const response = await api.activities.getByTrip(tripId)
 
             console.log('Activities response:', response)
 
@@ -462,11 +492,9 @@
             return
         }
 
-        let activityDate = startTime.split('T')[0]
-
         let activityData = {
             title,
-            type,                        // MUST be called "type"
+            type,
             startTime: new Date(startTime).toISOString(),
             endTime: endTime ? new Date(endTime).toISOString() : null,
             visitStatus: 'planned',
@@ -476,11 +504,14 @@
         console.log('Sending activity payload:', activityData)
 
         try {
+            // Use whichever apiService is available
+            const api = window.apiService || apiService
+            
             if (currentActivityId) {
-                await window.apiService.activities.update(currentActivityId, activityData)
+                await api.activities.update(currentActivityId, activityData)
                 showAlert('Activity updated successfully', 'success')
             } else {
-                await window.apiService.activities.create(tripId, activityData)
+                await api.activities.create(tripId, activityData)
                 showAlert('Activity created successfully', 'success')
             }
 
@@ -517,11 +548,6 @@
         }
     }
 
-    // Export schedule
-    function exportSchedule() {
-        showAlert('Export feature coming soon!', 'info')
-    }
-
     // Utility functions
     function formatTime(date) {
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -534,16 +560,13 @@
     }
 
     function formatDate(input) {
-        // Handle both Date objects and date strings
         let d = input instanceof Date ? input : new Date(input)
         
-        // Validate the date
         if (isNaN(d.getTime())) {
             console.error('Invalid date:', input)
-            return '1970-01-01' // Fallback
+            return '1970-01-01'
         }
         
-        // Get year, month, day in local timezone
         let year = d.getFullYear()
         let month = String(d.getMonth() + 1).padStart(2, '0')
         let day = String(d.getDate()).padStart(2, '0')
@@ -554,7 +577,6 @@
     function showAlert(message, type = 'info') {
         console.log(`[${type.toUpperCase()}] ${message}`)
 
-        // Create toast notification
         let toast = document.createElement('div')
         toast.className = `toast toast-${type}`
         toast.textContent = message
@@ -605,7 +627,7 @@
                 status: activity.status,
                 startTime: segmentStart.toISOString(),
                 endTime: segmentEnd.toISOString(),
-                _segmentOf: isFirst ? null : activity._id   // only mark continued if NOT first
+                _segmentOf: isFirst ? null : activity._id
             })
 
             isFirst = false
@@ -641,5 +663,5 @@
     `
     document.head.appendChild(style)
 
-    console.log('Schedule module loaded (no duplicates)')
+    console.log('Schedule module loaded successfully')
 })()
