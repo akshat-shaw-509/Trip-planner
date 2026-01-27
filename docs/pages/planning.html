@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan Your Trip - Planora</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/planning.css">
 </head>
@@ -273,7 +273,14 @@
 
     <div id="toast-container"></div>
     
-<!-- 1. Config FIRST -->
+<!-- ============================================
+     CRITICAL: Load scripts in correct order
+     ============================================ -->
+
+<!-- 0. External libraries FIRST (Leaflet for maps) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- 1. Config -->
 <script src="../js/config.js"></script>
 
 <!-- 2. API Service -->
@@ -288,94 +295,92 @@
 <!-- 5. Nav -->
 <script src="../js/nav.js"></script>
 
-<!-- 6. Page script (plan.js or planning.js) -->
+<!-- 6. Page script (plan.js) -->
 <script src="../js/plan.js"></script>
 
-    <script>
-        let currentStep = 1;
+<!-- 7. Inline scripts for UI -->
+<script>
+    let currentStep = 1;
 
-        function nextStep(step) {
-            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.step').forEach((s, i) => {
-                s.classList.remove('active');
-                if (i < step) s.classList.add('completed');
-            });
-
-            document.getElementById('step' + step).classList.add('active');
-            document.querySelectorAll('.step')[step - 1].classList.add('active');
-            currentStep = step;
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function initializeMap() {
-            if (typeof L !== 'undefined') {
-                map = L.map('map').setView([20.5937, 78.9629], 5)
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map)
-
-                let destinationInput = document.getElementById('destination')
-                if (destinationInput) {
-                    destinationInput.addEventListener('change', updateMapLocation)
-                }
-            }
-        }
-
-        function prevStep(step) {
-            nextStep(step);
-        }
-
-        // Live preview updates
-        document.getElementById('title')?.addEventListener('input', (e) => {
-            document.getElementById('previewTitle').textContent = e.target.value || '-';
+    function nextStep(step) {
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.step').forEach((s, i) => {
+            s.classList.remove('active');
+            if (i < step) s.classList.add('completed');
         });
 
-        document.getElementById('destination')?.addEventListener('input', (e) => {
-            document.getElementById('previewDestination').textContent = e.target.value || '-';
-        });
+        document.getElementById('step' + step).classList.add('active');
+        document.querySelectorAll('.step')[step - 1].classList.add('active');
+        currentStep = step;
 
-        document.getElementById('budget')?.addEventListener('input', (e) => {
-            let value = e.target.value;
-            document.getElementById('previewBudget').textContent = value ? `₹${parseInt(value).toLocaleString('en-IN')}` : '-';
-        });
-
-        document.getElementById('travelers')?.addEventListener('input', (e) => {
-            document.getElementById('previewTravelers').textContent = e.target.value || '1';
-        });
-
-        function updateDuration() {
-            let start = document.getElementById('startDate')?.value;
-            let end = document.getElementById('endDate')?.value;
-            if (start && end) {
-                let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
-                document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
-            }
-        }
-
-        function validateStep(currentStepNum, nextStepNum) {
-  let currentStepEl = document.getElementById(`step${currentStepNum}`);
-  // Check all inputs in the current step
-  let inputs = currentStepEl.querySelectorAll('input, select, textarea');
-  let isValid = true;
-  inputs.forEach(input => {
-    if (!input.checkValidity()) {
-      isValid = false;
-      // Show the browser's default popup for the specific field
-      input.reportValidity();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  });
-  
-  // Only proceed if all fields in current step are valid
-  if (isValid) {
-    nextStep(nextStepNum);
-  }
-}
 
-        document.getElementById('startDate')?.addEventListener('change', updateDuration);
-        document.getElementById('endDate')?.addEventListener('change', updateDuration);
-    </script>
+    function initializeMap() {
+        if (typeof L !== 'undefined') {
+            map = L.map('map').setView([20.5937, 78.9629], 5)
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map)
+
+            let destinationInput = document.getElementById('destination')
+            if (destinationInput) {
+                destinationInput.addEventListener('change', updateMapLocation)
+            }
+        }
+    }
+
+    function prevStep(step) {
+        nextStep(step);
+    }
+
+    // Live preview updates
+    document.getElementById('title')?.addEventListener('input', (e) => {
+        document.getElementById('previewTitle').textContent = e.target.value || '-';
+    });
+
+    document.getElementById('destination')?.addEventListener('input', (e) => {
+        document.getElementById('previewDestination').textContent = e.target.value || '-';
+    });
+
+    document.getElementById('budget')?.addEventListener('input', (e) => {
+        let value = e.target.value;
+        document.getElementById('previewBudget').textContent = value ? `₹${parseInt(value).toLocaleString('en-IN')}` : '-';
+    });
+
+    document.getElementById('travelers')?.addEventListener('input', (e) => {
+        document.getElementById('previewTravelers').textContent = e.target.value || '1';
+    });
+
+    function updateDuration() {
+        let start = document.getElementById('startDate')?.value;
+        let end = document.getElementById('endDate')?.value;
+        if (start && end) {
+            let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+            document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
+        }
+    }
+
+    function validateStep(currentStepNum, nextStepNum) {
+        let currentStepEl = document.getElementById(`step${currentStepNum}`);
+        let inputs = currentStepEl.querySelectorAll('input, select, textarea');
+        let isValid = true;
+        inputs.forEach(input => {
+            if (!input.checkValidity()) {
+                isValid = false;
+                input.reportValidity();
+            }
+        });
+        
+        if (isValid) {
+            nextStep(nextStepNum);
+        }
+    }
+
+    document.getElementById('startDate')?.addEventListener('change', updateDuration);
+    document.getElementById('endDate')?.addEventListener('change', updateDuration);
+</script>
 </body>
 
 </html>
