@@ -2,6 +2,19 @@
 
 // ===================== Page Initialization =====================
 document.addEventListener('DOMContentLoaded', () => {
+  // Check if required dependencies are loaded
+  if (typeof authHandler === 'undefined') {
+    console.error('authHandler not loaded yet');
+    setTimeout(() => location.reload(), 1000);
+    return;
+  }
+
+  if (typeof apiService === 'undefined') {
+    console.error('apiService not loaded yet');
+    setTimeout(() => location.reload(), 1000);
+    return;
+  }
+
   // Ensure user is authenticated before allowing trip creation
   if (!authHandler.requireAuth()) {
     return;
@@ -48,6 +61,13 @@ function initializePlanningForm() {
 async function handleTripCreation(e) {
   e.preventDefault();
 
+  // Safety check
+  if (typeof apiService === 'undefined') {
+    console.error('apiService is not defined');
+    showToast('Error: API service not loaded. Please refresh the page.', 'error');
+    return;
+  }
+
   const formData = new FormData(e.target);
 
   // Parse comma-separated tags into an array
@@ -87,7 +107,9 @@ async function handleTripCreation(e) {
       throw new Error(response?.message || 'Trip creation failed');
     }
 
-    showToast('Trip created successfully!', 'success');
+    if (typeof showToast === 'function') {
+      showToast('Trip created successfully!', 'success');
+    }
 
     // Redirect to trip overview after short delay
     setTimeout(() => {
@@ -96,7 +118,12 @@ async function handleTripCreation(e) {
 
   } catch (error) {
     console.error('Trip creation error:', error);
-    showToast(error.message || 'Failed to create trip', 'error');
+    
+    if (typeof showToast === 'function') {
+      showToast(error.message || 'Failed to create trip', 'error');
+    } else {
+      alert(error.message || 'Failed to create trip');
+    }
 
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalText;
