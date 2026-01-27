@@ -215,7 +215,6 @@ const forgotPassword = async (req, res) => {
     })
   }
 }
-
 /**
  * Reset password using token
  * POST /api/auth/reset-password/:token
@@ -320,5 +319,6 @@ module.exports = {
   changePassword,
   googleLogin
 }
+
 
 
