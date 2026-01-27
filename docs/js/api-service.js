@@ -1,5 +1,5 @@
 // ============================================================
-// ENHANCED API SERVICE WITH TOKEN REFRESH
+// ENHANCED API SERVICE WITH TOKEN REFRESH - FIXED EXPENSE ROUTES
 // ============================================================
 
 const apiService = {
@@ -254,14 +254,14 @@ const apiService = {
     }
   },
 
-    // Expense endpoints
+  // Expense endpoints - FIXED TO MATCH BACKEND ROUTES
   expenses: {
     async getByTrip(tripId) {
-      return await apiService.request(`/expenses/trip/${tripId}`);
+      return await apiService.request(`/expenses/trips/${tripId}/expenses`);
     },
 
     async create(tripId, data) {
-      return await apiService.request(`/expenses/trip/${tripId}`, {
+      return await apiService.request(`/expenses/trips/${tripId}/expenses`, {
         method: 'POST',
         body: JSON.stringify(data)
       });
@@ -278,9 +278,17 @@ const apiService = {
       return await apiService.request(`/expenses/${expenseId}`, {
         method: 'DELETE'
       });
+    },
+
+    // Additional helper methods matching backend capabilities
+    async getSummary(tripId) {
+      return await apiService.request(`/expenses/trips/${tripId}/expenses/summary`);
+    },
+
+    async getByCategory(tripId) {
+      return await apiService.request(`/expenses/trips/${tripId}/expenses/by-category`);
     }
   },
-
 
   // Schedule endpoints
   schedules: {
@@ -342,4 +350,4 @@ const apiService = {
 // Make it globally available
 window.apiService = apiService;
 
-console.log('✅ Enhanced API Service loaded with auto-refresh');
+console.log('✅ Enhanced API Service loaded with auto-refresh (EXPENSE ROUTES FIXED)');
