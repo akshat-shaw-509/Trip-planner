@@ -24,7 +24,7 @@ const register = async (req, res) => {
     emailService
       .sendVerificationEmail(
         result.user.email,
-        result.user.verificationToken
+        result.verificationToken
       )
       .catch(err => console.error('Verification email failed:', err))
 
@@ -319,6 +319,7 @@ module.exports = {
   changePassword,
   googleLogin
 }
+
 
 
 
