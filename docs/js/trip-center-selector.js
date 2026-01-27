@@ -12,14 +12,28 @@ let tripCenterState = {
 async function loadGeoapifyApiKey() {
   try {
     const baseURL = apiService.baseURL || 'http://localhost:5000/api'
-    const response = await fetch(`${baseURL}/config/geoapify-api-key`)
+    // ✅ FIX: Fetch without credentials to avoid 401
+    const response = await fetch(`${baseURL}/config/geoapify-api-key`, {
+      method: 'GET',
+      credentials: 'omit', // Don't send cookies/auth
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      console.error(`Failed to load API key: ${response.status} ${response.statusText}`)
+      return false
+    }
+    
     const data = await response.json()
     
-    if (data.success && data.apiKey) {
-      tripCenterState.geoapifyApiKey = data.apiKey
+    if (data.success && data.data && data.data.apiKey) {
+      tripCenterState.geoapifyApiKey = data.data.apiKey
+      console.log('✓ Geoapify API key loaded successfully')
       return true
     } else {
-      console.error('Failed to load Geoapify API key')
+      console.error('Failed to load Geoapify API key - invalid response:', data)
       return false
     }
   } catch (error) {
