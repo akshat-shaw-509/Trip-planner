@@ -290,6 +290,33 @@ const apiService = {
     }
   },
 
+  // Activity endpoints
+  activities: {
+    async getByTrip(tripId) {
+      return await apiService.request(`/activities/trip/${tripId}`);
+    },
+
+    async create(tripId, data) {
+      return await apiService.request(`/activities/trip/${tripId}`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    async update(activityId, data) {
+      return await apiService.request(`/activities/${activityId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    async delete(activityId) {
+      return await apiService.request(`/activities/${activityId}`, {
+        method: 'DELETE'
+      });
+    }
+  },
+
   // Schedule endpoints
   schedules: {
     async getByTrip(tripId) {
