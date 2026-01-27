@@ -254,6 +254,34 @@ const apiService = {
     }
   },
 
+    // Expense endpoints
+  expenses: {
+    async getByTrip(tripId) {
+      return await apiService.request(`/expenses/trip/${tripId}`);
+    },
+
+    async create(tripId, data) {
+      return await apiService.request(`/expenses/trip/${tripId}`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+
+    async update(expenseId, data) {
+      return await apiService.request(`/expenses/${expenseId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+
+    async delete(expenseId) {
+      return await apiService.request(`/expenses/${expenseId}`, {
+        method: 'DELETE'
+      });
+    }
+  },
+
+
   // Schedule endpoints
   schedules: {
     async getByTrip(tripId) {
