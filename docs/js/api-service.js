@@ -290,14 +290,14 @@ const apiService = {
     }
   },
 
-  // Activity endpoints
+  // Activity endpoints - FIXED TO MATCH BACKEND ROUTES
   activities: {
     async getByTrip(tripId) {
-      return await apiService.request(`/activities/trip/${tripId}`);
+      return await apiService.request(`/activities/trips/${tripId}/activities`);
     },
 
     async create(tripId, data) {
-      return await apiService.request(`/activities/trip/${tripId}`, {
+      return await apiService.request(`/activities/trips/${tripId}/activities`, {
         method: 'POST',
         body: JSON.stringify(data)
       });
@@ -313,6 +313,17 @@ const apiService = {
     async delete(activityId) {
       return await apiService.request(`/activities/${activityId}`, {
         method: 'DELETE'
+      });
+    },
+
+    async getByDate(tripId, date) {
+      return await apiService.request(`/activities/trips/${tripId}/activities/by-date?date=${date}`);
+    },
+
+    async updateStatus(activityId, status) {
+      return await apiService.request(`/activities/${activityId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
       });
     }
   },
