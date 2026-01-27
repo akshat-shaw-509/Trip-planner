@@ -191,7 +191,7 @@ const createTripCard = (trip) => {
   const coverImage = trip.coverImage
     ? (trip.coverImage.startsWith('http')
         ? trip.coverImage
-        : `http://localhost:5000${trip.coverImage}`)
+        : `https://trip-planner-5uys.onrender.com${trip.coverImage}`)
     : `https://source.unsplash.com/800x600/?${encodeURIComponent(trip.destination || 'travel')}`
 
   return `
@@ -377,3 +377,8 @@ const initLogout = () => {
     })
   }
 }
+
+// -------------------------------------------------------
+// ✅ CRITICAL: Initialize on page load
+// -------------------------------------------------------
+document.addEventListener('DOMContentLoaded', initTripsPage)
