@@ -284,7 +284,7 @@
 <script src="../js/config.js"></script>
 
 <!-- 2. API Service -->
-<script src="../js/api-service.js"></script>
+<script src="../js/api-service.js?v=2"></script>
 
 <!-- 3. Toast -->
 <script src="../js/toast.js"></script>
@@ -298,10 +298,10 @@
 <!-- 6. Page script (plan.js) -->
 <script src="../js/plan.js"></script>
 
-<!-- 7. Inline scripts for UI -->
+<!-- 7. Inline scripts for UI - MUST BE DEFINED BEFORE ONCLICK HANDLERS RUN -->
 <script>
     let currentStep = 1;
-    let map = null; // Global map variable
+    let tripMap = null; // Renamed to avoid conflicts
 
     function nextStep(step) {
         document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
@@ -317,28 +317,53 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function prevStep(step) {
+        nextStep(step);
+    }
+
+    function validateStep(currentStepNum, nextStepNum) {
+        let currentStepEl = document.getElementById(`step${currentStepNum}`);
+        let inputs = currentStepEl.querySelectorAll('input, select, textarea');
+        let isValid = true;
+        inputs.forEach(input => {
+            if (!input.checkValidity()) {
+                isValid = false;
+                input.reportValidity();
+            }
+        });
+        
+        if (isValid) {
+            nextStep(nextStepNum);
+        }
+    }
+
     function initializeMap() {
-        if (typeof L !== 'undefined' && !map) {
+        if (typeof L !== 'undefined' && !tripMap) {
             try {
-                map = L.map('map').setView([20.5937, 78.9629], 5)
+                tripMap = L.map('map').setView([20.5937, 78.9629], 5)
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
-                }).addTo(map)
+                }).addTo(tripMap)
 
                 let destinationInput = document.getElementById('destination')
                 if (destinationInput) {
                     destinationInput.addEventListener('change', updateMapLocation)
                 }
-                console.log('Map initialized successfully!');
+                console.log('✅ Map initialized successfully!');
             } catch (error) {
-                console.error('Map initialization error:', error);
+                console.error('❌ Map initialization error:', error);
             }
         }
     }
 
-    function prevStep(step) {
-        nextStep(step);
+    function updateDuration() {
+        let start = document.getElementById('startDate')?.value;
+        let end = document.getElementById('endDate')?.value;
+        if (start && end) {
+            let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+            document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
+        }
     }
 
     // Live preview updates
@@ -358,31 +383,6 @@
     document.getElementById('travelers')?.addEventListener('input', (e) => {
         document.getElementById('previewTravelers').textContent = e.target.value || '1';
     });
-
-    function updateDuration() {
-        let start = document.getElementById('startDate')?.value;
-        let end = document.getElementById('endDate')?.value;
-        if (start && end) {
-            let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
-            document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
-        }
-    }
-
-    function validateStep(currentStepNum, nextStepNum) {
-        let currentStepEl = document.getElementById(`step${currentStepNum}`);
-        let inputs = currentStepEl.querySelectorAll('input, select, textarea');
-        let isValid = true;
-        inputs.forEach(input => {
-            if (!input.checkValidity()) {
-                isValid = false;
-                input.reportValidity();
-            }
-        });
-        
-        if (isValid) {
-            nextStep(nextStepNum);
-        }
-    }
 
     document.getElementById('startDate')?.addEventListener('change', updateDuration);
     document.getElementById('endDate')?.addEventListener('change', updateDuration);
