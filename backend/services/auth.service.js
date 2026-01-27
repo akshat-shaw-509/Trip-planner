@@ -270,16 +270,15 @@ let verifyEmail = async (token) => {
  */
 let forgotPassword = async (email) => {
   let user = await User.findOne({ email: email.toLowerCase() })
-
-  // Prevent email enumeration
+  
   if (!user) {
     return { message: 'If email exists, reset link will be sent' }
   }
-
-  let resetToken = user.createPasswordResetToken()
+  
+  let resetToken = user.createPasswordResetToken()  // ← This creates a hashed token
   await user.save({ validateBeforeSave: false })
-
-  return { resetToken }
+  
+  return { resetToken }  // ← Returns the ORIGINAL token, but this isn't being sent anywhere!
 }
 
 /**
