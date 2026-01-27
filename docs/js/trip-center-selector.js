@@ -26,11 +26,25 @@ function escapeHtml(text) {
 async function loadGeoapifyApiKey() {
   try {
     const baseURL = apiService.baseURL || 'http://localhost:5000/api'
-    const response = await fetch(`${baseURL}/config/geoapify-api-key`)
+    const token = sessionStorage.getItem('accessToken')
+    
+    const response = await fetch(`${baseURL}/config/geoapify-api-key`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      console.error('Failed to load Geoapify API key - Status:', response.status)
+      return false
+    }
+    
     const data = await response.json()
     
     if (data.success && data.apiKey) {
       tripCenterState.geoapifyApiKey = data.apiKey
+      console.log('✓ Geoapify API key loaded successfully')
       return true
     } else {
       console.error('Failed to load Geoapify API key')
@@ -151,8 +165,8 @@ async function calculateTripCenter(tripData) {
     }
   }
 
-  // Priority 2: Geocode the destination automatically
-  if (tripData.destination) {
+  // Priority 2: Geocode the destination automatically (only if API key is loaded)
+  if (tripData.destination && tripCenterState.geoapifyApiKey) {
     console.log('Auto-geocoding destination:', tripData.destination)
     
     try {
@@ -173,6 +187,8 @@ async function calculateTripCenter(tripData) {
     } catch (err) {
       console.error('Geocoding failed:', err.message)
     }
+  } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
+    console.warn('Skipping geocoding - API key not available')
   }
 
   // Priority 3: Calculate from added places
