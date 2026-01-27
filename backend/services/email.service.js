@@ -1,10 +1,13 @@
+const nodemailer = require('nodemailer');
+const config = require('../config/env');
 
-// Nodemailer -> used for sending emails
-let nodemailer = require('nodemailer')
-
-// Environment configuration (email credentials, frontend URL, etc.)
-let config = require('../config/env')
-
+const transporter = nodemailer.createTransport({
+  service: config.email.service,
+  auth: {
+    user: config.email.user,
+    pass: config.email.password,
+  },
+});
 /**
  * -------------------- Transporter Helper --------------------
  * Creates and returns a Nodemailer transporter
