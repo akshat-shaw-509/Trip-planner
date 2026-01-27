@@ -1,12 +1,10 @@
-
 let User = require('../models/User.model')
 let RefreshToken = require('../models/RefreshToken.model')
 let AuditLog = require('../models/AuditLog.model')
 
-// JWT utility functions (access & refresh tokens)
-let jwtUtils = require('../utils/jwt')
+const emailService = require('./email.service')   // ✅ HERE
 
-// Crypto -> used for secure token generation & hashing
+let jwtUtils = require('../utils/jwt')
 let crypto = require('crypto')
 
 /**
@@ -281,15 +279,15 @@ let forgotPassword = async (email) => {
     return { message: 'If email exists, reset link will be sent' }
   }
 
-  let resetToken = user.createPasswordResetToken()
-  await user.save({ validateBeforeSave: false })
+let resetToken = user.createPasswordResetToken()
+await user.save({ validateBeforeSave: false })
 
-  // Return both token and email for email service
-  return { 
-    resetToken,
-    email: user.email,
-    message: 'Reset token generated' 
-  }
+// ✅ SEND EMAIL HERE (THIS WAS MISSING)
+await emailService.sendPasswordResetEmail(user.email, resetToken)
+
+return {
+  message: 'If email exists, reset link will be sent'
+}
 }
 
 /**
