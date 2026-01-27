@@ -1,7 +1,7 @@
 // ===================== API Service =====================
 const apiService = {
- // ...existing code...
   baseURL: window.config.API_BASE_URL,
+  
   // ===================== Auth =====================
   auth: {
     login: (data) => apiService.post('/auth/login', data),
@@ -162,3 +162,6 @@ const apiService = {
       apiService.delete('/preferences')
   }
 }
+
+// ✅ CRITICAL: Make apiService available globally
+window.apiService = apiService
