@@ -51,7 +51,7 @@ const config = {
   user: process.env.EMAIL_USER,
   password: process.env.EMAIL_PASS,   // ✅ FIXED
   from: process.env.EMAIL_FROM || process.env.EMAIL_USER
-}
+},
 
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5242880, // 5MB default
@@ -77,4 +77,5 @@ const config = {
 validateEnv()
 
 module.exports = config
+
 
