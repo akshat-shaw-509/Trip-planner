@@ -301,6 +301,7 @@
 <!-- 7. Inline scripts for UI -->
 <script>
     let currentStep = 1;
+    let map = null; // Global map variable
 
     function nextStep(step) {
         document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
@@ -317,16 +318,21 @@
     }
 
     function initializeMap() {
-        if (typeof L !== 'undefined') {
-            map = L.map('map').setView([20.5937, 78.9629], 5)
+        if (typeof L !== 'undefined' && !map) {
+            try {
+                map = L.map('map').setView([20.5937, 78.9629], 5)
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map)
 
-            let destinationInput = document.getElementById('destination')
-            if (destinationInput) {
-                destinationInput.addEventListener('change', updateMapLocation)
+                let destinationInput = document.getElementById('destination')
+                if (destinationInput) {
+                    destinationInput.addEventListener('change', updateMapLocation)
+                }
+                console.log('Map initialized successfully!');
+            } catch (error) {
+                console.error('Map initialization error:', error);
             }
         }
     }
@@ -380,7 +386,9 @@
 
     document.getElementById('startDate')?.addEventListener('change', updateDuration);
     document.getElementById('endDate')?.addEventListener('change', updateDuration);
+    
+    // ✅ CRITICAL: Initialize map after page loads
+    window.addEventListener('load', () => {
+        setTimeout(initializeMap, 200);
+    });
 </script>
-</body>
-
-</html>
