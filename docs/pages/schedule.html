@@ -267,17 +267,18 @@
         </div>
     </div>
 
-    <!-- External library first -->
+<!-- External libraries FIRST -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-<!-- Core dependencies - FIXED -->
+<!-- Then core dependencies in this EXACT order: -->
 <script src="../js/config.js"></script>
 <script src="../js/api-service.js"></script>
 <script src="../js/toast.js"></script>
 <script src="../js/auth.js"></script>
-
-<!-- Then nav and page script -->
 <script src="../js/nav.js"></script>
+
+<!-- THEN schedule.js LAST -->
 <script src="../js/schedule.js"></script>
+
 </body>
 </html>
