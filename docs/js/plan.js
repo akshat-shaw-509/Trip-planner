@@ -131,19 +131,16 @@ async function handleTripCreation(e) {
 }
 
 // ===================== Map Preview =====================
-let map = null;
+// REMOVED: let map = null; (this was causing the conflict)
+// The map is now handled in the inline script as 'tripMap'
 
 /**
  * Initialize Leaflet map for destination preview
+ * This function is now called from the inline script in planning.html
  */
-function initializeMap() {
+window.initializePlanningMap = function() {
   if (typeof L === 'undefined') return;
-
-  map = L.map('map').setView([20.5937, 78.9629], 5);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+  if (typeof tripMap === 'undefined' || !tripMap) return;
 
   // Update map when destination changes
   const destinationInput = document.getElementById('destination');
@@ -157,7 +154,13 @@ function initializeMap() {
  */
 async function updateMapLocation() {
   const destination = document.getElementById('destination').value;
-  if (!destination || !map) return;
+  if (!destination) return;
+  
+  // Use the global tripMap variable from the inline script
+  if (typeof tripMap === 'undefined' || !tripMap) {
+    console.warn('Map not initialized yet');
+    return;
+  }
 
   try {
     const response = await fetch(
@@ -175,18 +178,18 @@ async function updateMapLocation() {
 
     const { latitude, longitude, name, country } = data.results[0];
 
-    map.setView([latitude, longitude], 10);
+    tripMap.setView([latitude, longitude], 10);
 
     // Remove existing markers
-    map.eachLayer(layer => {
+    tripMap.eachLayer(layer => {
       if (layer instanceof L.Marker) {
-        map.removeLayer(layer);
+        tripMap.removeLayer(layer);
       }
     });
 
     // Add marker for destination
     L.marker([latitude, longitude])
-      .addTo(map)
+      .addTo(tripMap)
       .bindPopup(`${name}, ${country}`)
       .openPopup();
 
@@ -195,7 +198,7 @@ async function updateMapLocation() {
   }
 }
 
-// Initialize map after Leaflet loads
-if (typeof L !== 'undefined') {
-  setTimeout(initializeMap, 100);
-}
+// Make updateMapLocation available globally for the inline script
+window.updateMapLocation = updateMapLocation;
+
+console.log('✅ plan.js loaded (map conflict resolved)');
