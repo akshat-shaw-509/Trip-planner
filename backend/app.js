@@ -1,4 +1,3 @@
-
 const path = require('path')
 const express = require('express')
 const cors = require('cors')
@@ -50,13 +49,18 @@ app.use(
 )
 
 /* =========================
-   3. CORS CONFIG
+   3. CORS CONFIG - UPDATED FOR GITHUB PAGES
     */
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
   : [
-      'https://akshat-shaw-509.github.io/Trip-planner/',
+      // GitHub Pages - with and without trailing slash
+      'https://akshat-shaw-509.github.io',
+      'https://akshat-shaw-509.github.io/',
+      // Render
       'https://trip-planner-n1g3.onrender.com',
+      'https://trip-planner-5uys.onrender.com',
+      // Localhost
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://localhost:8000',
@@ -68,11 +72,31 @@ console.log('Allowed CORS origins:', allowedOrigins)
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) return callback(null, true)
-      if (allowedOrigins.includes(origin)) return callback(null, true)
+      // Allow requests with no origin (mobile apps, curl, Postman)
+      if (!origin) {
+        console.log('✅ Request with no origin - allowed')
+        return callback(null, true)
+      }
+
+      // Normalize origin (remove trailing slash for comparison)
+      const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin
+      const normalizedAllowed = allowedOrigins.map(o => o.endsWith('/') ? o.slice(0, -1) : o)
+
+      // Check if origin is allowed
+      if (normalizedAllowed.includes(normalizedOrigin)) {
+        console.log(`✅ CORS allowed for: ${origin}`)
+        return callback(null, true)
+      }
+
+      console.error(`❌ CORS blocked for origin: ${origin}`)
+      console.error(`   Normalized: ${normalizedOrigin}`)
+      console.error(`   Allowed origins:`, normalizedAllowed)
       return callback(new Error(`CORS blocked for origin: ${origin}`))
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
   })
 )
 
