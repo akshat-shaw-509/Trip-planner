@@ -29,7 +29,7 @@ router.post('/google', authController.googleLogin)
 
 // Tokens & recovery
 router.post('/refresh', authController.refreshToken)
-router.post('/forgot-password', authController.forgotPassword)
+//router.post('/forgot-password', authController.forgotPassword)
 router.post('/reset-password/:token', validatePasswordReset, authController.resetPassword)
 router.get('/verify-email/:token', authController.verifyEmail)
 
