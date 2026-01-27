@@ -346,10 +346,11 @@
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(tripMap)
 
-                let destinationInput = document.getElementById('destination')
-                if (destinationInput) {
-                    destinationInput.addEventListener('change', updateMapLocation)
+                // Call the planning map initializer from plan.js if available
+                if (typeof window.initializePlanningMap === 'function') {
+                    window.initializePlanningMap();
                 }
+
                 console.log('✅ Map initialized successfully!');
             } catch (error) {
                 console.error('❌ Map initialization error:', error);
