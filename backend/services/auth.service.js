@@ -275,10 +275,15 @@ let forgotPassword = async (email) => {
     return { message: 'If email exists, reset link will be sent' }
   }
   
-  let resetToken = user.createPasswordResetToken()  // ← This creates a hashed token
+  let resetToken = user.createPasswordResetToken()
   await user.save({ validateBeforeSave: false })
   
-  return { resetToken }  // ← Returns the ORIGINAL token, but this isn't being sent anywhere!
+  // Return both token and email for email service
+  return { 
+    resetToken,
+    email: user.email,
+    message: 'Reset token generated' 
+  }
 }
 
 /**
