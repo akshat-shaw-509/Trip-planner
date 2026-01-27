@@ -1,3 +1,8 @@
+// =====================================================================
+// TRIP CENTER SELECTOR - FIXED VERSION
+// All functions defined before use to avoid hoisting issues
+// =====================================================================
+
 let tripCenterState = {
   currentCenter: null,
   searchResults: [],
@@ -7,7 +12,7 @@ let tripCenterState = {
 }
 
 // -------------------------------------------------------
-// Escape HTML (XSS safety) - Defined early as it's used everywhere
+// UTILITY FUNCTIONS (defined first)
 // -------------------------------------------------------
 function escapeHtml(text) {
   const div = document.createElement('div')
@@ -16,7 +21,7 @@ function escapeHtml(text) {
 }
 
 // -------------------------------------------------------
-// Load Geoapify API Key from Backend
+// API KEY LOADING
 // -------------------------------------------------------
 async function loadGeoapifyApiKey() {
   try {
@@ -38,7 +43,7 @@ async function loadGeoapifyApiKey() {
 }
 
 // -------------------------------------------------------
-// Geocode Destination using Geoapify
+// GEOCODING
 // -------------------------------------------------------
 async function geocodeDestination(destination) {
   if (!tripCenterState.geoapifyApiKey) {
@@ -70,7 +75,7 @@ async function geocodeDestination(destination) {
 }
 
 // -------------------------------------------------------
-// Save Trip Coordinates to Backend
+// SAVE COORDINATES
 // -------------------------------------------------------
 async function saveTripCoordinates(tripId, coords) {
   try {
@@ -90,7 +95,7 @@ async function saveTripCoordinates(tripId, coords) {
 }
 
 // -------------------------------------------------------
-// Calculate Center from Added Places (Fallback)
+// CALCULATE CENTER FROM PLACES
 // -------------------------------------------------------
 async function calculateCenterFromPlaces(tripId) {
   try {
@@ -128,7 +133,7 @@ async function calculateCenterFromPlaces(tripId) {
 }
 
 // -------------------------------------------------------
-// Calculate Trip Center (AUTO)
+// CALCULATE TRIP CENTER (MAIN LOGIC)
 // -------------------------------------------------------
 async function calculateTripCenter(tripData) {
   if (!tripData) {
@@ -193,7 +198,7 @@ async function calculateTripCenter(tripData) {
 }
 
 // -------------------------------------------------------
-// Render Banner UI (above recommendations)
+// UI RENDERING
 // -------------------------------------------------------
 function renderTripCenterUI() {
   const section = document.querySelector('.recommendations-section')
@@ -232,16 +237,24 @@ function renderTripCenterUI() {
   }
 }
 
-// -------------------------------------------------------
-// Attach banner button listener
-// -------------------------------------------------------
 function attachTripCenterListeners() {
   const btn = document.getElementById('btnChangeCenter')
   if (btn) btn.onclick = openTripCenterModal
 }
 
+function updateTripCenterBanner() {
+  const banner = document.querySelector('.trip-center-banner')
+  if (!banner) return
+
+  banner.querySelector('.trip-center-name').textContent =
+    tripCenterState.currentCenter.formatted
+
+  banner.querySelector('.trip-center-coords').textContent =
+    `${tripCenterState.currentCenter.lat.toFixed(4)}, ${tripCenterState.currentCenter.lon.toFixed(4)}`
+}
+
 // -------------------------------------------------------
-// Initialize Trip Center Selector
+// MAIN INITIALIZATION FUNCTION
 // -------------------------------------------------------
 async function initTripCenterSelector(tripData) {
   console.log('Initializing trip center with data:', tripData)
@@ -260,7 +273,7 @@ async function initTripCenterSelector(tripData) {
 }
 
 // -------------------------------------------------------
-// Open Trip Center Modal
+// MODAL FUNCTIONS
 // -------------------------------------------------------
 function openTripCenterModal() {
   const modal = document.createElement('div')
@@ -344,9 +357,10 @@ function openTripCenterModal() {
   setupSearchHandlers()
 }
 
-// -------------------------------------------------------
-// Setup search input logic (debounced)
-// -------------------------------------------------------
+function closeTripCenterModal() {
+  document.getElementById('tripCenterModal')?.remove()
+}
+
 function setupSearchHandlers() {
   const input = document.getElementById('tripCenterSearch')
   const clearBtn = document.getElementById('btnSearchClear')
@@ -376,7 +390,7 @@ function setupSearchHandlers() {
 }
 
 // -------------------------------------------------------
-// Search locations using Geoapify
+// SEARCH FUNCTIONS
 // -------------------------------------------------------
 async function searchLocations(query) {
   if (!tripCenterState.geoapifyApiKey) {
@@ -418,9 +432,6 @@ async function searchLocations(query) {
   }
 }
 
-// -------------------------------------------------------
-// Display search results list
-// -------------------------------------------------------
 function displaySearchResults() {
   const container = document.getElementById('searchResults')
 
@@ -436,9 +447,6 @@ function displaySearchResults() {
     `).join('')
 }
 
-// -------------------------------------------------------
-// Select a location from results
-// -------------------------------------------------------
 function selectLocation(index) {
   const loc = tripCenterState.searchResults[index]
   tripCenterState.selectedLocation = loc
@@ -454,7 +462,7 @@ function selectLocation(index) {
 }
 
 // -------------------------------------------------------
-// Quick Options Functions
+// QUICK OPTIONS
 // -------------------------------------------------------
 async function useDestinationCenter() {
   const tripData = recommendationsState?.tripData
@@ -587,7 +595,7 @@ function clearSelection() {
 }
 
 // -------------------------------------------------------
-// Save trip center to backend
+// SAVE CENTER
 // -------------------------------------------------------
 async function saveTripCenter() {
   if (!tripCenterState.selectedLocation) return
@@ -619,28 +627,7 @@ async function saveTripCenter() {
 }
 
 // -------------------------------------------------------
-// Update banner UI
-// -------------------------------------------------------
-function updateTripCenterBanner() {
-  const banner = document.querySelector('.trip-center-banner')
-  if (!banner) return
-
-  banner.querySelector('.trip-center-name').textContent =
-    tripCenterState.currentCenter.formatted
-
-  banner.querySelector('.trip-center-coords').textContent =
-    `${tripCenterState.currentCenter.lat.toFixed(4)}, ${tripCenterState.currentCenter.lon.toFixed(4)}`
-}
-
-// -------------------------------------------------------
-// Close modal
-// -------------------------------------------------------
-function closeTripCenterModal() {
-  document.getElementById('tripCenterModal')?.remove()
-}
-
-// -------------------------------------------------------
-// Export for other modules
+// EXPORTS
 // -------------------------------------------------------
 window.initTripCenterSelector = initTripCenterSelector
 window.tripCenterState = tripCenterState
