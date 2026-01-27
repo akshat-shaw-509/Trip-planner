@@ -1,3 +1,4 @@
+
 const path = require('path')
 const express = require('express')
 const cors = require('cors')
@@ -18,6 +19,18 @@ const recommendationRoutes = require('./routes/recommendation.routes')
 // Import middleware
 const { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
 
+console.log('ROUTE TYPES:', {
+  authRoutes: typeof authRoutes,
+  tripRoutes: typeof tripRoutes,
+  placeRoutes: typeof placeRoutes,
+  activityRoutes: typeof activityRoutes,
+  expenseRoutes: typeof expenseRoutes,
+  uploadRoutes: typeof uploadRoutes,
+  recommendationRoutes: typeof recommendationRoutes,
+  notFoundHandler: typeof notFoundHandler,
+  errorHandler: typeof errorHandler
+})
+
 const app = express()
 
 /* =========================
@@ -37,43 +50,31 @@ app.use(
 )
 
 /* =========================
-   3. CORS CONFIG (FIXED)
-========================= */
-const allowedOrigins = [
-      'https://akshat-shaw-509.github.io',
+   3. CORS CONFIG
+    */
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : [
+      'https://akshat-shaw-509.github.io/Trip-planner/',
       'https://trip-planner-n1g3.onrender.com',
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://localhost:8000',
       'http://127.0.0.1:8000'
-    ];
+    ]
 
-console.log('🌐 CORS Configuration:');
-console.log('   NODE_ENV:', process.env.NODE_ENV);
-console.log('   Allowed origins:', allowedOrigins);
+console.log('Allowed CORS origins:', allowedOrigins)
 
-app.use(cors({
-  origin: function (origin, callback) {
-    console.log('📍 Request from origin:', origin);
-    
-    // allow server-to-server & Postman
-    if (!origin) {
-      console.log('   ✅ Allowed (no origin header)');
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      console.log('   ✅ Allowed');
-      callback(null, true);
-    } else {
-      console.log('   ❌ Blocked - not in allowed list');
-      callback(new Error(`CORS blocked for origin: ${origin}`));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true)
+      if (allowedOrigins.includes(origin)) return callback(null, true)
+      return callback(new Error(`CORS blocked for origin: ${origin}`))
+    },
+    credentials: true
+  })
+)
 
 /* =========================
    4. Rate limiting
