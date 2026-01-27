@@ -197,7 +197,15 @@ const getCurrentUser = async (req, res) => {
  */
 const forgotPassword = async (req, res) => {
   try {
-    await authService.forgotPassword(req.body.email)
+    const result = await authService.forgotPassword(req.body.email)
+    
+    // Send password reset email (non-blocking)
+    if (result.resetToken && result.email) {
+      emailService
+        .sendPasswordResetEmail(result.email, result.resetToken)
+        .catch(err => console.error('Password reset email failed:', err))
+    }
+    
     sendSuccess(res, 200, null, 'If email exists, reset link will be sent')
   } catch (error) {
     console.error('Forgot password error:', error)
@@ -312,4 +320,5 @@ module.exports = {
   changePassword,
   googleLogin
 }
+
 
