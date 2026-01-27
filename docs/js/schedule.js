@@ -20,23 +20,23 @@
         console.log('Schedule page initializing...')
 
         // ✅ CRITICAL FIX: Check if apiService is loaded
-        if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined') {
-            console.error('apiService not loaded! Waiting...')
-            
-            // Wait up to 3 seconds for apiService to load
-            let retries = 0
-            while ((typeof window.apiService === 'undefined' && typeof apiService === 'undefined') && retries < 30) {
-                await new Promise(resolve => setTimeout(resolve, 100))
-                retries++
-            }
-            
-            if (typeof window.apiService === 'undefined' && typeof apiService === 'undefined') {
-                showAlert('Failed to load API service. Please refresh the page.', 'error')
-                return
-            }
-            
-            console.log('apiService loaded after waiting')
-        }
+if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined') {
+    console.error('apiService not loaded! Waiting...')
+    
+    // Wait up to 3 seconds for apiService to load
+    let retries = 0
+    while ((typeof window.apiService === 'undefined' && typeof apiService === 'undefined') && retries < 30) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        retries++
+    }
+    
+    if (typeof window.apiService === 'undefined' && typeof apiService === 'undefined') {
+        showAlert('Failed to load API service. Please refresh the page.', 'error')
+        return
+    }
+    
+    console.log('apiService loaded after waiting')
+}
 
         // Make sure apiService is available globally
         if (typeof window.apiService === 'undefined' && typeof apiService !== 'undefined') {
