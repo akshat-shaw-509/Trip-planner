@@ -12,7 +12,7 @@ const requiredEnvVars = [
 const optionalEnvVars = [
   'EMAIL_SERVICE',
   'EMAIL_USER',
-  'EMAIL_PASSWORD',
+  'EMAIL_PASS',       // ✅ FIXED
   'FRONTEND_URL',
   'MAX_FILE_SIZE',
   'UPLOAD_DIR'
@@ -46,12 +46,12 @@ const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
   },
 
-  email: {
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    user: process.env.EMAIL_USER,
-    password: process.env.EMAIL_PASSWORD,
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER
-  },
+ email: {
+  service: process.env.EMAIL_SERVICE || 'gmail',
+  user: process.env.EMAIL_USER,
+  password: process.env.EMAIL_PASS,   // ✅ FIXED
+  from: process.env.EMAIL_FROM || process.env.EMAIL_USER
+}
 
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5242880, // 5MB default
@@ -77,3 +77,4 @@ const config = {
 validateEnv()
 
 module.exports = config
+
