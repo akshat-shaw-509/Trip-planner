@@ -271,13 +271,14 @@ let verifyEmail = async (token) => {
 let forgotPassword = async (email) => {
   let user = await User.findOne({ email: email.toLowerCase() })
   
+  // Prevent email enumeration
   if (!user) {
     return { message: 'If email exists, reset link will be sent' }
   }
-  
+
   let resetToken = user.createPasswordResetToken()
   await user.save({ validateBeforeSave: false })
-  
+
   // Return both token and email for email service
   return { 
     resetToken,
