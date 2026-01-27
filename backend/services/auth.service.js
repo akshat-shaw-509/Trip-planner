@@ -2,7 +2,7 @@ let User = require('../models/User.model')
 let RefreshToken = require('../models/RefreshToken.model')
 let AuditLog = require('../models/AuditLog.model')
 
-const emailService = require('./email.service')   // ✅ HERE
+const emailService = require('../services/email.service')
 
 let jwtUtils = require('../utils/jwt')
 let crypto = require('crypto')
