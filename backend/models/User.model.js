@@ -1,9 +1,6 @@
-
 const mongoose = require('mongoose')
-
-// bcrypt -> used for hashing and comparing passwords securely
 const bcrypt = require('bcryptjs')
-
+const crypto = require('crypto')   
 /**
  * -------------------- User Schema --------------------
  */
@@ -34,12 +31,22 @@ const UserSchema = new mongoose.Schema(
      * User password (hashed)
      * select: false -> excluded from queries by default
      */
-    password: {
-      type: String,
-      required: true,
-      minlength: 8,
-      select: false
-    },
+   password: {
+  type: String,
+  required: true,
+  minlength: 8,
+  select: false
+},
+
+/**
+ * Password reset token (hashed)
+ */
+passwordResetToken: String,
+
+/**
+ * Password reset token expiry time
+ */
+passwordResetExpires: Date,
 
     /**
      * Role-based access control
@@ -107,15 +114,32 @@ UserSchema.pre('save', async function () {
 /**
  * -------------------- Instance Methods --------------------
  */
-
 /**
  * Compare provided password with hashed password
  */
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
 }
+/**
+ * Compare provided password with hashed password
+ */
+UserSchema.methods.createPasswordResetToken = function () {
+  // Generate random token
+  const resetToken = crypto.randomBytes(32).toString('hex')
 
+  // Hash token & store in DB
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex')
+
+  // Token expires in 1 hour
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000
+
+  return resetToken // this goes in the email
+}
 /**
  * Create and export User model
  */
 module.exports = mongoose.model('User', UserSchema)
+
