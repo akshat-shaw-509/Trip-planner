@@ -272,7 +272,10 @@ const uploadBanner = async (file) => {
   } finally {
     const btn = document.querySelector('.banner-upload-btn')
     const input = document.getElementById('bannerFileInput')
-    if (btn) btn.disabled = false
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
+    }
     if (input) input.value = ''
   }
 }
@@ -320,3 +323,8 @@ const initLogout = () => {
 
 // Expose navigation
 window.navigateTo = navigateTo
+
+// -------------------------------------------------------
+// ✅ CRITICAL FIX: Initialize on page load
+// -------------------------------------------------------
+document.addEventListener('DOMContentLoaded', initTripOverview)
