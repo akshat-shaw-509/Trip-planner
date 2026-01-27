@@ -11,6 +11,16 @@ if (config.email.user && config.email.password) {
       pass: config.email.password,
     },
   });
+
+  // ✅ ADD THIS BLOCK (SMTP VERIFICATION)
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ SMTP CONFIG ERROR:', error);
+    } else {
+      console.log('✅ SMTP SERVER READY');
+    }
+  });
+
 } else {
   console.warn('Email service not configured. Email functionality disabled.');
 }
