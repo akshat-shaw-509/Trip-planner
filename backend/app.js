@@ -14,7 +14,7 @@ const activityRoutes = require('./routes/activity.routes')
 const expenseRoutes = require('./routes/expense.routes')
 const uploadRoutes = require('./routes/upload.routes')
 const recommendationRoutes = require('./routes/recommendation.routes')
-
+const configRoutes = require('./routes/config.routes')
 // Import middleware
 const { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
 
@@ -150,6 +150,7 @@ app.use('/api', recommendationRoutes)
 /* =========================
    10. Error handling
    */
+app.use('/api/config', configRoutes)
 app.use(notFoundHandler)
 app.use(errorHandler)
 
