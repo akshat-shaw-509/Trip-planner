@@ -3,41 +3,56 @@ let router = express.Router()
 let placeController = require('../controllers/place.controller')
 let { authenticate } = require('../middleware/auth.middleware')
 let { validatePlace, validatePlaceUpdate } = require('../middleware/place.validation.middleware')
-let { geocodeLocation } = require('../services/geoapifyService') // ✅ ADD THIS
 
-// ✅ ADD THIS PUBLIC ENDPOINT (before authenticate middleware)
-router.post('/geocode', async (req, res) => {
-  try {
-    const { location } = req.body
-    
-    if (!location) {
-      return res.status(400).json({ 
+// Try to load geoapify service
+let geocodeLocation
+try {
+  const geoapifyService = require('../services/geoapifyService')
+  geocodeLocation = geoapifyService.geocodeLocation
+  console.log('✅ Geoapify service loaded successfully')
+} catch (error) {
+  console.error('⚠️ Failed to load geoapifyService:', error.message)
+  console.error('Geocoding endpoint will not be available')
+}
+
+// Only add geocode endpoint if the service loaded
+if (geocodeLocation) {
+  router.post('/geocode', async (req, res) => {
+    try {
+      const { location } = req.body
+      
+      if (!location) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Location is required' 
+        })
+      }
+
+      const coords = await geocodeLocation(location)
+      
+      if (!coords) {
+        return res.status(404).json({ 
+          success: false, 
+          error: 'Location not found' 
+        })
+      }
+
+      res.json({ 
+        success: true, 
+        data: coords 
+      })
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      res.status(500).json({ 
         success: false, 
-        error: 'Location is required' 
+        error: 'Geocoding failed' 
       })
     }
-
-    const coords = await geocodeLocation(location)
-    
-    if (!coords) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Location not found' 
-      })
-    }
-
-    res.json({ 
-      success: true, 
-      data: coords 
-    })
-  } catch (error) {
-    console.error('Geocoding error:', error)
-    res.status(500).json({ 
-      success: false, 
-      error: 'Geocoding failed' 
-    })
-  }
-})
+  })
+  console.log('✅ Geocoding endpoint registered at POST /geocode')
+} else {
+  console.warn('⚠️ Geocoding endpoint not available - service not loaded')
+}
 
 router.use(authenticate)
 
