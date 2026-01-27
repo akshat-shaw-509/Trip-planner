@@ -105,15 +105,19 @@ let register = async (userData, req) => {
     throw createError('Email already registered', 409)
   }
 
-  // Generate email verification token
-  let verificationToken = crypto.randomBytes(32).toString('hex')
+let verificationToken = crypto.randomBytes(32).toString('hex')
+let hashedVerificationToken = crypto
+  .createHash('sha256')
+  .update(verificationToken)
+  .digest('hex')
+
 
   // Create user
   let user = await User.create({
     name,
     email: email.toLowerCase(),
     password,
-    verificationToken
+    verificationToken: hashedVerificationToken
   })
 
   // Audit registration event
@@ -126,11 +130,12 @@ let register = async (userData, req) => {
   let userObject = user.toObject()
 
   return {
-    user: userObject,
-    accessToken,
-    refreshToken,
-    requiresVerification: true
-  }
+  user: userObject,
+  accessToken,
+  refreshToken,
+  verificationToken,
+  requiresVerification: true
+}
 }
 
 /**
@@ -294,17 +299,17 @@ let resetPassword = async (token, newPassword) => {
   let hashedToken = crypto.createHash('sha256').update(token).digest('hex')
 
   let user = await User.findOne({
-    resetPasswordHash: hashedToken,
-    resetPasswordExpires: { $gt: Date.now() }
-  })
+  passwordResetToken: hashedToken,
+  passwordResetExpires: { $gt: Date.now() }
+})
 
   if (!user) {
     throw createError('Invalid or expired reset token', 401)
   }
 
   user.password = newPassword
-  user.resetPasswordHash = undefined
-  user.resetPasswordExpires = undefined
+  user.passwordResetToken = undefined
+user.passwordResetExpires = undefined
   await user.save()
 
   // Invalidate all sessions
