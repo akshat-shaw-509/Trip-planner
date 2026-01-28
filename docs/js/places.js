@@ -1,4 +1,4 @@
-// FIXED places.js - Now with working map and geocoding!
+// FIXED places.js - Proper map initialization!
 
 let currentTripId = null;
 let allPlaces = [];
@@ -36,6 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   initFilters();
+  
+  // ✅ Initialize map after DOM is ready and places are loaded
+  setTimeout(() => {
+    initMap();
+  }, 500);
 
   // UI handlers
   document.getElementById('addPlaceBtn')?.addEventListener('click', openAddPlaceModal);
@@ -79,7 +84,7 @@ async function loadPlaces(filters = {}) {
     allPlaces = res.data || [];
     displayPlaces();
     
-    // Update map if it's open
+    // Update map if it's initialized
     if (map) {
       updatePlaceMarkers();
     }
@@ -323,49 +328,95 @@ async function deletePlace(placeId) {
 
 // ===================== Map Functions (FIXED) =====================
 function toggleMap() {
-  document.getElementById('map').style.display = 'block';
-  document.getElementById('toggleMapBtn').style.display = 'none';
-  document.getElementById('closeMapBtn').style.display = 'inline-block';
-  initMap();
+  const mapEl = document.getElementById('map');
+  mapEl.style.display = 'block';
+  
+  if (!map) {
+    initMap();
+  }
+  
+  // Force resize after showing
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+      updatePlaceMarkers();
+    }
+  }, 100);
 }
 
 function closeMap() {
   document.getElementById('map').style.display = 'none';
-  document.getElementById('toggleMapBtn').style.display = 'inline-block';
-  document.getElementById('closeMapBtn').style.display = 'none';
 }
 
 function initMap() {
-  if (map || typeof L === 'undefined') {
-    console.warn('Leaflet not loaded or map already initialized');
+  // Check if Leaflet is loaded
+  if (typeof L === 'undefined') {
+    console.error('❌ Leaflet library not loaded!');
+    showToast('Map library not loaded. Please refresh the page.', 'error');
     return;
   }
 
-  map = L.map('map').setView([20.5937, 78.9629], 5);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
-  }).addTo(map);
-
-  // ✅ IMPORTANT: force Leaflet to recalc container size
-  setTimeout(() => {
+  // Check if map already exists
+  if (map) {
+    console.log('ℹ️ Map already initialized');
     map.invalidateSize();
-  }, 200);
+    return;
+  }
 
-  updatePlaceMarkers();
+  const mapContainer = document.getElementById('map');
+  if (!mapContainer) {
+    console.error('❌ Map container not found!');
+    return;
+  }
+
+  console.log('🗺️ Initializing Leaflet map...');
+
+  try {
+    // Create map with default center (India)
+    map = L.map('map', {
+      center: [20.5937, 78.9629],
+      zoom: 5,
+      zoomControl: true,
+      scrollWheelZoom: true
+    });
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    console.log('✅ Map initialized successfully');
+
+    // Force container size recalculation
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize();
+        updatePlaceMarkers();
+      }
+    }, 300);
+
+  } catch (err) {
+    console.error('❌ Map initialization failed:', err);
+    showToast('Failed to initialize map', 'error');
+  }
 }
 
-
-// ✅ NEW: Update markers on the map
+// ✅ Update markers on the map
 function updatePlaceMarkers() {
   if (!map) {
-    console.warn('Map not initialized');
+    console.warn('⚠️ Cannot update markers - map not initialized');
     return;
   }
 
   // Clear existing markers
-  markers.forEach(marker => map.removeLayer(marker));
+  markers.forEach(marker => {
+    try {
+      map.removeLayer(marker);
+    } catch (err) {
+      console.warn('Error removing marker:', err);
+    }
+  });
   markers = [];
 
   // Filter places based on current filter
@@ -374,16 +425,18 @@ function updatePlaceMarkers() {
     : allPlaces.filter(p => p.category.toLowerCase() === currentFilter);
 
   if (filtered.length === 0) {
-    console.log('No places to show on map');
+    console.log('ℹ️ No places to show on map');
     return;
   }
+
+  console.log(`📍 Adding ${filtered.length} markers to map...`);
 
   // Add marker for each place
   const bounds = [];
   
   filtered.forEach(place => {
     if (!place.location?.coordinates || place.location.coordinates.length !== 2) {
-      console.warn('Place missing valid coordinates:', place.name);
+      console.warn('⚠️ Place missing valid coordinates:', place.name);
       return;
     }
 
@@ -391,7 +444,7 @@ function updatePlaceMarkers() {
     
     // Validate coordinates
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.warn('Invalid coordinates for:', place.name, [lat, lon]);
+      console.warn('⚠️ Invalid coordinates for:', place.name, [lat, lon]);
       return;
     }
 
@@ -418,45 +471,53 @@ function updatePlaceMarkers() {
       popupAnchor: [0, -18]
     });
 
-    // Create marker
-    const marker = L.marker([lat, lon], { icon: markerIcon })
-      .addTo(map)
-      .bindPopup(`
-        <div style="padding: 12px; min-width: 200px;">
-          <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">
-            ${escapeHtml(place.name)}
+    try {
+      // Create marker
+      const marker = L.marker([lat, lon], { icon: markerIcon })
+        .addTo(map)
+        .bindPopup(`
+          <div style="padding: 12px; min-width: 200px;">
+            <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">
+              ${escapeHtml(place.name)}
+            </div>
+            <div style="color: #666; margin-bottom: 8px;">
+              <i class="fas fa-${icon}"></i> ${place.category}
+            </div>
+            ${place.rating > 0 ? `
+              <div style="margin-bottom: 8px;">
+                <span style="color: #FFA500;">⭐</span> ${place.rating.toFixed(1)}
+              </div>
+            ` : ''}
+            ${place.address ? `
+              <div style="color: #666; font-size: 13px; margin-bottom: 8px;">
+                <i class="fas fa-map-marker-alt"></i> ${escapeHtml(place.address)}
+              </div>
+            ` : ''}
+            ${place.notes ? `
+              <div style="color: #666; font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+                ${escapeHtml(place.notes)}
+              </div>
+            ` : ''}
           </div>
-          <div style="color: #666; margin-bottom: 8px;">
-            <i class="fas fa-${icon}"></i> ${place.category}
-          </div>
-          ${place.rating > 0 ? `
-            <div style="margin-bottom: 8px;">
-              <span style="color: #FFA500;">⭐</span> ${place.rating.toFixed(1)}
-            </div>
-          ` : ''}
-          ${place.address ? `
-            <div style="color: #666; font-size: 13px; margin-bottom: 8px;">
-              <i class="fas fa-map-marker-alt"></i> ${escapeHtml(place.address)}
-            </div>
-          ` : ''}
-          ${place.notes ? `
-            <div style="color: #666; font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-              ${escapeHtml(place.notes)}
-            </div>
-          ` : ''}
-        </div>
-      `);
+        `);
 
-    markers.push(marker);
-    bounds.push([lat, lon]);
+      markers.push(marker);
+      bounds.push([lat, lon]);
+    } catch (err) {
+      console.error('Error adding marker for:', place.name, err);
+    }
   });
 
   // Fit map to show all markers
   if (bounds.length > 0) {
-    map.fitBounds(bounds, { 
-      padding: [50, 50],
-      maxZoom: 15
-    });
+    try {
+      map.fitBounds(bounds, { 
+        padding: [50, 50],
+        maxZoom: 15
+      });
+    } catch (err) {
+      console.error('Error fitting bounds:', err);
+    }
   }
 
   console.log(`✅ Added ${markers.length} markers to map`);
@@ -483,7 +544,3 @@ function addToSchedule(placeId) {
   showToast('Schedule feature coming soon!', 'info');
   console.log('Add to schedule:', placeId);
 }
-window.addEventListener('load', () => {
-  console.log('WINDOW LOADED → INIT MAP');
-  initMap();
-});
