@@ -483,3 +483,7 @@ function addToSchedule(placeId) {
   showToast('Schedule feature coming soon!', 'info');
   console.log('Add to schedule:', placeId);
 }
+window.addEventListener('load', () => {
+  console.log('WINDOW LOADED → INIT MAP');
+  initMap();
+});
