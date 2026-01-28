@@ -11,6 +11,8 @@ const { calculateDistance } = require('../utils/helpers')
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+// Simple delay helper for rate limiting
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 /**
  * AI Recommendations Entry Point
@@ -214,23 +216,41 @@ const geocodePlaces = async (places, destination) => {
 
   for (const p of places) {
     try {
-      const query = `${p.name}, ${p.addressHint || ''}, ${destination}`.replace(/,\s*,/g, ',').trim()
-      
+      const query = `${p.name}, ${p.addressHint || ''}, ${destination}`
+        .replace(/,\s*,/g, ',')
+        .trim()
+
       console.log('Geocoding:', query)
+
       const geo = await geoapifyService.geocodeLocation(query)
 
       if (geo?.lat && geo?.lon) {
         results.push({
           ...p,
-          location: { type: 'Point', coordinates: [geo.lon, geo.lat] },
+
+          // ✅ GeoJSON format (DB + maps)
+          location: {
+            type: 'Point',
+            coordinates: [geo.lon, geo.lat]
+          },
+
+          // ✅ Compatibility format (frontend / filters)
+          lat: geo.lat,
+          lon: geo.lon,
+
           address: geo.formatted,
           confidence: geo.rank?.confidence || 0,
           popularity: geo.rank?.popularity || 0
         })
+
         console.log('✓ Geocoded:', p.name)
       } else {
         console.warn('✗ Geocoding failed for:', p.name)
       }
+
+      // ✅ Rate limiting: 100ms between requests
+      await sleep(100)
+
     } catch (err) {
       console.error('Geocoding error for', p.name, ':', err.message)
     }
