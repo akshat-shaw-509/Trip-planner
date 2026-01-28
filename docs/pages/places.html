@@ -4,38 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Places to Visit - Planora</title>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     
-    <!-- CSS -->
+    <!-- ✅ FIXED: CSS Files in correct order -->
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/places.css">
-     <link rel="stylesheet" href="../css/recommendations.css">
+    <link rel="stylesheet" href="../css/recommendations.css">
     <link rel="stylesheet" href="../css/advanced-recommendations.css">
     <link rel="stylesheet" href="../css/comparison.css">
     <link rel="stylesheet" href="../css/trip-center-selector.css">
 </head>
 <body>
+    <!-- Navigation -->
     <nav id="mainNav">
-    <div class="logo">
-        <img src="../Svg/Logo.png" alt="Planora">
-    </div>
-    <div class="nav-center">
-        <a href="../index.html">Home</a>
-        <a href="./trips.html">My Trips</a>
-        <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search destinations...">
-            <i class="fa fa-search search-icon"></i>
+        <div class="logo">
+            <img src="../Svg/Logo.png" alt="Planora">
         </div>
-    </div>
-    <div class="auth-buttons">
-        <button class="primary" onclick="window.location.href='./login.html'">Login</button>
-        <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
-    </div>
-</nav>
+        <div class="nav-center">
+            <a href="../index.html">Home</a>
+            <a href="./trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
+        </div>
+    </nav>
 
+    <!-- Breadcrumb -->
     <div class="breadcrumb">
         <a href="./trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
         <i class="fas fa-chevron-right"></i>
@@ -50,30 +56,31 @@
         </div>
     </div>
 
-    <!-- Famous Places Recommendations Section -->
+    <!-- AI Recommendations Section -->
     <div class="recommendations-section">
         <div class="section-header">
             <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
             <p>Personalized suggestions based on your destination</p>
         </div>
         
-        <!-- Trip Center Banner will be inserted here by trip-center-selector.js -->
+        <!-- Trip Center Selector will be inserted here -->
         
-        <!-- Category filters will be inserted here by recommendations-filters.js -->
+        <!-- Recommendation Controls will be inserted here by advanced-recommendations.js -->
         
-        <div class="recommendations-grid" id="recommendationsGrid"></div>
+        <!-- Recommendations Grid -->
+        <div class="recommendations-grid" id="recommendationsGrid">
+            <!-- Cards will be inserted here -->
+        </div>
     </div>
 
-    <!-- Map View -->
-<div class="map-view-section">
-  <div class="map-header">
-    <h3><i class="fas fa-map"></i> Map View</h3>
-    <button id="closeMapBtn" class="btn-close-map" style="display:none;">✕</button>
-  </div>
-  <div id="map"></div>
-</div>
-
-    <!-- Enhanced Map View will be inserted here by map-view.js -->
+    <!-- Map View Section -->
+    <div class="map-view-section">
+        <div class="map-header">
+            <h3><i class="fas fa-map"></i> Map View</h3>
+            <button id="closeMapBtn" class="btn-close-map" style="display:none;">✕</button>
+        </div>
+        <div id="map"></div>
+    </div>
 
     <!-- My Added Places Section -->
     <div class="my-places-section">
@@ -84,7 +91,7 @@
             </button>
         </div>
 
-        <!-- Simple Filters for My Places -->
+        <!-- Filters -->
         <div class="filter-section">
             <button class="filter-btn active" data-filter="all">All Categories</button>
             <button class="filter-btn" data-filter="restaurant">🍴 Restaurants</button>
@@ -158,21 +165,23 @@
         </div>
     </div>
 
-    <!-- 1️⃣ External Libraries FIRST -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- ✅ FIXED: Scripts in correct order -->
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-<!-- 2️⃣ Core Utilities -->
-<script src="../js/config.js"></script>
-<script src="../js/api-service.js"></script>
-<script src="../js/toast.js"></script>
-<script src="../js/auth.js"></script>
-<script src="../js/nav.js"></script>
+    <!-- Core Utilities (FIRST) -->
+    <script src="../js/config.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/nav.js"></script>
 
-<!-- 3️⃣ Feature Modules (ORDER CRITICAL!) -->
-<script src="../js/trip-center-selector.js"></script>
-<script src="../js/comparison.js"></script>           <!-- ✅ MUST BE BEFORE advanced-recommendations.js -->
-<script src="../js/advanced-recommendations.js"></script>
-<script src="../js/places.js"></script>
+    <!-- Feature Modules (ORDER MATTERS!) -->
+    <script src="../js/trip-center-selector.js"></script>
+    <script src="../js/comparison.js"></script>
+    <script src="../js/advanced-recommendations.js"></script>
+    <script src="../js/places.js"></script>
 </body>
 </html>
