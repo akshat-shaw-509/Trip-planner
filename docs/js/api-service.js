@@ -1,5 +1,5 @@
 // ============================================================
-// ENHANCED API SERVICE WITH TOKEN REFRESH - FIXED EXPENSE ROUTES
+// ENHANCED API SERVICE WITH DETAILED ERROR MESSAGES
 // ============================================================
 
 const apiService = {
@@ -68,7 +68,7 @@ const apiService = {
     }, 1500);
   },
 
-  // Main request function with automatic token refresh
+  // ✅ ENHANCED REQUEST FUNCTION WITH DETAILED ERROR LOGGING
   async request(endpoint, options = {}) {
     const token = sessionStorage.getItem('accessToken');
     
@@ -85,75 +85,127 @@ const apiService = {
     }
 
     try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
-      // Handle 401 Unauthorized - Token expired
-      if (response.status === 401) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        // Check if it's a token expiration
-        if (errorData.message?.includes('expired') || errorData.message?.includes('Token expired')) {
-          console.log('⚠️ Token expired, attempting refresh...');
-
-          // Prevent multiple simultaneous refresh attempts
-          if (!this.isRefreshing) {
-            this.isRefreshing = true;
-            const newToken = await this.refreshToken();
-            this.isRefreshing = false;
-
-            if (newToken) {
-              // Notify all waiting requests
-              this.onRefreshed(newToken);
-              
-              // Retry the original request with new token
-              config.headers['Authorization'] = `Bearer ${newToken}`;
-              const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
-              
-              if (!retryResponse.ok) {
-                throw new Error(`Request failed: ${retryResponse.status}`);
-              }
-              
-              return await retryResponse.json();
-            }
-          } else {
-            // Wait for the ongoing refresh to complete
-            return new Promise((resolve, reject) => {
-              this.subscribeTokenRefresh(async (newToken) => {
-                try {
-                  config.headers['Authorization'] = `Bearer ${newToken}`;
-                  const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
-                  
-                  if (!retryResponse.ok) {
-                    throw new Error(`Request failed: ${retryResponse.status}`);
-                  }
-                  
-                  resolve(await retryResponse.json());
-                } catch (error) {
-                  reject(error);
-                }
-              });
-            });
-          }
-        } else {
-          // Not a token expiration, just unauthorized
-          throw new Error('Unauthorized');
-        }
+      // Log the request for debugging
+      console.log(`🌐 API Request: ${config.method || 'GET'} ${endpoint}`);
+      if (config.body) {
+        console.log('📤 Request Body:', config.body);
       }
 
+      const response = await fetch(`${this.baseURL}${endpoint}`, config);
+
+      // ✅ ENHANCED ERROR HANDLING
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        // Try to get JSON error response
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json();
+        } else {
+          const textError = await response.text();
+          errorData = { message: textError || `HTTP ${response.status}` };
+        }
+        
+        // Log detailed error info
+        console.error('═══════════════════════════════════════════');
+        console.error(`❌ API ERROR ${response.status}`);
+        console.error('═══════════════════════════════════════════');
+        console.error('Endpoint:', `${this.baseURL}${endpoint}`);
+        console.error('Method:', config.method || 'GET');
+        console.error('Status:', response.status, response.statusText);
+        console.error('Error Response:', errorData);
+        console.error('═══════════════════════════════════════════');
+
+        // Handle 401 Unauthorized - Token expired
+        if (response.status === 401) {
+          if (errorData.message?.includes('expired') || errorData.message?.includes('Token expired')) {
+            console.log('⚠️ Token expired, attempting refresh...');
+
+            if (!this.isRefreshing) {
+              this.isRefreshing = true;
+              const newToken = await this.refreshToken();
+              this.isRefreshing = false;
+
+              if (newToken) {
+                this.onRefreshed(newToken);
+                config.headers['Authorization'] = `Bearer ${newToken}`;
+                const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
+                
+                if (!retryResponse.ok) {
+                  const retryError = await retryResponse.json().catch(() => ({}));
+                  throw new Error(retryError.message || `HTTP ${retryResponse.status}`);
+                }
+                
+                return await retryResponse.json();
+              }
+            } else {
+              return new Promise((resolve, reject) => {
+                this.subscribeTokenRefresh(async (newToken) => {
+                  try {
+                    config.headers['Authorization'] = `Bearer ${newToken}`;
+                    const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
+                    
+                    if (!retryResponse.ok) {
+                      const retryError = await retryResponse.json().catch(() => ({}));
+                      throw new Error(retryError.message || `HTTP ${retryResponse.status}`);
+                    }
+                    
+                    resolve(await retryResponse.json());
+                  } catch (error) {
+                    reject(error);
+                  }
+                });
+              });
+            }
+          } else {
+            throw new Error('Unauthorized');
+          }
+        }
+
+        // ✅ HANDLE 400 BAD REQUEST WITH DETAILED VALIDATION ERRORS
+        if (response.status === 400) {
+          let errorMessage = 'Bad Request';
+          
+          // Handle express-validator errors (array format)
+          if (errorData.errors && Array.isArray(errorData.errors)) {
+            console.error('🔍 VALIDATION ERRORS:');
+            errorData.errors.forEach(err => {
+              const field = err.field || err.path || err.param || 'Unknown field';
+              const message = err.message || err.msg || 'Invalid value';
+              console.error(`  ❌ ${field}: ${message}`);
+            });
+            
+            errorMessage = errorData.errors.map(err => {
+              const field = err.field || err.path || err.param || 'Field';
+              const message = err.message || err.msg || 'Invalid';
+              return `${field}: ${message}`;
+            }).join('; ');
+          } 
+          // Handle simple error message
+          else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        // Other HTTP errors
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
-      return await response.json();
+      // Success - log and return
+      const data = await response.json();
+      console.log('✅ API Response:', data);
+      return data;
+
     } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error);
+      console.error(`❌ API request failed: ${endpoint}`, error);
       throw error;
     }
   },
 
   // Auth endpoints
-    auth: {
+  auth: {
     async register(data) {
       return await apiService.request('/auth/register', {
         method: 'POST',
@@ -201,7 +253,6 @@ const apiService = {
       });
     }
   },
-
 
   // Trip endpoints
   trips: {
@@ -269,7 +320,7 @@ const apiService = {
     }
   },
 
-  // Expense endpoints - FIXED TO MATCH BACKEND ROUTES
+  // Expense endpoints
   expenses: {
     async getByTrip(tripId) {
       return await apiService.request(`/expenses/trips/${tripId}/expenses`);
@@ -295,7 +346,6 @@ const apiService = {
       });
     },
 
-    // Additional helper methods matching backend capabilities
     async getSummary(tripId) {
       return await apiService.request(`/expenses/trips/${tripId}/expenses/summary`);
     },
@@ -305,7 +355,7 @@ const apiService = {
     }
   },
 
-  // Activity endpoints - FIXED TO MATCH BACKEND ROUTES
+  // Activity endpoints
   activities: {
     async getByTrip(tripId) {
       return await apiService.request(`/activities/trips/${tripId}/activities`);
@@ -403,4 +453,4 @@ const apiService = {
 // Make it globally available
 window.apiService = apiService;
 
-console.log('✅ Enhanced API Service loaded with auto-refresh (EXPENSE ROUTES FIXED)');
+console.log('✅ Enhanced API Service loaded with DETAILED ERROR MESSAGES');
