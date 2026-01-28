@@ -386,7 +386,7 @@ function applyViewMode() {
 function applyQuickFilters() {
   if (!filterState || !filterState.allRecommendations) return;
 
-  const filtered = [...filterState.allRecommendations];
+  let filtered = [...filterState.allRecommendations];
   const opts = advancedRecState.options;
 
   // Min rating filter (skip if 0 = Any)
