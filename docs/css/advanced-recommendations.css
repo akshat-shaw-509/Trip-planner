@@ -1,6 +1,10 @@
-/* css/advanced-recommendations.css - Enhanced Recommendation Options */
+/* ====================================
+   ADVANCED-RECOMMENDATIONS.CSS - FIXED & IMPROVED
+   ==================================== */
 
-/* Recommendation Controls Panel */
+/* ====================================
+   RECOMMENDATION CONTROLS PANEL
+   ==================================== */
 .rec-controls-panel {
   background: white;
   border-radius: 12px;
@@ -24,6 +28,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
 }
 
 .rec-controls-toggle {
@@ -34,6 +39,10 @@
   font-size: 20px;
   padding: 4px;
   transition: transform 0.2s;
+}
+
+.rec-controls-toggle:hover {
+  color: #4f46e5;
 }
 
 .rec-controls-toggle.collapsed {
@@ -50,7 +59,9 @@
   display: none;
 }
 
-/* Control Group */
+/* ====================================
+   CONTROL GROUP
+   ==================================== */
 .control-group {
   display: flex;
   flex-direction: column;
@@ -69,16 +80,21 @@
 .control-value {
   color: #6366f1;
   font-weight: 700;
+  font-size: 14px;
 }
 
-/* Range Slider */
+/* ====================================
+   RANGE SLIDER
+   ==================================== */
 .range-slider {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
+  background: #e5e7eb;
   outline: none;
   transition: all 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .range-slider::-webkit-slider-thumb {
@@ -98,6 +114,10 @@
   transform: scale(1.1);
 }
 
+.range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+}
+
 .range-slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
@@ -106,9 +126,24 @@
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
+  transition: all 0.2s;
 }
 
-/* Toggle Switch */
+.range-slider::-moz-range-thumb:hover {
+  background: #4f46e5;
+  transform: scale(1.1);
+}
+
+.range-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+/* ====================================
+   TOGGLE SWITCH
+   ==================================== */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -150,11 +185,17 @@ input:checked + .toggle-slider {
   background-color: #6366f1;
 }
 
+input:focus + .toggle-slider {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
 input:checked + .toggle-slider:before {
   transform: translateX(24px);
 }
 
-/* Sort Options */
+/* ====================================
+   SORT OPTIONS
+   ==================================== */
 .sort-options {
   display: flex;
   gap: 8px;
@@ -179,19 +220,23 @@ input:checked + .toggle-slider:before {
 .sort-btn:hover {
   border-color: #d1d5db;
   background: #f9fafb;
+  transform: translateY(-1px);
 }
 
 .sort-btn.active {
   background: #6366f1;
   border-color: #6366f1;
   color: white;
+  transform: translateY(0);
 }
 
 .sort-btn i {
   font-size: 12px;
 }
 
-/* View Mode Toggle */
+/* ====================================
+   VIEW MODE TOGGLE
+   ==================================== */
 .view-mode-toggle {
   display: flex;
   gap: 8px;
@@ -215,12 +260,19 @@ input:checked + .toggle-slider:before {
   gap: 6px;
 }
 
+.view-mode-btn:hover {
+  color: #374151;
+}
+
 .view-mode-btn.active {
   background: white;
   color: #6366f1;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* ====================================
+   GRID VIEW MODES
+   ==================================== */
 /* Compact View */
 .recommendations-grid.compact {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -273,7 +325,9 @@ input:checked + .toggle-slider:before {
   flex-shrink: 0;
 }
 
-/* Quick Actions Bar */
+/* ====================================
+   QUICK ACTIONS BAR
+   ==================================== */
 .quick-actions-bar {
   display: flex;
   gap: 12px;
@@ -289,6 +343,7 @@ input:checked + .toggle-slider:before {
   font-size: 14px;
   font-weight: 600;
   color: #6b7280;
+  margin: 0;
 }
 
 .quick-action-btn {
@@ -318,7 +373,9 @@ input:checked + .toggle-slider:before {
   color: white;
 }
 
-/* Bulk Actions */
+/* ====================================
+   BULK ACTIONS BAR
+   ==================================== */
 .bulk-actions-bar {
   position: fixed;
   bottom: 24px;
@@ -332,10 +389,23 @@ input:checked + .toggle-slider:before {
   align-items: center;
   gap: 16px;
   z-index: 1000;
+  max-width: 90%;
 }
 
 .bulk-actions-bar.show {
   display: flex;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .bulk-count {
@@ -369,6 +439,7 @@ input:checked + .toggle-slider:before {
 
 .bulk-action-btn.primary:hover {
   background: #4f46e5;
+  transform: translateY(-1px);
 }
 
 .bulk-action-btn.secondary {
@@ -380,7 +451,9 @@ input:checked + .toggle-slider:before {
   background: #e5e7eb;
 }
 
-/* Quality Indicators */
+/* ====================================
+   QUALITY INDICATORS
+   ==================================== */
 .quality-badge {
   position: absolute;
   top: 12px;
@@ -394,29 +467,36 @@ input:checked + .toggle-slider:before {
   display: flex;
   align-items: center;
   gap: 4px;
+  z-index: 10;
 }
 
 .quality-badge.top-rated {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
 }
 
 .quality-badge.hidden-gem {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .quality-badge.popular {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .quality-badge.budget {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
-/* Distance Ring Indicator */
+/* ====================================
+   DISTANCE RING INDICATOR
+   ==================================== */
 .distance-ring {
   width: 48px;
   height: 48px;
@@ -426,6 +506,8 @@ input:checked + .toggle-slider:before {
 
 .distance-ring svg {
   transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
 }
 
 .distance-ring-bg {
@@ -452,7 +534,9 @@ input:checked + .toggle-slider:before {
   color: #6366f1;
 }
 
-/* Save for Later Heart */
+/* ====================================
+   SAVE FOR LATER HEART
+   ==================================== */
 .save-for-later {
   position: absolute;
   top: 12px;
@@ -473,11 +557,18 @@ input:checked + .toggle-slider:before {
 .save-for-later:hover {
   border-color: #ef4444;
   background: #fef2f2;
+  transform: scale(1.1);
 }
 
 .save-for-later.saved {
   background: #ef4444;
   border-color: #ef4444;
+  animation: heartPop 0.3s ease-in-out;
+}
+
+@keyframes heartPop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 .save-for-later i {
@@ -494,10 +585,54 @@ input:checked + .toggle-slider:before {
   color: white;
 }
 
-/* Mobile Responsive */
+/* ====================================
+   LOADING STATES
+   ==================================== */
+.rec-controls-panel.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.recommendations-grid.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ====================================
+   RESPONSIVE - TABLET
+   ==================================== */
+@media (max-width: 1024px) {
+  .rec-controls-body {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .recommendations-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .bulk-actions-bar {
+    bottom: 16px;
+    padding: 14px 20px;
+  }
+}
+
+/* ====================================
+   RESPONSIVE - MOBILE
+   ==================================== */
 @media (max-width: 768px) {
+  .rec-controls-panel {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .rec-controls-header h3 {
+    font-size: 14px;
+  }
+
   .rec-controls-body {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .sort-options {
@@ -507,6 +642,27 @@ input:checked + .toggle-slider:before {
   .sort-btn {
     flex: 1;
     justify-content: center;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .view-mode-toggle {
+    width: 100%;
+  }
+
+  .view-mode-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .quick-actions-bar {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .quick-action-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 
   .bulk-actions-bar {
@@ -516,14 +672,128 @@ input:checked + .toggle-slider:before {
     transform: none;
     border-radius: 12px;
     flex-wrap: wrap;
+    padding: 12px 16px;
+    bottom: 12px;
+  }
+
+  .bulk-count {
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .bulk-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bulk-action-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .recommendations-grid.list .recommendation-card {
     flex-direction: column;
     align-items: flex-start;
+    padding: 16px;
   }
 
   .recommendations-grid.list .rec-actions {
     width: 100%;
+  }
+
+  .quality-badge {
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .save-for-later {
+    top: 8px;
+    left: 40px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .save-for-later i {
+    font-size: 14px;
+  }
+
+  .distance-ring {
+    width: 40px;
+    height: 40px;
+  }
+
+  .distance-ring-text {
+    font-size: 10px;
+  }
+}
+
+/* ====================================
+   RESPONSIVE - SMALL MOBILE
+   ==================================== */
+@media (max-width: 480px) {
+  .rec-controls-panel {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .control-label {
+    font-size: 13px;
+  }
+
+  .control-value {
+    font-size: 13px;
+  }
+
+  .sort-btn,
+  .view-mode-btn,
+  .quick-action-btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .recommendations-grid.compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ====================================
+   ACCESSIBILITY
+   ==================================== */
+.range-slider:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.sort-btn:focus,
+.view-mode-btn:focus,
+.quick-action-btn:focus,
+.bulk-action-btn:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ====================================
+   PRINT STYLES
+   ==================================== */
+@media print {
+  .rec-controls-panel,
+  .quick-actions-bar,
+  .bulk-actions-bar,
+  .save-for-later {
+    display: none !important;
+  }
+
+  .recommendations-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
