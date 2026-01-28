@@ -4,14 +4,14 @@ let placeController = require('../controllers/place.controller')
 let { authenticate } = require('../middleware/auth.middleware')
 let { validatePlace, validatePlaceUpdate } = require('../middleware/place.validation.middleware')
 
-// Try to load geoapify service
+// ✅ FIXED: Correct import path for geoapify service
 let geocodeLocation
 try {
-  const geoapifyService = require('../services/geoapifyService')
+  const geoapifyService = require('../services/geoapify.service') // ✅ Changed from geoapifyService to geoapify.service
   geocodeLocation = geoapifyService.geocodeLocation
   console.log('✅ Geoapify service loaded successfully')
 } catch (error) {
-  console.error('⚠️ Failed to load geoapifyService:', error.message)
+  console.error('⚠️ Failed to load geoapify.service:', error.message)
   console.error('Geocoding endpoint will not be available')
 }
 
@@ -28,6 +28,7 @@ if (geocodeLocation) {
         })
       }
 
+      console.log('🔍 Geocoding request for:', location)
       const coords = await geocodeLocation(location)
       
       if (!coords) {
@@ -37,23 +38,25 @@ if (geocodeLocation) {
         })
       }
 
+      console.log('✅ Geocoded successfully:', coords.formatted)
       res.json({ 
         success: true, 
         data: coords 
       })
     } catch (error) {
-      console.error('Geocoding error:', error)
+      console.error('❌ Geocoding error:', error)
       res.status(500).json({ 
         success: false, 
-        error: 'Geocoding failed' 
+        error: 'Geocoding failed: ' + error.message 
       })
     }
   })
-  console.log('✅ Geocoding endpoint registered at POST /geocode')
+  console.log('✅ Geocoding endpoint registered at POST /api/places/geocode')
 } else {
   console.warn('⚠️ Geocoding endpoint not available - service not loaded')
 }
 
+// All other routes require authentication
 router.use(authenticate)
 
 // Place routes for a specific trip
