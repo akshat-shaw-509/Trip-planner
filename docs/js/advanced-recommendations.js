@@ -1,638 +1,490 @@
-const advancedRecState = {
-  options: {
-    radius: 10, 
-    minRating: 3.0, 
-    maxResults: 50, 
-    sortBy: 'score',
-    viewMode: 'grid',
-    showHiddenGems: false, 
-    budgetFriendly: false, 
-    topRatedOnly: false,
-    nearbyOnly: false
-  },
+// Handles AI recommendations with map integration and compare features
 
-  // Using Sets so we don’t accidentally save duplicates.
-  // (Also easy to add/remove without worrying about index.)
-  savedPlaces: new Set(),
-  selectedForBulk: new Set()
+// ====================== STATE ======================
+let recommendationsState = {
+    currentTripId: null,
+    recommendations: [],
+    dayPlans: [],
+    userPreferences: null,
+    isLoading: false
 };
 
+// ====================== INIT ======================
 /**
- * Initialize advanced recommendation controls
- * This gets everything started - builds UI, adds click handlers, loads saved stuff
- * Made it simple so it doesn't break when navigating between pages
+ * Initialize recommendations module
  */
-
-function initAdvancedRecommendations() {
-  renderAdvancedControls();
-  attachAdvancedListeners();
-  loadSavedPreferences();
-}
-
-/**
- * Render advanced control panel
- * This builds the HTML and inserts it right before the recommendations grid.
- * I used a template string because it’s quicker than creating every node manually.
- */
-function renderAdvancedControls() {
-  const container = document.querySelector('.recommendations-section');
-  if (!container) return; // if the section isn't on this page, just stop
-
-  const controlsHTML = `
-    <div class="rec-controls-panel">
-      <div class="rec-controls-header">
-        <h3>
-          <i class="fas fa-sliders-h"></i>
-          Recommendation Options
-        </h3>
-        <button class="rec-controls-toggle" id="recControlsToggle">
-          <i class="fas fa-chevron-down"></i>
-        </button>
-      </div>
-      
-      <div class="rec-controls-body" id="recControlsBody">
-        <!-- Radius Control -->
-        <div class="control-group">
-          <label class="control-label">
-            Search Radius
-            <span class="control-value" id="radiusValue">10 km</span>
-          </label>
-          <input type="range" class="range-slider" id="radiusSlider" 
-                min="1" max="50" value="10" step="1">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 4px;">
-            <span>1 km</span>
-            <span>50 km</span>
-          </div>
-        </div>
-
-        <!-- Min Rating Control -->
-        <div class="control-group">
-          <label class="control-label">
-            Minimum Rating
-            <span class="control-value" id="ratingValue">3.0 ⭐</span>
-          </label>
-          <input type="range" class="range-slider" id="ratingSlider" 
-                min="0" max="5" value="3" step="0.5">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 4px;">
-            <span>Any</span>
-            <span>5.0 ⭐</span>
-          </div>
-        </div>
-
-        <!-- Max Results Control -->
-        <div class="control-group">
-          <label class="control-label">
-            Show Results
-            <span class="control-value" id="resultsValue">50</span>
-          </label>
-          <input type="range" class="range-slider" id="resultsSlider" 
-                min="10" max="100" value="50" step="10">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 4px;">
-            <span>10</span>
-            <span>100</span>
-          </div>
-        </div>
-
-        <!-- Sort By -->
-        <div class="control-group">
-          <label class="control-label">Sort By</label>
-          <div class="sort-options">
-            <button class="sort-btn active" data-sort="score">
-              <i class="fas fa-star"></i>
-              Best Match
-            </button>
-            <button class="sort-btn" data-sort="rating">
-              <i class="fas fa-trophy"></i>
-              Highest Rated
-            </button>
-            <button class="sort-btn" data-sort="distance">
-              <i class="fas fa-location-arrow"></i>
-              Nearest
-            </button>
-            <button class="sort-btn" data-sort="price">
-              <i class="fas fa-dollar-sign"></i>
-              Budget
-            </button>
-          </div>
-        </div>
-
-        <!-- View Mode -->
-        <div class="control-group">
-          <label class="control-label">View Mode</label>
-          <div class="view-mode-toggle">
-            <button class="view-mode-btn active" data-view="grid">
-              <i class="fas fa-th"></i>
-              Grid
-            </button>
-            <button class="view-mode-btn" data-view="compact">
-              <i class="fas fa-th-large"></i>
-              Compact
-            </button>
-            <button class="view-mode-btn" data-view="list">
-              <i class="fas fa-list"></i>
-              List
-            </button>
-          </div>
-        </div>
-
-        <!-- Quick Filters -->
-        <div class="control-group">
-          <label class="control-label">Quick Filters</label>
-          <div class="sort-options">
-            <button class="quick-action-btn" id="hiddenGemsBtn">
-              <i class="fas fa-gem"></i>
-              Hidden Gems
-            </button>
-            <button class="quick-action-btn" id="budgetBtn">
-              <i class="fas fa-piggy-bank"></i>
-              Budget Friendly
-            </button>
-            <button class="quick-action-btn" id="topRatedBtn">
-              <i class="fas fa-award"></i>
-              Top Rated Only
-            </button>
-            <button class="quick-action-btn" id="nearbyBtn">
-              <i class="fas fa-map-marker-alt"></i>
-              Nearby (5km)
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bulk Actions Bar -->
-    <!-- This shows up only when user selects some cards for bulk actions. -->
-    <div class="bulk-actions-bar" id="bulkActionsBar">
-      <span class="bulk-count" id="bulkCount">0 selected</span>
-      <div class="bulk-actions">
-        <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
-          <i class="fas fa-plus"></i>
-          Add All
-        </button>
-        <button class="bulk-action-btn secondary" onclick="bulkSaveForLater()">
-          <i class="fas fa-heart"></i>
-          Save
-        </button>
-        <button class="bulk-action-btn secondary" onclick="clearBulkSelection()">
-          <i class="fas fa-times"></i>
-          Clear
-        </button>
-      </div>
-    </div>
-  `;
-
-  // Insert controls before recommendations grid so it appears above the cards.
-  const grid = document.getElementById('recommendationsGrid');
-  if (grid) {
-    grid.insertAdjacentHTML('beforebegin', controlsHTML);
-  }
-}
-
-/**
- * Attach event listeners to controls
- * Mostly just updates advancedRecState + triggers filtering/sorting/reload.
- * Note: I used debouncing to avoid spamming reload/filter on slider drag.
- */
-function attachAdvancedListeners() {
-  // Toggle controls panel (collapse/expand)
-  const toggle = document.getElementById('recControlsToggle');
-  const body = document.getElementById('recControlsBody');
-  if (toggle && body) {
-    toggle.onclick = () => {
-      body.classList.toggle('hidden');
-      toggle.classList.toggle('collapsed');
-    };
-  }
-
-  // Radius slider -> triggers a reload because this likely changes API results.
-  const radiusSlider = document.getElementById('radiusSlider');
-  const radiusValue = document.getElementById('radiusValue');
-  if (radiusSlider && radiusValue) {
-    radiusSlider.oninput = (e) => {
-      const value = e.target.value;
-      radiusValue.textContent = `${value} km`;
-      advancedRecState.options.radius = parseInt(value);
-      debouncedReload();
-    };
-  }
-
-  // Rating slider -> can be applied locally, so we just filter.
-  const ratingSlider = document.getElementById('ratingSlider');
-  const ratingValue = document.getElementById('ratingValue');
-  if (ratingSlider && ratingValue) {
-    ratingSlider.oninput = (e) => {
-      const value = parseFloat(e.target.value);
-      ratingValue.textContent = value === 0 ? 'Any' : `${value.toFixed(1)} ⭐`;
-      advancedRecState.options.minRating = value;
-      debouncedFilter();
-    };
-  }
-
-  // Results slider -> triggers reload because we want different “limit” amount.
-  const resultsSlider = document.getElementById('resultsSlider');
-  const resultsValue = document.getElementById('resultsValue');
-  if (resultsSlider && resultsValue) {
-    resultsSlider.oninput = (e) => {
-      const value = e.target.value;
-      resultsValue.textContent = value;
-      advancedRecState.options.maxResults = parseInt(value);
-      debouncedReload();
-    };
-  }
-
-  // Sort buttons -> updates sort type and resorts current filtered list.
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      advancedRecState.options.sortBy = btn.dataset.sort;
-      applySorting();
-    };
-  });
-
-  // View mode buttons -> just changes CSS class on the grid.
-  document.querySelectorAll('.view-mode-btn').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      advancedRecState.options.viewMode = btn.dataset.view;
-      applyViewMode();
-    };
-  });
-
-  // Quick filter buttons -> toggle flags, then re-filter.
-  const hiddenGemsBtn = document.getElementById('hiddenGemsBtn');
-  const budgetBtn = document.getElementById('budgetBtn');
-  const topRatedBtn = document.getElementById('topRatedBtn');
-  const nearbyBtn = document.getElementById('nearbyBtn');
-
-  if (hiddenGemsBtn) {
-    hiddenGemsBtn.onclick = () => {
-      hiddenGemsBtn.classList.toggle('active');
-      advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
-      applyQuickFilters();
-    };
-  }
-
-  if (budgetBtn) {
-    budgetBtn.onclick = () => {
-      budgetBtn.classList.toggle('active');
-      advancedRecState.options.budgetFriendly = !advancedRecState.options.budgetFriendly;
-      applyQuickFilters();
-    };
-  }
-
-  if (topRatedBtn) {
-    topRatedBtn.onclick = () => {
-      topRatedBtn.classList.toggle('active');
-      advancedRecState.options.topRatedOnly = !advancedRecState.options.topRatedOnly;
-      applyQuickFilters();
-    };
-  }
-
-  if (nearbyBtn) {
-    nearbyBtn.onclick = () => {
-      nearbyBtn.classList.toggle('active');
-      advancedRecState.options.nearbyOnly = !advancedRecState.options.nearbyOnly;
-      applyQuickFilters();
-    };
-  }
-}
-
-/**
- * Debounced reload recommendations
- * We use setTimeout + clearTimeout to debounce, so rapid slider changes only trigger 1 reload. [web:7]
- */
-let reloadTimeout;
-function debouncedReload() {
-  clearTimeout(reloadTimeout);
-  reloadTimeout = setTimeout(() => {
-    // Safety check so this file doesn't crash if recommendations module isn't loaded.
-    if (typeof loadRecommendations === 'function') {
-      loadRecommendations({
-        radius: advancedRecState.options.radius * 1000, // km -> meters (API expects meters)
-        limit: advancedRecState.options.maxResults
-      });
+async function initRecommendations(tripId, tripData) {
+    recommendationsState.currentTripId = tripId;
+    
+    // Load recommendations with trip data context
+    await loadRecommendations();
+    
+    // Initialize advanced controls if available
+    if (typeof initAdvancedRecommendations === 'function') {
+        initAdvancedRecommendations();
     }
-  }, 500);
 }
 
+// ====================== LOAD RECOMMENDATIONS ======================
 /**
- * Debounced filter
- * Faster delay because filtering is local and should feel instant-ish. [web:7]
+ * Load recommendations from API with coordinate data
  */
-let filterTimeout;
-function debouncedFilter() {
-  clearTimeout(filterTimeout);
-  filterTimeout = setTimeout(() => {
-    applyQuickFilters();
-  }, 300);
-}
+async function loadRecommendations(options = {}) {
+    try {
+        recommendationsState.isLoading = true;
+        showRecommendationsLoading();
 
-/**
- * Apply sorting
- * Sorts only the current filtered list (filterState.filteredResults).
- * If filterState is missing, just exit because it means recommendations haven't loaded yet.
- */
-function applySorting() {
-  if (!filterState || !filterState.filteredResults) return;
+        console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
 
-  const sorted = [...filterState.filteredResults];
-  const sortBy = advancedRecState.options.sortBy;
+        const res = await apiService.recommendations.getForTrip(
+            recommendationsState.currentTripId,
+            options
+        );
 
-  switch (sortBy) {
-    case 'rating':
-      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      break;
-    case 'distance':
-      sorted.sort((a, b) => (a.distanceFromCenter || 0) - (b.distanceFromCenter || 0));
-      break;
-    case 'price':
-      sorted.sort((a, b) => (a.priceLevel || 0) - (b.priceLevel || 0));
-      break;
-    case 'score':
-    default:
-      sorted.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0));
-      break;
-  }
+        const responseData = res.data || {};
 
-  filterState.filteredResults = sorted;
+        // Normalize backend response
+        recommendationsState.recommendations = Array.isArray(responseData)
+            ? responseData
+            : responseData.places || [];
 
-  // Let the main recommendations renderer repaint the UI.
-  if (typeof displayFilteredRecommendations === 'function') {
-    displayFilteredRecommendations();
-  }
+        console.log('✅ Loaded recommendations:', recommendationsState.recommendations.length);
+        
+        // Store in filterState for filtering/sorting
+        if (typeof filterState !== 'undefined') {
+            filterState.allRecommendations = [...recommendationsState.recommendations];
+            filterState.filteredResults = [...recommendationsState.recommendations];
+        }
 
-  // Add small UI badges after rendering (Top Rated / Hidden Gem / Budget + save button).
-  addQualityBadges();
-}
+        displayRecommendations();
+        
+        // ✅ Update map markers after recommendations load
+        if (typeof updateMapWithRecommendations === 'function') {
+            setTimeout(() => updateMapWithRecommendations(), 500);
+        }
 
-/**
- * Apply view mode
- * Basically toggles CSS class on the grid to change layout.
- */
-function applyViewMode() {
-  const grid = document.getElementById('recommendationsGrid');
-  if (!grid) return;
-
-  grid.classList.remove('grid', 'compact', 'list');
-  grid.classList.add(advancedRecState.options.viewMode);
-}
-
-/**
- * Apply quick filters
- * Filters starting from "allRecommendations" every time (so toggles don't stack weirdly).
- */
-function applyQuickFilters() {
-  if (!filterState || !filterState.allRecommendations) return;
-
-  let filtered = [...filterState.allRecommendations];
-  const opts = advancedRecState.options;
-
-  // Min rating filter (skip if 0 = Any)
-  if (opts.minRating > 0) {
-    filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
-  }
-
-  // Hidden gems = good rating but a bit away from center (rough logic for now).
-  if (opts.showHiddenGems) {
-    filtered = filtered.filter(r =>
-      (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3
-    );
-  }
-
-  // Budget friendly = cheaper places (assuming priceLevel: 1 cheap -> 4 expensive)
-  if (opts.budgetFriendly) {
-    filtered = filtered.filter(r => (r.priceLevel || 2) <= 2);
-  }
-
-  // Top rated only = stricter rating cutoff
-  if (opts.topRatedOnly) {
-    filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
-  }
-
-  // Nearby only = very close results
-  if (opts.nearbyOnly) {
-    filtered = filtered.filter(r => (r.distanceFromCenter || 0) <= 5);
-  }
-
-  filterState.filteredResults = filtered;
-  applySorting(); // sorting also triggers UI render + badges
-}
-
-/**
- * Add quality badges to recommendation cards
- * After cards are rendered, we decorate them: badge + save button + bulk checkbox handler.
- * NOTE: This assumes card order matches filterState.filteredResults order.
- */
-function addQualityBadges() {
-  const cards = document.querySelectorAll('.recommendation-card');
-
-  cards.forEach((card, index) => {
-    const rec = filterState.filteredResults[index];
-    if (!rec) return;
-
-    // Cleanup first so we don’t duplicate badges when sorting/filtering reruns.
-    card.querySelectorAll('.quality-badge').forEach(b => b.remove());
-    card.querySelectorAll('.save-for-later').forEach(s => s.remove());
-
-    let badge = null;
-
-    // Top rated badge
-    if (rec.rating >= 4.7) {
-      badge = '<div class="quality-badge top-rated"><i class="fas fa-crown"></i> Top Rated</div>';
+    } catch (err) {
+        console.error('❌ Error loading recommendations:', err);
+        showRecommendationsError();
+    } finally {
+        recommendationsState.isLoading = false;
     }
-    // Hidden gem badge
-    else if (rec.rating >= 4.0 && rec.distanceFromCenter > 5) {
-      badge = '<div class="quality-badge hidden-gem"><i class="fas fa-gem"></i> Hidden Gem</div>';
-    }
-    // Budget badge
-    else if (rec.priceLevel <= 1) {
-      badge = '<div class="quality-badge budget"><i class="fas fa-piggy-bank"></i> Budget</div>';
+}
+
+// ====================== DISPLAY RECOMMENDATIONS ======================
+/**
+ * Display recommendations with coordinate data for map
+ */
+function displayRecommendations() {
+    const container = document.getElementById('recommendationsGrid');
+    if (!container) return;
+
+    const recs = recommendationsState.recommendations;
+
+    if (recs.length === 0) {
+        container.innerHTML = `
+            <div class="recommendations-empty">
+                <i class="fas fa-compass"></i>
+                <h3>No recommendations yet</h3>
+                <p>AI is generating personalized suggestions for your trip...</p>
+            </div>
+        `;
+        return;
     }
 
-    if (badge) {
-      card.insertAdjacentHTML('afterbegin', badge);
-    }
+    container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
 
-    // Save-for-later button: uses Set so it’s easy to check saved state.
-    const isSaved = advancedRecState.savedPlaces.has(rec.name);
-    const saveBtn = `
-      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${rec.name}', event)">
-        <i class="fas fa-heart"></i>
-      </div>
+    // Attach button listeners
+    recs.forEach((rec, index) => {
+        const card = container.children[index];
+        if (!card) return;
+
+        // Add to trip button
+        const addBtn = card.querySelector('.btn-add-to-trip');
+        if (addBtn) {
+            addBtn.onclick = (e) => {
+                e.stopPropagation();
+                addRecommendationToTrip(rec);
+            };
+        }
+
+        // View details button
+        const detailsBtn = card.querySelector('.btn-view-details');
+        if (detailsBtn) {
+            detailsBtn.onclick = (e) => {
+                e.stopPropagation();
+                showRecommendationDetails(rec);
+            };
+        }
+
+        // ✅ Compare checkbox handler
+        const checkbox = card.querySelector('.rec-card-compare-checkbox');
+        if (checkbox) {
+            checkbox.onclick = (e) => {
+                e.stopPropagation();
+                toggleCompareSelection(rec, card);
+            };
+        }
+    });
+
+    console.log('📍 Recommendation cards rendered with coordinate data');
+}
+
+// ====================== RECOMMENDATION CARD WITH COORDINATES ======================
+/**
+ * Create recommendation card with data attributes for map
+ */
+function createRecommendationCard(rec) {
+    const icon = getCategoryIcon(rec.category);
+    
+    // ✅ Extract coordinates for map
+    const lat = rec.location?.coordinates?.[1] || rec.lat || 0;
+    const lon = rec.location?.coordinates?.[0] || rec.lon || 0;
+
+    const reasonsHTML = (rec.reasons || []).map(reason => `
+        <span class="reason-tag">
+            <i class="fas fa-check-circle"></i>
+            ${escapeHtml(reason)}
+        </span>
+    `).join('');
+
+    // ✅ Add data attributes for map and comparison
+    return `
+        <div class="recommendation-card" 
+             data-place-id="${rec._id || rec.externalId || rec.name}" 
+             data-category="${rec.category}" 
+             data-lat="${lat}" 
+             data-lon="${lon}">
+            
+            <!-- ✅ Compare Checkbox -->
+            <div class="rec-card-compare-checkbox" title="Compare places">
+                <i class="fas fa-check" style="display: none;"></i>
+            </div>
+
+            <div class="rec-header">
+                <div class="rec-title">
+                    <h3 class="rec-name">${escapeHtml(rec.name)}</h3>
+                    <span class="rec-category">
+                        <i class="fas fa-${icon}"></i>
+                        ${escapeHtml(rec.category)}
+                    </span>
+                </div>
+                <div class="rec-score">
+                    <i class="fas fa-star"></i>
+                    <span class="rec-rating">${(rec.recommendationScore || rec.rating || 0).toFixed(1)}</span>
+                </div>
+            </div>
+
+            <div class="rec-meta">
+                <div class="rec-rating-display">
+                    <i class="fas fa-star"></i>
+                    ${(rec.rating || 0).toFixed(1)}
+                </div>
+                ${rec.distanceFromCenter ? `
+                    <div class="rec-distance">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${rec.distanceFromCenter.toFixed(1)} km away
+                    </div>
+                ` : ''}
+                ${rec.priceLevel ? `
+                    <div class="rec-price">
+                        <i class="fas fa-dollar-sign"></i>
+                        ${'$'.repeat(rec.priceLevel)}
+                    </div>
+                ` : ''}
+            </div>
+
+            ${reasonsHTML ? `
+                <div class="rec-reasons">
+                    <div class="rec-reasons-title">Why we recommend this</div>
+                    ${reasonsHTML}
+                </div>
+            ` : ''}
+
+            ${rec.description ? `
+                <div class="rec-description">
+                    ${escapeHtml(rec.description.substring(0, 150))}${rec.description.length > 150 ? '...' : ''}
+                </div>
+            ` : ''}
+
+            ${rec.address ? `
+                <div class="rec-address">
+                    <i class="fas fa-map-pin"></i>
+                    ${escapeHtml(rec.address)}
+                </div>
+            ` : ''}
+
+            <div class="rec-actions">
+                <button class="btn-add-to-trip">
+                    <i class="fas fa-plus"></i> Add to Trip
+                </button>
+                <button class="btn-view-details">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+        </div>
     `;
-    card.insertAdjacentHTML('afterbegin', saveBtn);
+}
 
-    // Bulk selection: hook into existing checkbox element if present.
+// ====================== COMPARE PLACES FEATURE ======================
+/**
+ * Toggle place selection for comparison
+ */
+function toggleCompareSelection(rec, card) {
     const checkbox = card.querySelector('.rec-card-compare-checkbox');
-    if (checkbox) {
-      checkbox.onclick = (e) => {
-        e.stopPropagation(); // don’t trigger card click (like opening details)
-        toggleBulkSelection(rec, card);
-      };
+    const checkIcon = checkbox?.querySelector('i');
+    
+    if (card.classList.contains('comparing')) {
+        // Deselect
+        card.classList.remove('comparing');
+        if (checkIcon) checkIcon.style.display = 'none';
+        
+        // Remove from comparison state
+        if (typeof advancedRecState !== 'undefined') {
+            advancedRecState.selectedForBulk.delete(rec.name);
+        }
+    } else {
+        // Select
+        card.classList.add('comparing');
+        if (checkIcon) checkIcon.style.display = 'block';
+        
+        // Add to comparison state
+        if (typeof advancedRecState !== 'undefined') {
+            advancedRecState.selectedForBulk.add(rec.name);
+        }
     }
-  });
+    
+    // Update comparison panel if it exists
+    if (typeof updateComparisonPanel === 'function') {
+        updateComparisonPanel();
+    }
+    
+    // Update bulk actions bar
+    if (typeof updateBulkActionsBar === 'function') {
+        updateBulkActionsBar();
+    }
 }
 
+// ====================== ADD TO TRIP ======================
 /**
- * Toggle save for later
- * Attached to window because it's called from inline onclick in the HTML.
+ * Add recommendation to user's trip places
  */
-window.toggleSaveForLater = function(placeName, event) {
-  event.stopPropagation();
+async function addRecommendationToTrip(rec) {
+    try {
+        // Validate coordinates
+        const lat = rec.location?.coordinates?.[1] || rec.lat;
+        const lon = rec.location?.coordinates?.[0] || rec.lon;
 
-  if (advancedRecState.savedPlaces.has(placeName)) {
-    advancedRecState.savedPlaces.delete(placeName);
-    showToast('Removed from saved', 'info');
-  } else {
-    advancedRecState.savedPlaces.add(placeName);
-    showToast('Saved for later!', 'success');
-  }
+        if (!lat || !lon) {
+            showToast('Missing location data for this place', 'error');
+            return;
+        }
 
-  saveSavedPreferences();
-  addQualityBadges(); // re-render the heart state
+        const placeData = {
+            name: rec.name,
+            category: rec.category,
+            address: rec.address || '',
+            location: {
+                type: 'Point',
+                coordinates: [lon, lat] // [longitude, latitude]
+            },
+            rating: rec.rating || 0,
+            priceLevel: rec.priceLevel || 0,
+            description: rec.description || '',
+            notes: `Added from AI recommendations. ${(rec.reasons || []).join('. ')}`
+        };
+
+        await apiService.places.create(
+            recommendationsState.currentTripId,
+            placeData
+        );
+
+        showToast('✅ Place added to your trip!', 'success');
+
+        // Remove from recommendations
+        recommendationsState.recommendations = 
+            recommendationsState.recommendations.filter(r => r.name !== rec.name);
+
+        // Update filter state
+        if (typeof filterState !== 'undefined') {
+            filterState.allRecommendations = [...recommendationsState.recommendations];
+            filterState.filteredResults = [...recommendationsState.recommendations];
+        }
+
+        displayRecommendations();
+
+        // Reload user places
+        if (typeof loadPlaces === 'function') {
+            await loadPlaces();
+        }
+
+        // Track preference
+        await trackPlaceAdded(rec.category);
+
+    } catch (err) {
+        console.error('❌ Error adding place:', err);
+        showToast('Failed to add place: ' + (err.message || 'Unknown error'), 'error');
+    }
+}
+
+// ====================== DETAILS MODAL ======================
+function showRecommendationDetails(rec) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+
+    const lat = rec.location?.coordinates?.[1] || rec.lat || 0;
+    const lon = rec.location?.coordinates?.[0] || rec.lon || 0;
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> ${escapeHtml(rec.name)}</h3>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; gap: 16px;">
+                    <div>
+                        <strong><i class="fas fa-tag"></i> Category:</strong> 
+                        <span style="text-transform: capitalize;">${escapeHtml(rec.category)}</span>
+                    </div>
+                    
+                    <div>
+                        <strong><i class="fas fa-star"></i> Rating:</strong> 
+                        ${(rec.rating || 0).toFixed(1)} / 5.0
+                    </div>
+                    
+                    ${rec.distanceFromCenter ? `
+                        <div>
+                            <strong><i class="fas fa-map-marker-alt"></i> Distance:</strong> 
+                            ${rec.distanceFromCenter.toFixed(2)} km from center
+                        </div>
+                    ` : ''}
+                    
+                    ${rec.priceLevel ? `
+                        <div>
+                            <strong><i class="fas fa-dollar-sign"></i> Price Level:</strong> 
+                            ${'$'.repeat(rec.priceLevel)} (${rec.priceLevel}/4)
+                        </div>
+                    ` : ''}
+                    
+                    ${rec.address ? `
+                        <div>
+                            <strong><i class="fas fa-map-pin"></i> Address:</strong><br>
+                            ${escapeHtml(rec.address)}
+                        </div>
+                    ` : ''}
+                    
+                    ${rec.description ? `
+                        <div>
+                            <strong><i class="fas fa-align-left"></i> Description:</strong><br>
+                            ${escapeHtml(rec.description)}
+                        </div>
+                    ` : ''}
+                    
+                    ${rec.reasons && rec.reasons.length > 0 ? `
+                        <div>
+                            <strong><i class="fas fa-lightbulb"></i> Why we recommend:</strong><br>
+                            <ul style="margin: 8px 0 0 20px;">
+                                ${rec.reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    <div>
+                        <strong><i class="fas fa-map"></i> Coordinates:</strong> 
+                        ${lat.toFixed(4)}, ${lon.toFixed(4)}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="this.closest('.modal').remove()">
+                    Close
+                </button>
+                <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-plus"></i> Add to Trip
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+}
+
+// Modal wrapper
+window.addRecommendationToTripFromModal = async function(rec) {
+    await addRecommendationToTrip(rec);
+    document.querySelector('.modal')?.remove();
 };
 
-/**
- * Toggle bulk selection
- * Adds/removes selection and updates the checkbox UI + bulk action bar.
- */
-function toggleBulkSelection(rec, card) {
-  const checkbox = card.querySelector('.rec-card-compare-checkbox');
-
-  if (advancedRecState.selectedForBulk.has(rec.name)) {
-    advancedRecState.selectedForBulk.delete(rec.name);
-    card.classList.remove('comparing');
-
-    if (checkbox) {
-      checkbox.classList.remove('checked');
-      checkbox.innerHTML = '';
+// ====================== PREFERENCE TRACKING ======================
+async function trackPlaceAdded(category) {
+    try {
+        await apiService.preferences.trackSearch({
+            category,
+            query: '',
+            location: null
+        });
+    } catch (err) {
+        console.warn('⚠️ Preference tracking failed:', err);
     }
-  } else {
-    advancedRecState.selectedForBulk.add(rec.name);
-    card.classList.add('comparing');
-
-    if (checkbox) {
-      checkbox.classList.add('checked');
-      checkbox.innerHTML = '<i class="fas fa-check"></i>';
-    }
-  }
-
-  updateBulkActionsBar();
 }
 
-/**
- * Update bulk actions bar
- * Shows the bar only if something is selected.
- */
-function updateBulkActionsBar() {
-  const bar = document.getElementById('bulkActionsBar');
-  const count = document.getElementById('bulkCount');
-  if (!bar || !count) return;
-
-  const selected = advancedRecState.selectedForBulk.size;
-
-  if (selected > 0) {
-    bar.classList.add('show');
-    count.textContent = `${selected} selected`;
-  } else {
-    bar.classList.remove('show');
-  }
+// ====================== UI STATES ======================
+function showRecommendationsLoading() {
+    const container = document.getElementById('recommendationsGrid');
+    if (!container) return;
+    container.innerHTML = `
+        <div class="recommendations-loading">
+            <div class="loading-spinner"></div>
+            <p>🤖 AI is finding personalized recommendations...</p>
+        </div>
+    `;
 }
 
-/**
- * Bulk add to trip
- * Loops selected places one by one (await inside loop) so we can count successes.
- * Not the fastest, but easier to handle errors per item.
- */
-window.bulkAddToTrip = async function() {
-  const selected = Array.from(advancedRecState.selectedForBulk);
-
-  if (selected.length === 0) {
-    showToast('No places selected', 'warning');
-    return;
-  }
-
-  let addedCount = 0;
-
-  for (const placeName of selected) {
-    const rec = filterState.filteredResults.find(r => r.name === placeName);
-    if (rec) {
-      try {
-        await addRecommendationToTrip(rec);
-        addedCount++;
-      } catch (err) {
-        console.error('Error adding place:', err);
-      }
-    }
-  }
-
-  if (addedCount > 0) {
-    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
-    clearBulkSelection();
-  }
-};
-
-/**
- * Bulk save for later
- * Adds all selected places to savedPlaces Set, then persists to sessionStorage.
- */
-window.bulkSaveForLater = function() {
-  const selected = Array.from(advancedRecState.selectedForBulk);
-
-  selected.forEach(placeName => {
-    advancedRecState.savedPlaces.add(placeName);
-  });
-
-  showToast(`Saved ${selected.length} place(s) for later!`, 'success');
-  saveSavedPreferences();
-  clearBulkSelection();
-  addQualityBadges();
-};
-
-/**
- * Clear bulk selection
- * Also resets the UI state on cards.
- */
-window.clearBulkSelection = function() {
-  advancedRecState.selectedForBulk.clear();
-
-  document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
-    card.classList.remove('comparing');
-    const checkbox = card.querySelector('.rec-card-compare-checkbox');
-    if (checkbox) {
-      checkbox.classList.remove('checked');
-      checkbox.innerHTML = '';
-    }
-  });
-
-  updateBulkActionsBar();
-};
-
-/**
- * Save preferences to sessionStorage
- * sessionStorage stores strings, so we JSON.stringify the array version of the Set. [web:6]
- */
-function saveSavedPreferences() {
-  try {
-    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces))); // [web:6]
-  } catch (err) {
-    console.error('Error saving preferences:', err);
-  }
+function showRecommendationsError() {
+    const container = document.getElementById('recommendationsGrid');
+    if (!container) return;
+    container.innerHTML = `
+        <div class="recommendations-empty">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Failed to load recommendations</h3>
+            <button class="btn-primary" onclick="loadRecommendations()">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+        </div>
+    `;
 }
 
-/**
- * Load saved preferences
- * Parse the stored JSON array and convert back to Set for easy lookups. [web:6]
- */
-function loadSavedPreferences() {
-  try {
-    const saved = sessionStorage.getItem('savedPlaces');
-    if (saved) {
-      advancedRecState.savedPlaces = new Set(JSON.parse(saved)); // [web:6]
-    }
-  } catch (err) {
-    console.error('Error loading preferences:', err);
-  }
+// ====================== HELPERS ======================
+function getCategoryIcon(category) {
+    const icons = {
+        restaurant: 'utensils',
+        attraction: 'landmark',
+        accommodation: 'bed',
+        transport: 'bus',
+        shopping: 'shopping-bag',
+        entertainment: 'film',
+        other: 'map-marker-alt'
+    };
+    return icons[category?.toLowerCase()] || 'map-marker-alt';
 }
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ✅ Make functions globally available
+window.loadRecommendations = loadRecommendations;
+window.displayRecommendations = displayRecommendations;
+window.addRecommendationToTrip = addRecommendationToTrip;
+window.initRecommendations = initRecommendations;
+
+console.log('✅ Advanced recommendations module loaded with map and compare support');
