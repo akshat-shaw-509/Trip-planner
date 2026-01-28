@@ -1,4 +1,4 @@
-// FIXED places.js - Proper map initialization!
+// FIXED places.js - Map shows RECOMMENDED places, not added places!
 
 let currentTripId = null;
 let allPlaces = [];
@@ -6,6 +6,7 @@ let currentFilter = 'all';
 let map = null;
 let markers = []; // Track markers for cleanup
 let currentTripData = null;
+let recommendedPlaces = []; // ✅ NEW: Store recommended places for map
 
 // ===================== Page Init =====================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -83,11 +84,6 @@ async function loadPlaces(filters = {}) {
     const res = await apiService.places.getByTrip(currentTripId, filters);
     allPlaces = res.data || [];
     displayPlaces();
-    
-    // Update map if it's initialized
-    if (map) {
-      updatePlaceMarkers();
-    }
   } catch (err) {
     console.error('Failed to load places:', err);
     allPlaces = [];
@@ -199,11 +195,6 @@ function initFilters() {
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
       displayPlaces();
-      
-      // Update map markers when filter changes
-      if (map) {
-        updatePlaceMarkers();
-      }
     });
   });
 }
@@ -326,7 +317,7 @@ async function deletePlace(placeId) {
   }
 }
 
-// ===================== Map Functions (FIXED) =====================
+// ===================== Map Functions (FIXED FOR RECOMMENDATIONS) =====================
 function toggleMap() {
   const mapEl = document.getElementById('map');
   mapEl.style.display = 'block';
@@ -339,7 +330,7 @@ function toggleMap() {
   setTimeout(() => {
     if (map) {
       map.invalidateSize();
-      updatePlaceMarkers();
+      updateRecommendedMarkers(); // ✅ Show recommended places
     }
   }, 100);
 }
@@ -392,7 +383,7 @@ function initMap() {
     setTimeout(() => {
       if (map) {
         map.invalidateSize();
-        updatePlaceMarkers();
+        updateRecommendedMarkers(); // ✅ Show recommended places
       }
     }, 300);
 
@@ -402,8 +393,8 @@ function initMap() {
   }
 }
 
-// ✅ Update markers on the map
-function updatePlaceMarkers() {
+// ✅ NEW: Function to update recommended place markers
+function updateRecommendedMarkers() {
   if (!map) {
     console.warn('⚠️ Cannot update markers - map not initialized');
     return;
@@ -419,56 +410,66 @@ function updatePlaceMarkers() {
   });
   markers = [];
 
-  // Filter places based on current filter
-  let filtered = currentFilter === 'all'
-    ? allPlaces
-    : allPlaces.filter(p => p.category.toLowerCase() === currentFilter);
-
-  if (filtered.length === 0) {
-    console.log('ℹ️ No places to show on map');
+  // Get recommended places from the recommendations grid
+  const recommendationCards = document.querySelectorAll('.recommendation-card');
+  
+  if (recommendationCards.length === 0) {
+    console.log('ℹ️ No recommended places to show on map');
+    showToast('No recommendations available yet. AI is generating suggestions...', 'info');
     return;
   }
 
-  console.log(`📍 Adding ${filtered.length} markers to map...`);
+  console.log(`📍 Adding ${recommendationCards.length} recommended places to map...`);
 
-  // Add marker for each place
   const bounds = [];
-  
-  filtered.forEach(place => {
-    if (!place.location?.coordinates || place.location.coordinates.length !== 2) {
-      console.warn('⚠️ Place missing valid coordinates:', place.name);
+  let markersAdded = 0;
+
+  recommendationCards.forEach(card => {
+    // Extract place data from card
+    const name = card.querySelector('.rec-name')?.textContent || 'Unknown Place';
+    const category = card.dataset.category || 'attraction';
+    const rating = card.querySelector('.rec-rating')?.textContent || 'N/A';
+    const description = card.querySelector('.rec-description')?.textContent || '';
+    
+    // Get coordinates from data attributes if available
+    const lat = parseFloat(card.dataset.lat);
+    const lon = parseFloat(card.dataset.lon);
+
+    // Skip if no valid coordinates
+    if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+      console.warn('⚠️ Skipping place with invalid coordinates:', name);
       return;
     }
 
-    const [lon, lat] = place.location.coordinates;
-    
     // Validate coordinates
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.warn('⚠️ Invalid coordinates for:', place.name, [lat, lon]);
+      console.warn('⚠️ Invalid coordinate range for:', name, [lat, lon]);
       return;
     }
 
-    const icon = getCategoryIcon(place.category);
+    const icon = getCategoryIcon(category);
 
-    // Create custom icon with category color
+    // Category colors
     const categoryColors = {
       restaurant: '#EF4444',
       attraction: '#3B82F6',
       accommodation: '#8B5CF6',
       transport: '#10B981',
+      shopping: '#F59E0B',
+      entertainment: '#EC4899',
       other: '#6B7280'
     };
 
-    const color = categoryColors[place.category.toLowerCase()] || categoryColors.other;
+    const color = categoryColors[category.toLowerCase()] || categoryColors.other;
 
     const markerIcon = L.divIcon({
-      html: `<div style="background: ${color}; color: white; padding: 8px; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-              <i class="fas fa-${icon}" style="font-size: 16px;"></i>
+      html: `<div style="background: ${color}; color: white; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 3px solid white;">
+              <i class="fas fa-${icon}" style="font-size: 18px;"></i>
             </div>`,
       className: '',
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -18]
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20]
     });
 
     try {
@@ -476,35 +477,42 @@ function updatePlaceMarkers() {
       const marker = L.marker([lat, lon], { icon: markerIcon })
         .addTo(map)
         .bindPopup(`
-          <div style="padding: 12px; min-width: 200px;">
-            <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">
-              ${escapeHtml(place.name)}
+          <div style="padding: 14px; min-width: 250px; max-width: 300px;">
+            <div style="font-weight: 700; font-size: 17px; margin-bottom: 10px; color: #1a2332;">
+              ${escapeHtml(name)}
             </div>
-            <div style="color: #666; margin-bottom: 8px;">
-              <i class="fas fa-${icon}"></i> ${place.category}
+            <div style="color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-${icon}"></i>
+              <span style="text-transform: capitalize;">${category}</span>
             </div>
-            ${place.rating > 0 ? `
-              <div style="margin-bottom: 8px;">
-                <span style="color: #FFA500;">⭐</span> ${place.rating.toFixed(1)}
+            ${rating !== 'N/A' ? `
+              <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                <span style="color: #FFA500; font-size: 16px;">⭐</span>
+                <span style="font-weight: 600;">${rating}</span>
               </div>
             ` : ''}
-            ${place.address ? `
-              <div style="color: #666; font-size: 13px; margin-bottom: 8px;">
-                <i class="fas fa-map-marker-alt"></i> ${escapeHtml(place.address)}
+            ${description ? `
+              <div style="color: #666; font-size: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; line-height: 1.5;">
+                ${escapeHtml(description.substring(0, 150))}${description.length > 150 ? '...' : ''}
               </div>
             ` : ''}
-            ${place.notes ? `
-              <div style="color: #666; font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                ${escapeHtml(place.notes)}
-              </div>
-            ` : ''}
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+              <button onclick="handleAddRecommendedPlace('${name.replace(/'/g, "\\'")}', '${category}')" 
+                      style="background: #0066cc; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">
+                <i class="fas fa-plus"></i> Add to My Places
+              </button>
+            </div>
           </div>
-        `);
+        `, {
+          maxWidth: 300,
+          className: 'custom-popup'
+        });
 
       markers.push(marker);
       bounds.push([lat, lon]);
+      markersAdded++;
     } catch (err) {
-      console.error('Error adding marker for:', place.name, err);
+      console.error('Error adding marker for:', name, err);
     }
   });
 
@@ -512,16 +520,33 @@ function updatePlaceMarkers() {
   if (bounds.length > 0) {
     try {
       map.fitBounds(bounds, { 
-        padding: [50, 50],
-        maxZoom: 15
+        padding: [60, 60],
+        maxZoom: 13
       });
     } catch (err) {
       console.error('Error fitting bounds:', err);
     }
   }
 
-  console.log(`✅ Added ${markers.length} markers to map`);
+  console.log(`✅ Added ${markersAdded} recommended place markers to map`);
+  
+  if (markersAdded === 0) {
+    showToast('No location data available for recommended places', 'warning');
+  }
 }
+
+// ✅ NEW: Handle adding recommended place to user's places
+window.handleAddRecommendedPlace = function(name, category) {
+  // Pre-fill the add place modal
+  document.getElementById('placeName').value = name;
+  document.getElementById('placeCategory').value = category.toLowerCase();
+  openAddPlaceModal();
+  
+  // Close the popup
+  if (map) {
+    map.closePopup();
+  }
+};
 
 // ===================== Utilities =====================
 function getCategoryIcon(cat) {
@@ -529,7 +554,9 @@ function getCategoryIcon(cat) {
     restaurant: 'utensils',
     attraction: 'landmark',
     accommodation: 'bed',
-    transport: 'bus'
+    transport: 'bus',
+    shopping: 'shopping-bag',
+    entertainment: 'film'
   }[cat?.toLowerCase()] || 'map-marker-alt';
 }
 
@@ -544,3 +571,10 @@ function addToSchedule(placeId) {
   showToast('Schedule feature coming soon!', 'info');
   console.log('Add to schedule:', placeId);
 }
+
+// ✅ EXPORT function so recommendations can trigger map update
+window.updateMapWithRecommendations = function() {
+  if (map) {
+    updateRecommendedMarkers();
+  }
+};
