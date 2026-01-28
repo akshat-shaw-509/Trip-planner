@@ -1,9 +1,10 @@
-// Handles trip places: list, filters, favorites, add/delete, and map view
+// FIXED places.js - Now with working map and geocoding!
 
 let currentTripId = null;
 let allPlaces = [];
 let currentFilter = 'all';
 let map = null;
+let markers = []; // Track markers for cleanup
 let currentTripData = null;
 
 // ===================== Page Init =====================
@@ -15,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Get trip ID from URL or storage
   currentTripId =
     new URLSearchParams(window.location.search).get('id') ||
     sessionStorage.getItem('currentTripId');
@@ -31,10 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadTripContext();
   await loadPlaces();
 
-// Pass trip data to recommendations
-if (currentTripData && typeof initRecommendations === 'function') {
-  await initRecommendations(currentTripId, currentTripData);  // ✅ Pass both params
-}
+  if (currentTripData && typeof initRecommendations === 'function') {
+    await initRecommendations(currentTripId, currentTripData);
+  }
 
   initFilters();
 
@@ -79,6 +78,11 @@ async function loadPlaces(filters = {}) {
     const res = await apiService.places.getByTrip(currentTripId, filters);
     allPlaces = res.data || [];
     displayPlaces();
+    
+    // Update map if it's open
+    if (map) {
+      updatePlaceMarkers();
+    }
   } catch (err) {
     console.error('Failed to load places:', err);
     allPlaces = [];
@@ -190,6 +194,11 @@ function initFilters() {
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
       displayPlaces();
+      
+      // Update map markers when filter changes
+      if (map) {
+        updatePlaceMarkers();
+      }
     });
   });
 }
@@ -204,31 +213,73 @@ function closePlaceModal() {
   document.getElementById('placeModal').style.display = 'none';
 }
 
-// ===================== Create Place =====================
+// ===================== Geocoding Helper =====================
+async function geocodePlace(placeName, address) {
+  try {
+    const query = address || placeName;
+    const response = await fetch(`${API_BASE_URL}/places/geocode`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionStorage.getItem('accessToken')}`
+      },
+      body: JSON.stringify({ location: query })
+    });
+
+    if (!response.ok) {
+      throw new Error('Geocoding failed');
+    }
+
+    const result = await response.json();
+    return result.data;
+  } catch (err) {
+    console.error('Geocoding error:', err);
+    return null;
+  }
+}
+
+// ===================== Create Place (FIXED) =====================
 async function handlePlaceSubmit(e) {
   e.preventDefault();
 
+  const name = document.getElementById('placeName').value.trim();
+  const address = document.getElementById('placeAddress').value.trim();
+
+  // ✅ GEOCODE THE PLACE FIRST
+  showToast('Finding location...', 'info');
+  const coords = await geocodePlace(name, address);
+
+  if (!coords) {
+    showToast('Could not find location. Please enter a valid address or place name.', 'error');
+    return;
+  }
+
   const data = {
-    name: document.getElementById('placeName').value.trim(),
+    name: name,
     category: document.getElementById('placeCategory').value.toLowerCase(),
     visitDate: document.getElementById('placeVisitDate').value || null,
     rating: parseFloat(document.getElementById('placeRating').value) || 0,
-    address: document.getElementById('placeAddress').value.trim(),
+    address: address || coords.formatted,
     description: document.getElementById('placeDescription').value.trim(),
     priceLevel: parseInt(document.getElementById('placePrice').value) || 0,
-    notes: document.getElementById('placeNotes').value.trim()
+    notes: document.getElementById('placeNotes').value.trim(),
+    // ✅ ADD COORDINATES (REQUIRED BY MODEL)
+    location: {
+      type: 'Point',
+      coordinates: [coords.lon, coords.lat] // [longitude, latitude]
+    }
   };
 
   try {
     await apiService.places.create(currentTripId, data);
-    showToast('Place added', 'success');
+    showToast('Place added successfully!', 'success');
     closePlaceModal();
     await loadPlaces();
 
     typeof loadRecommendations === 'function' && loadRecommendations();
   } catch (err) {
     console.error('Failed to add place:', err);
-    showToast('Failed to add place', 'error');
+    showToast('Failed to add place: ' + (err.message || 'Unknown error'), 'error');
   }
 }
 
@@ -270,7 +321,7 @@ async function deletePlace(placeId) {
   }
 }
 
-// ===================== Map =====================
+// ===================== Map Functions (FIXED) =====================
 function toggleMap() {
   document.getElementById('map').style.display = 'block';
   document.getElementById('toggleMapBtn').style.display = 'none';
@@ -285,16 +336,129 @@ function closeMap() {
 }
 
 function initMap() {
-  if (map || typeof L === 'undefined') return;
+  if (map || typeof L === 'undefined') {
+    console.warn('Leaflet not loaded or map already initialized');
+    return;
+  }
+
+  // Create map
   map = L.map('map').setView([20.5937, 78.9629], 5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
   }).addTo(map);
+
+  // ✅ ADD MARKERS FOR ALL PLACES
+  updatePlaceMarkers();
 }
 
+// ✅ NEW: Update markers on the map
+function updatePlaceMarkers() {
+  if (!map) {
+    console.warn('Map not initialized');
+    return;
+  }
 
+  // Clear existing markers
+  markers.forEach(marker => map.removeLayer(marker));
+  markers = [];
 
+  // Filter places based on current filter
+  let filtered = currentFilter === 'all'
+    ? allPlaces
+    : allPlaces.filter(p => p.category.toLowerCase() === currentFilter);
+
+  if (filtered.length === 0) {
+    console.log('No places to show on map');
+    return;
+  }
+
+  // Add marker for each place
+  const bounds = [];
+  
+  filtered.forEach(place => {
+    if (!place.location?.coordinates || place.location.coordinates.length !== 2) {
+      console.warn('Place missing valid coordinates:', place.name);
+      return;
+    }
+
+    const [lon, lat] = place.location.coordinates;
+    
+    // Validate coordinates
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      console.warn('Invalid coordinates for:', place.name, [lat, lon]);
+      return;
+    }
+
+    const icon = getCategoryIcon(place.category);
+
+    // Create custom icon with category color
+    const categoryColors = {
+      restaurant: '#EF4444',
+      attraction: '#3B82F6',
+      accommodation: '#8B5CF6',
+      transport: '#10B981',
+      other: '#6B7280'
+    };
+
+    const color = categoryColors[place.category.toLowerCase()] || categoryColors.other;
+
+    const markerIcon = L.divIcon({
+      html: `<div style="background: ${color}; color: white; padding: 8px; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+              <i class="fas fa-${icon}" style="font-size: 16px;"></i>
+            </div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18]
+    });
+
+    // Create marker
+    const marker = L.marker([lat, lon], { icon: markerIcon })
+      .addTo(map)
+      .bindPopup(`
+        <div style="padding: 12px; min-width: 200px;">
+          <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">
+            ${escapeHtml(place.name)}
+          </div>
+          <div style="color: #666; margin-bottom: 8px;">
+            <i class="fas fa-${icon}"></i> ${place.category}
+          </div>
+          ${place.rating > 0 ? `
+            <div style="margin-bottom: 8px;">
+              <span style="color: #FFA500;">⭐</span> ${place.rating.toFixed(1)}
+            </div>
+          ` : ''}
+          ${place.address ? `
+            <div style="color: #666; font-size: 13px; margin-bottom: 8px;">
+              <i class="fas fa-map-marker-alt"></i> ${escapeHtml(place.address)}
+            </div>
+          ` : ''}
+          ${place.notes ? `
+            <div style="color: #666; font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+              ${escapeHtml(place.notes)}
+            </div>
+          ` : ''}
+        </div>
+      `);
+
+    markers.push(marker);
+    bounds.push([lat, lon]);
+  });
+
+  // Fit map to show all markers
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { 
+      padding: [50, 50],
+      maxZoom: 15
+    });
+  }
+
+  console.log(`✅ Added ${markers.length} markers to map`);
+}
+
+// ===================== Utilities =====================
 function getCategoryIcon(cat) {
   return {
     restaurant: 'utensils',
@@ -308,4 +472,10 @@ function escapeHtml(text = '') {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ===================== Add to Schedule (Placeholder) =====================
+function addToSchedule(placeId) {
+  showToast('Schedule feature coming soon!', 'info');
+  console.log('Add to schedule:', placeId);
 }
