@@ -1,5 +1,5 @@
 //============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED
 // Handles AI recommendations, filters, sorting, comparison, and map integration
 // ============================================================
 
@@ -20,8 +20,23 @@ const advancedRecState = {
   selectedForBulk: new Set()
 };
 
-// ✅ FIXED: Removed duplicate recommendationsState declaration
-// Recommendations state is now part of window.recommendationsState
+// ✅ FIXED: Proper filter state management
+if (!window.filterState) {
+  window.filterState = {
+    activeFilters: {
+      categories: [],
+      minRating: 0,
+      maxDistance: 999,
+      priceLevel: null
+    },
+    allRecommendations: [], // ✅ NEVER mutate this
+    filteredResults: []     // ✅ This is what gets displayed
+  };
+}
+
+const filterState = window.filterState;
+
+// Recommendations state
 if (!window.recommendationsState) {
   window.recommendationsState = {
     currentTripId: null,
@@ -29,7 +44,7 @@ if (!window.recommendationsState) {
     dayPlans: [],
     userPreferences: null,
     isLoading: false,
-    tripData: null // Added to store trip data
+    tripData: null
   };
 }
 
@@ -43,7 +58,7 @@ async function initRecommendations(tripId, tripData) {
   console.log('🚀 Initializing unified recommendations module');
   
   recommendationsState.currentTripId = tripId;
-  recommendationsState.tripData = tripData; // Store trip data
+  recommendationsState.tripData = tripData;
   
   // Render controls UI
   renderAdvancedControls();
@@ -84,28 +99,22 @@ async function loadRecommendations(options = {}) {
 
     // ✅ ENSURE COORDINATES ARE PROPERLY EXTRACTED
     places = places.map(place => {
-      // Extract coordinates from various possible formats
       let lat = 0, lon = 0;
       
       if (place.location?.coordinates) {
-        // GeoJSON format: [lon, lat]
         lon = place.location.coordinates[0];
         lat = place.location.coordinates[1];
       } else if (place.lat && place.lon) {
-        // Direct properties
         lat = place.lat;
         lon = place.lon;
       } else if (place.location?.lat && place.location?.lon) {
-        // Nested properties
         lat = place.location.lat;
         lon = place.location.lon;
       } else if (place.coordinates) {
-        // Alternative coordinates field
         lon = place.coordinates[0];
         lat = place.coordinates[1];
       }
 
-      // ✅ VALIDATE COORDINATES
       const validLat = parseFloat(lat);
       const validLon = parseFloat(lon);
       
@@ -140,19 +149,16 @@ async function loadRecommendations(options = {}) {
       console.warn(`⚠️ Filtered out ${invalidCount} places with invalid coordinates`);
     }
 
-    recommendationsState.recommendations = validPlaces;
+    // ✅ CRITICAL: Initialize filter state with ALL recommendations
+    filterState.allRecommendations = [...validPlaces];
+    filterState.filteredResults = [...validPlaces];
+    recommendationsState.recommendations = [...validPlaces];
 
     console.log('✅ Loaded', validPlaces.length, 'valid recommendations');
-    
-    // Update filter state if it exists
-    if (typeof filterState !== 'undefined') {
-      filterState.allRecommendations = [...validPlaces];
-      filterState.filteredResults = [...validPlaces];
-    }
 
+    // Display and update map
     displayRecommendations();
     
-    // ✅ Update map after short delay to ensure DOM is ready
     setTimeout(() => {
       if (typeof updateMapWithRecommendations === 'function') {
         console.log('🗺️ Triggering map update...');
@@ -184,8 +190,8 @@ function displayRecommendations() {
     container.innerHTML = `
       <div class="recommendations-empty">
         <i class="fas fa-compass"></i>
-        <h3>No recommendations yet</h3>
-        <p>AI is generating personalized suggestions for your trip...</p>
+        <h3>No recommendations match your filters</h3>
+        <p>Try adjusting your filters or search criteria</p>
       </div>
     `;
     return;
@@ -198,7 +204,6 @@ function displayRecommendations() {
     const card = container.children[index];
     if (!card) return;
 
-    // Add to trip button
     const addBtn = card.querySelector('.btn-add-to-trip');
     if (addBtn) {
       addBtn.onclick = (e) => {
@@ -207,7 +212,6 @@ function displayRecommendations() {
       };
     }
 
-    // View details button
     const detailsBtn = card.querySelector('.btn-view-details');
     if (detailsBtn) {
       detailsBtn.onclick = (e) => {
@@ -216,7 +220,6 @@ function displayRecommendations() {
       };
     }
 
-    // Compare checkbox
     const checkbox = card.querySelector('.rec-card-compare-checkbox');
     if (checkbox) {
       checkbox.onclick = (e) => {
@@ -226,9 +229,7 @@ function displayRecommendations() {
     }
   });
 
-  // Add quality badges
   addQualityBadges();
-
   console.log('📍 Rendered', recs.length, 'recommendation cards with coordinates');
 }
 
@@ -237,8 +238,6 @@ window.displayRecommendations = displayRecommendations;
 // ====================== CREATE RECOMMENDATION CARD ======================
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
-  
-  // ✅ Use validated lat/lon and ensure they're set as data attributes
   const lat = parseFloat(rec.lat) || 0;
   const lon = parseFloat(rec.lon) || 0;
 
@@ -421,7 +420,7 @@ function attachAdvancedListeners() {
     };
   }
 
-  // Radius slider
+  // Radius slider - reloads from API
   const radiusSlider = document.getElementById('radiusSlider');
   const radiusValue = document.getElementById('radiusValue');
   if (radiusSlider) {
@@ -433,7 +432,7 @@ function attachAdvancedListeners() {
     };
   }
 
-  // Rating slider
+  // Rating slider - filters existing data
   const ratingSlider = document.getElementById('ratingSlider');
   const ratingValue = document.getElementById('ratingValue');
   if (ratingSlider) {
@@ -487,8 +486,10 @@ function debouncedFilter() {
 }
 
 // ====================== SORTING & FILTERING ======================
+// ✅ FIXED: Proper sorting that preserves filters
 function applySorting() {
-  let results = [...recommendationsState.recommendations];
+  // ✅ Always start with filtered results, not all recommendations
+  let results = [...filterState.filteredResults];
   
   switch (advancedRecState.options.sortBy) {
     case 'rating':
@@ -501,28 +502,50 @@ function applySorting() {
       results.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0));
   }
 
+  // ✅ Update both filtered results and display
+  filterState.filteredResults = results;
   recommendationsState.recommendations = results;
   displayRecommendations();
+  
+  console.log('✅ Applied sorting:', advancedRecState.options.sortBy);
 }
 
+// ✅ FIXED: Proper filtering that preserves original data
 function applyQuickFilters() {
-  let filtered = [...recommendationsState.recommendations];
+  // ✅ CRITICAL: Always start from ALL recommendations, not already-filtered ones
+  let filtered = [...filterState.allRecommendations];
   const opts = advancedRecState.options;
 
+  console.log('🔍 Applying filters to', filtered.length, 'recommendations');
+
+  // Apply rating filter
   if (opts.minRating > 0) {
+    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
+    console.log(`  Rating filter (>=${opts.minRating}): ${before} → ${filtered.length}`);
   }
 
+  // Apply hidden gems filter
   if (opts.showHiddenGems) {
+    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3);
+    console.log(`  Hidden gems filter: ${before} → ${filtered.length}`);
   }
 
+  // Apply top rated filter
   if (opts.topRatedOnly) {
+    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
+    console.log(`  Top rated filter: ${before} → ${filtered.length}`);
   }
 
-  recommendationsState.recommendations = filtered;
-  displayRecommendations();
+  console.log('✅ Filter complete:', filtered.length, 'results');
+
+  // ✅ Update filtered results first
+  filterState.filteredResults = filtered;
+  
+  // ✅ Then apply current sort order
+  applySorting();
 }
 
 // ====================== QUALITY BADGES ======================
@@ -616,8 +639,10 @@ async function addRecommendationToTrip(rec) {
     await apiService.places.create(recommendationsState.currentTripId, placeData);
     showToast('✅ Place added to your trip!', 'success');
 
-    recommendationsState.recommendations = 
-      recommendationsState.recommendations.filter(r => r.name !== rec.name);
+    // ✅ Remove from ALL arrays
+    filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
+    filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
+    recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
 
     displayRecommendations();
 
@@ -787,4 +812,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Unified advanced recommendations module loaded with map support (FIXED)');
+console.log('✅ Unified advanced recommendations module loaded with FIXED filters');
