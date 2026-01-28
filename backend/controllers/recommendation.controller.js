@@ -29,14 +29,22 @@ let getRecommendations = async (req, res, next) => {
     
     let recommendations = await recommendationService.getRecommendations(
       tripId,
-      req.user.id,
       options
     )
     
-    console.log('  Service returned', recommendations.length, 'recommendations')
-    
-    sendSuccess(res, 200, recommendations, null, { count: recommendations.length })
-    
+    console.log(
+  '  Service returned',
+  recommendations.places.length,
+  'recommendations'
+)
+
+sendSuccess(
+  res,
+  200,
+  { places: recommendations.places },
+  recommendations.message,
+  { count: recommendations.places.length }
+)    
     console.log('  Response sent successfully\n')
     
   } catch (error) {
@@ -52,7 +60,7 @@ let getDayPlans = async (req, res, next) => {
     console.log('  Trip ID:', req.params.tripId)
     
     let tripId = req.params.tripId
-    let dayPlans = await recommendationService.generateDayPlans(tripId, req.user.id)
+    let dayPlans = await recommendationService.generateDayPlans(tripId)
     
     console.log('  Generated', dayPlans.length, 'day plans')
     
@@ -130,3 +138,4 @@ module.exports = {
   updateRatingThreshold,
   resetPreferences
 }
+
