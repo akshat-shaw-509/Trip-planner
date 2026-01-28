@@ -20,14 +20,20 @@ const advancedRecState = {
   selectedForBulk: new Set()
 };
 
-// Recommendations state (separate from advancedRecState)
-const recommendationsState = {
-  currentTripId: null,
-  recommendations: [],
-  dayPlans: [],
-  userPreferences: null,
-  isLoading: false
-};
+// ✅ FIXED: Removed duplicate recommendationsState declaration
+// Recommendations state is now part of window.recommendationsState
+if (!window.recommendationsState) {
+  window.recommendationsState = {
+    currentTripId: null,
+    recommendations: [],
+    dayPlans: [],
+    userPreferences: null,
+    isLoading: false,
+    tripData: null // Added to store trip data
+  };
+}
+
+const recommendationsState = window.recommendationsState;
 
 // ====================== INITIALIZATION ======================
 /**
@@ -37,6 +43,7 @@ async function initRecommendations(tripId, tripData) {
   console.log('🚀 Initializing unified recommendations module');
   
   recommendationsState.currentTripId = tripId;
+  recommendationsState.tripData = tripData; // Store trip data
   
   // Render controls UI
   renderAdvancedControls();
@@ -92,22 +99,41 @@ async function loadRecommendations(options = {}) {
         // Nested properties
         lat = place.location.lat;
         lon = place.location.lon;
+      } else if (place.coordinates) {
+        // Alternative coordinates field
+        lon = place.coordinates[0];
+        lat = place.coordinates[1];
       }
 
       // ✅ VALIDATE COORDINATES
-      if (!lat || !lon || lat === 0 || lon === 0) {
-        console.warn('⚠️ Missing/invalid coordinates for:', place.name);
+      const validLat = parseFloat(lat);
+      const validLon = parseFloat(lon);
+      
+      if (!validLat || !validLon || isNaN(validLat) || isNaN(validLon) || 
+          validLat === 0 || validLon === 0 ||
+          validLat < -90 || validLat > 90 || validLon < -180 || validLon > 180) {
+        console.warn('⚠️ Missing/invalid coordinates for:', place.name, {lat: validLat, lon: validLon});
       }
 
       return {
         ...place,
-        lat: parseFloat(lat) || 0,
-        lon: parseFloat(lon) || 0
+        lat: validLat || 0,
+        lon: validLon || 0
       };
     });
 
     // Filter out places with no valid coordinates
-    const validPlaces = places.filter(p => p.lat !== 0 && p.lon !== 0);
+    const validPlaces = places.filter(p => 
+      p.lat !== 0 && 
+      p.lon !== 0 && 
+      !isNaN(p.lat) && 
+      !isNaN(p.lon) &&
+      p.lat >= -90 && 
+      p.lat <= 90 && 
+      p.lon >= -180 && 
+      p.lon <= 180
+    );
+    
     const invalidCount = places.length - validPlaces.length;
     
     if (invalidCount > 0) {
@@ -118,7 +144,7 @@ async function loadRecommendations(options = {}) {
 
     console.log('✅ Loaded', validPlaces.length, 'valid recommendations');
     
-    // Update filter state
+    // Update filter state if it exists
     if (typeof filterState !== 'undefined') {
       filterState.allRecommendations = [...validPlaces];
       filterState.filteredResults = [...validPlaces];
@@ -212,9 +238,9 @@ window.displayRecommendations = displayRecommendations;
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
   
-  // ✅ Use validated lat/lon
-  const lat = rec.lat || 0;
-  const lon = rec.lon || 0;
+  // ✅ Use validated lat/lon and ensure they're set as data attributes
+  const lat = parseFloat(rec.lat) || 0;
+  const lon = parseFloat(rec.lon) || 0;
 
   const reasonsHTML = (rec.reasons || []).map(reason => `
     <span class="reason-tag">
@@ -228,7 +254,8 @@ function createRecommendationCard(rec) {
          data-place-id="${rec._id || rec.externalId || rec.name}" 
          data-category="${rec.category}" 
          data-lat="${lat}" 
-         data-lon="${lon}">
+         data-lon="${lon}"
+         data-name="${escapeHtml(rec.name)}">
       
       <div class="rec-card-compare-checkbox" title="Compare places">
         <i class="fas fa-check" style="display: none;"></i>
@@ -760,4 +787,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Unified advanced recommendations module loaded with map support');
+console.log('✅ Unified advanced recommendations module loaded with map support (FIXED)');
