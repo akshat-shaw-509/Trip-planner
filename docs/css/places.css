@@ -532,8 +532,11 @@ body {
 
 #map {
     width: 100%;
-    height: calc(100% - 80px);
+    height: 450px;        /* REQUIRED */
+    min-height: 400px;
+    border-radius: 12px;
 }
+
 
 /* Custom Map Markers */
 .custom-marker {
