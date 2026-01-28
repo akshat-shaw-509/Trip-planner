@@ -341,7 +341,6 @@ function initMap() {
     return;
   }
 
-  // Create map
   map = L.map('map').setView([20.5937, 78.9629], 5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -349,9 +348,14 @@ function initMap() {
     maxZoom: 19
   }).addTo(map);
 
-  // ✅ ADD MARKERS FOR ALL PLACES
+  // ✅ IMPORTANT: force Leaflet to recalc container size
+  setTimeout(() => {
+    map.invalidateSize();
+  }, 200);
+
   updatePlaceMarkers();
 }
+
 
 // ✅ NEW: Update markers on the map
 function updatePlaceMarkers() {
