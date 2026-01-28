@@ -264,7 +264,7 @@ const apiService = {
 
     async toggleFavorite(placeId) {
       return await apiService.request(`/places/${placeId}/favorite`, {
-        method: 'POST'
+        method: 'PATCH'
       });
     }
   },
