@@ -1,4 +1,4 @@
-// ============================================================
+//============================================================
 // UNIFIED ADVANCED RECOMMENDATIONS MODULE
 // Handles AI recommendations, filters, sorting, comparison, and map integration
 // ============================================================
