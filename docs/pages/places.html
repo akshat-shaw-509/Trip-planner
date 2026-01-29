@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     
-    <!-- ✅ FIXED: CSS Files in correct order -->
+    <!-- ✅ CSS Files in correct order -->
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/places.css">
     <link rel="stylesheet" href="../css/recommendations.css">
@@ -59,8 +59,15 @@
     <!-- AI Recommendations Section -->
     <div class="recommendations-section">
         <div class="section-header">
-            <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
-            <p>Personalized suggestions based on your destination</p>
+            <div>
+                <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
+                <p>Personalized suggestions based on your destination</p>
+            </div>
+            <button class="btn-compare" id="compareBtn" onclick="openComparisonPanel()" style="display: none;">
+                <i class="fas fa-balance-scale"></i>
+                Compare
+                <span class="compare-count" id="compareCountBadge">0</span>
+            </button>
         </div>
         
         <!-- Trip Center Selector will be inserted here -->
@@ -165,7 +172,7 @@
         </div>
     </div>
 
-    <!-- ✅ FIXED: Scripts in correct order -->
+    <!-- ✅ Scripts in correct order -->
     
     <!-- External Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -183,5 +190,30 @@
     <script src="../js/comparison.js"></script>
     <script src="../js/advanced-recommendations.js"></script>
     <script src="../js/places.js"></script>
+    
+    <!-- Update Compare Button Badge -->
+    <script>
+        // Override updateComparisonPanel to also update the compare button
+        const originalUpdateComparisonPanel = window.updateComparisonPanel;
+        window.updateComparisonPanel = function() {
+            if (originalUpdateComparisonPanel) {
+                originalUpdateComparisonPanel();
+            }
+            
+            const compareBtn = document.getElementById('compareBtn');
+            const compareBadge = document.getElementById('compareCountBadge');
+            const count = window.comparisonState ? window.comparisonState.selectedPlaces.size : 0;
+            
+            if (compareBtn && compareBadge) {
+                compareBadge.textContent = count;
+                
+                if (count > 0) {
+                    compareBtn.style.display = 'inline-flex';
+                } else {
+                    compareBtn.style.display = 'none';
+                }
+            }
+        };
+    </script>
 </body>
 </html>
