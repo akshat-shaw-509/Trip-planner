@@ -1,949 +1,822 @@
-//============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED
-// Handles AI recommendations, filters, sorting, comparison, and map integration
-// ============================================================
+/* =====================================================================
+   ADVANCED RECOMMENDATIONS - MODERN UI STYLING
+   Inspired by style.css design system
+   ===================================================================== */
 
-// ====================== STATE ======================
-const advancedRecState = {
-  options: {
-    radius: 10, 
-    minRating: 3.0, 
-    maxResults: 50, 
-    sortBy: 'score',
-    viewMode: 'grid',
-    showHiddenGems: false, 
-    budgetFriendly: false, 
-    topRatedOnly: false,
-    nearbyOnly: false
-  },
-  savedPlaces: new Set(),
-  selectedForBulk: new Set()
-};
-
-// ✅ FIXED: Proper filter state management
-if (!window.filterState) {
-  window.filterState = {
-    activeFilters: {
-      categories: [],
-      minRating: 0,
-      maxDistance: 999,
-      priceLevel: null
-    },
-    allRecommendations: [], // ✅ NEVER mutate this
-    filteredResults: []     // ✅ This is what gets displayed
-  };
+/* ===================== RECOMMENDATIONS SECTION ===================== */
+.recommendations-section {
+    padding: 60px 0;
+    background: #ffffff;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-const filterState = window.filterState;
-
-// Recommendations state
-if (!window.recommendationsState) {
-  window.recommendationsState = {
-    currentTripId: null,
-    recommendations: [],
-    dayPlans: [],
-    userPreferences: null,
-    isLoading: false,
-    tripData: null
-  };
+.section-header {
+    text-align: center;
+    margin-bottom: 48px;
 }
 
-const recommendationsState = window.recommendationsState;
-
-// ====================== STORAGE FUNCTIONS ======================
-/**
- * Save user preferences to session storage
- */
-function saveSavedPreferences() {
-  try {
-    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
-  } catch (err) {
-    console.error('Error saving preferences:', err);
-  }
+.section-header h2 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a2332;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
 }
 
-/**
- * Load saved preferences from session storage
- */
-function loadSavedPreferences() {
-  try {
-    const saved = sessionStorage.getItem('savedPlaces');
-    if (saved) {
-      advancedRecState.savedPlaces = new Set(JSON.parse(saved));
-    }
-  } catch (err) {
-    console.error('Error loading preferences:', err);
-  }
+.section-header p {
+    font-size: 17px;
+    color: #64748b;
+    line-height: 1.7;
 }
 
-// ====================== INITIALIZATION ======================
-/**
- * Initialize all recommendation features
- */
-async function initRecommendations(tripId, tripData) {
-  console.log('🚀 Initializing unified recommendations module');
-  
-  recommendationsState.currentTripId = tripId;
-  recommendationsState.tripData = tripData;
-  
-  // Render controls UI
-  renderAdvancedControls();
-  attachAdvancedListeners();
-  loadSavedPreferences();
-  
-  // Load recommendations from API
-  await loadRecommendations();
+/* ===================== CATEGORY FILTER BUTTONS ===================== */
+.rec-category-filters {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-// Make globally available
-window.initRecommendations = initRecommendations;
-
-// ====================== LOAD RECOMMENDATIONS ======================
-/**
- * Load recommendations from API with proper coordinate handling
- */
-async function loadRecommendations(options = {}) {
-  try {
-    recommendationsState.isLoading = true;
-    showRecommendationsLoading();
-    
-    // ✅ Add loading state to active category button
-    const activeBtn = document.querySelector('.category-filter-btn.active');
-    if (activeBtn) {
-      activeBtn.classList.add('loading');
-    }
-
-    console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
-    console.log('  📋 Category filter:', options.category || 'all');
-
-    const res = await apiService.recommendations.getForTrip(
-      recommendationsState.currentTripId,
-      {
-        radius: (advancedRecState.options.radius * 1000) || 10000,
-        limit: advancedRecState.options.maxResults || 50,
-        category: options.category
-      }
-    );
-
-    const responseData = res.data || {};
-    let places = Array.isArray(responseData) ? responseData : responseData.places || [];
-    
-    console.log('📦 Raw API response:', places.length, 'places');
-
-    // ✅ ENSURE COORDINATES ARE PROPERLY EXTRACTED
-    places = places.map(place => {
-      let lat = 0, lon = 0;
-      
-      if (place.location?.coordinates) {
-        lon = place.location.coordinates[0];
-        lat = place.location.coordinates[1];
-      } else if (place.lat && place.lon) {
-        lat = place.lat;
-        lon = place.lon;
-      } else if (place.location?.lat && place.location?.lon) {
-        lat = place.location.lat;
-        lon = place.location.lon;
-      } else if (place.coordinates) {
-        lon = place.coordinates[0];
-        lat = place.coordinates[1];
-      }
-
-      const validLat = parseFloat(lat);
-      const validLon = parseFloat(lon);
-      
-      if (!validLat || !validLon || isNaN(validLat) || isNaN(validLon) || 
-          validLat === 0 || validLon === 0 ||
-          validLat < -90 || validLat > 90 || validLon < -180 || validLon > 180) {
-        console.warn('⚠️ Missing/invalid coordinates for:', place.name, {lat: validLat, lon: validLon});
-      }
-
-      return {
-        ...place,
-        lat: validLat || 0,
-        lon: validLon || 0
-      };
-    });
-
-    // Filter out places with no valid coordinates
-    const validPlaces = places.filter(p => 
-      p.lat !== 0 && 
-      p.lon !== 0 && 
-      !isNaN(p.lat) && 
-      !isNaN(p.lon) &&
-      p.lat >= -90 && 
-      p.lat <= 90 && 
-      p.lon >= -180 && 
-      p.lon <= 180
-    );
-    
-    const invalidCount = places.length - validPlaces.length;
-    
-    if (invalidCount > 0) {
-      console.warn(`⚠️ Filtered out ${invalidCount} places with invalid coordinates`);
-    }
-
-    // ✅ CRITICAL: Initialize filter state with ALL recommendations
-    filterState.allRecommendations = [...validPlaces];
-    filterState.filteredResults = [...validPlaces];
-    recommendationsState.recommendations = [...validPlaces];
-
-    console.log('✅ Loaded', validPlaces.length, 'valid recommendations');
-
-    // Display and update map
-    displayRecommendations();
-    
-    setTimeout(() => {
-      if (typeof updateMapWithRecommendations === 'function') {
-        console.log('🗺️ Triggering map update...');
-        updateMapWithRecommendations();
-      }
-    }, 500);
-
-  } catch (err) {
-    console.error('❌ Error loading recommendations:', err);
-    showRecommendationsError();
-  } finally {
-    recommendationsState.isLoading = false;
-    
-    // ✅ Remove loading state from category button
-    const loadingBtn = document.querySelector('.category-filter-btn.loading');
-    if (loadingBtn) {
-      loadingBtn.classList.remove('loading');
-    }
-  }
+.rec-category-filters h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2332;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-window.loadRecommendations = loadRecommendations;
-
-// ====================== DISPLAY RECOMMENDATIONS ======================
-/**
- * Display recommendations with proper data attributes for map
- */
-function displayRecommendations() {
-  const container = document.getElementById('recommendationsGrid');
-  if (!container) return;
-
-  const recs = recommendationsState.recommendations;
-
-  if (recs.length === 0) {
-    container.innerHTML = `
-      <div class="recommendations-empty">
-        <i class="fas fa-compass"></i>
-        <h3>No recommendations match your filters</h3>
-        <p>Try adjusting your filters or search criteria</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
-
-  // Attach event listeners
-  recs.forEach((rec, index) => {
-    const card = container.children[index];
-    if (!card) return;
-
-    const addBtn = card.querySelector('.btn-add-to-trip');
-    if (addBtn) {
-      addBtn.onclick = (e) => {
-        e.stopPropagation();
-        addRecommendationToTrip(rec);
-      };
-    }
-
-    const detailsBtn = card.querySelector('.btn-view-details');
-    if (detailsBtn) {
-      detailsBtn.onclick = (e) => {
-        e.stopPropagation();
-        showRecommendationDetails(rec);
-      };
-    }
-
-    const checkbox = card.querySelector('.rec-card-compare-checkbox');
-    if (checkbox) {
-      checkbox.onclick = (e) => {
-        e.stopPropagation();
-        toggleCompareSelection(rec, card);
-      };
-    }
-  });
-
-  addQualityBadges();
-  console.log('📍 Rendered', recs.length, 'recommendation cards with coordinates');
+.rec-category-filters h3 i {
+    color: #0066cc;
 }
 
-window.displayRecommendations = displayRecommendations;
-
-// ====================== CREATE RECOMMENDATION CARD ======================
-function createRecommendationCard(rec) {
-  const icon = getCategoryIcon(rec.category);
-  const lat = parseFloat(rec.lat) || 0;
-  const lon = parseFloat(rec.lon) || 0;
-
-  const reasonsHTML = (rec.reasons || []).map(reason => `
-    <span class="reason-tag">
-      <i class="fas fa-check-circle"></i>
-      ${escapeHtml(reason)}
-    </span>
-  `).join('');
-
-  return `
-    <div class="recommendation-card" 
-         data-place-id="${rec._id || rec.externalId || rec.name}" 
-         data-category="${rec.category}" 
-         data-lat="${lat}" 
-         data-lon="${lon}"
-         data-name="${escapeHtml(rec.name)}">
-      
-      <div class="rec-card-compare-checkbox" title="Compare places">
-        <i class="fas fa-check" style="display: none;"></i>
-      </div>
-
-      <div class="rec-header">
-        <div class="rec-title">
-          <h3 class="rec-name">${escapeHtml(rec.name)}</h3>
-          ${rec.city || rec.country ? `
-            <div class="rec-location-info">
-              <i class="fas fa-map-marker-alt"></i>
-              ${rec.city ? escapeHtml(rec.city) : ''}${rec.city && rec.country ? ', ' : ''}${rec.country ? escapeHtml(rec.country) : ''}
-            </div>
-          ` : ''}
-          <span class="rec-category">
-            <i class="fas fa-${icon}"></i>
-            ${escapeHtml(rec.category)}
-          </span>
-        </div>
-        <div class="rec-score">
-          <i class="fas fa-star"></i>
-          <span class="rec-rating">${(rec.recommendationScore || rec.rating || 0).toFixed(1)}</span>
-        </div>
-      </div>
-
-      <div class="rec-meta">
-        <div class="rec-rating-display">
-          <i class="fas fa-star"></i>
-          ${(rec.rating || 0).toFixed(1)}
-        </div>
-        ${rec.distanceFromCenter ? `
-          <div class="rec-distance">
-            <i class="fas fa-map-marker-alt"></i>
-            ${rec.distanceFromCenter.toFixed(1)} km away
-          </div>
-        ` : ''}
-        ${rec.priceLevel ? `
-          <div class="rec-price">
-            <i class="fas fa-dollar-sign"></i>
-            ${'$'.repeat(rec.priceLevel)}
-          </div>
-        ` : ''}
-      </div>
-
-      ${reasonsHTML ? `
-        <div class="rec-reasons">
-          <div class="rec-reasons-title">Why we recommend this</div>
-          ${reasonsHTML}
-        </div>
-      ` : ''}
-
-      ${rec.description ? `
-        <div class="rec-description">
-          ${escapeHtml(rec.description.substring(0, 150))}${rec.description.length > 150 ? '...' : ''}
-        </div>
-      ` : ''}
-
-      ${rec.address && rec.address !== 'undefined' ? `
-        <div class="rec-address">
-          <i class="fas fa-map-pin"></i>
-          ${escapeHtml(rec.address)}
-        </div>
-      ` : ''}
-
-      <div class="rec-actions">
-        <button class="btn-add-to-trip">
-          <i class="fas fa-plus"></i> Add to Trip
-        </button>
-        <button class="btn-view-details">
-          <i class="fas fa-info-circle"></i>
-        </button>
-      </div>
-    </div>
-  `;
+.category-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-// ====================== ADVANCED CONTROLS UI ======================
-function renderAdvancedControls() {
-  const container = document.querySelector('.recommendations-section');
-  if (!container) return;
-
-  const controlsHTML = `
-    <!-- ✅ NEW: Category Filter Buttons -->
-    <div class="rec-category-filters">
-      <h3>
-        <i class="fas fa-filter"></i>
-        Filter by Category
-      </h3>
-      <div class="category-filter-buttons">
-        <button class="category-filter-btn active" data-category="all">
-          <i class="fas fa-th"></i>
-          All Categories
-        </button>
-        <button class="category-filter-btn" data-category="restaurant">
-          <i class="fas fa-utensils"></i>
-          Restaurants
-        </button>
-        <button class="category-filter-btn" data-category="attraction">
-          <i class="fas fa-landmark"></i>
-          Attractions
-        </button>
-        <button class="category-filter-btn" data-category="accommodation">
-          <i class="fas fa-bed"></i>
-          Hotels
-        </button>
-      </div>
-    </div>
-
-    <div class="rec-controls-panel">
-      <div class="rec-controls-header">
-        <h3>
-          <i class="fas fa-sliders-h"></i>
-          Recommendation Options
-        </h3>
-        <button class="rec-controls-toggle" id="recControlsToggle">
-          <i class="fas fa-chevron-down"></i>
-        </button>
-      </div>
-      
-      <div class="rec-controls-body" id="recControlsBody">
-        <div class="control-group">
-          <label class="control-label">
-            Search Radius
-            <span class="control-value" id="radiusValue">10 km</span>
-          </label>
-          <input type="range" class="range-slider" id="radiusSlider" 
-                min="1" max="50" value="10" step="1">
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">
-            Minimum Rating
-            <span class="control-value" id="ratingValue">3.0 ⭐</span>
-          </label>
-          <input type="range" class="range-slider" id="ratingSlider" 
-                min="0" max="5" value="3" step="0.5">
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Sort By</label>
-          <div class="sort-options">
-            <button class="sort-btn active" data-sort="score">
-              <i class="fas fa-star"></i> Best Match
-            </button>
-            <button class="sort-btn" data-sort="rating">
-              <i class="fas fa-trophy"></i> Highest Rated
-            </button>
-            <button class="sort-btn" data-sort="distance">
-              <i class="fas fa-location-arrow"></i> Nearest
-            </button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Quick Filters</label>
-          <div class="sort-options">
-            <button class="quick-action-btn" id="hiddenGemsBtn">
-              <i class="fas fa-gem"></i> Hidden Gems
-            </button>
-            <button class="quick-action-btn" id="topRatedBtn">
-              <i class="fas fa-award"></i> Top Rated Only
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="bulk-actions-bar" id="bulkActionsBar">
-      <span class="bulk-count" id="bulkCount">0 selected</span>
-      <div class="bulk-actions">
-        <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
-          <i class="fas fa-plus"></i> Add All
-        </button>
-        <button class="bulk-action-btn secondary" onclick="clearBulkSelection()">
-          <i class="fas fa-times"></i> Clear
-        </button>
-      </div>
-    </div>
-  `;
-
-  const grid = document.getElementById('recommendationsGrid');
-  if (grid) {
-    grid.insertAdjacentHTML('beforebegin', controlsHTML);
-  }
+.category-filter-btn {
+    padding: 12px 24px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
 }
 
-function attachAdvancedListeners() {
-  // ✅ NEW: Category filter buttons
-  document.querySelectorAll('.category-filter-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      // Update active state
-      document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      
-      // Get selected category
-      const category = this.dataset.category;
-      
-      console.log('🔍 Filtering by category:', category);
-      
-      // Reload recommendations with category filter
-      await loadRecommendations({ 
-        category: category === 'all' ? undefined : category 
-      });
-    });
-  });
-
-  // Toggle controls
-  const toggle = document.getElementById('recControlsToggle');
-  const body = document.getElementById('recControlsBody');
-  if (toggle && body) {
-    toggle.onclick = () => {
-      body.classList.toggle('hidden');
-      toggle.classList.toggle('collapsed');
-    };
-  }
-
-  // Radius slider - reloads from API
-  const radiusSlider = document.getElementById('radiusSlider');
-  const radiusValue = document.getElementById('radiusValue');
-  if (radiusSlider) {
-    radiusSlider.oninput = (e) => {
-      const value = e.target.value;
-      if (radiusValue) radiusValue.textContent = `${value} km`;
-      advancedRecState.options.radius = parseInt(value);
-      debouncedReload();
-    };
-  }
-
-  // Rating slider - filters existing data
-  const ratingSlider = document.getElementById('ratingSlider');
-  const ratingValue = document.getElementById('ratingValue');
-  if (ratingSlider) {
-    ratingSlider.oninput = (e) => {
-      const value = parseFloat(e.target.value);
-      if (ratingValue) ratingValue.textContent = value === 0 ? 'Any' : `${value.toFixed(1)} ⭐`;
-      advancedRecState.options.minRating = value;
-      debouncedFilter();
-    };
-  }
-
-  // Sort buttons
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      advancedRecState.options.sortBy = btn.dataset.sort;
-      applySorting();
-    };
-  });
-
-  // Quick filters
-  document.getElementById('hiddenGemsBtn')?.addEventListener('click', function() {
-    this.classList.toggle('active');
-    advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
-    applyQuickFilters();
-  });
-
-  document.getElementById('topRatedBtn')?.addEventListener('click', function() {
-    this.classList.toggle('active');
-    advancedRecState.options.topRatedOnly = !advancedRecState.options.topRatedOnly;
-    applyQuickFilters();
-  });
+.category-filter-btn i {
+    font-size: 16px;
 }
 
-// ====================== DEBOUNCED FUNCTIONS ======================
-let reloadTimeout;
-function debouncedReload() {
-  clearTimeout(reloadTimeout);
-  reloadTimeout = setTimeout(() => {
-    loadRecommendations();
-  }, 500);
+.category-filter-btn:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-1px);
 }
 
-let filterTimeout;
-function debouncedFilter() {
-  clearTimeout(filterTimeout);
-  filterTimeout = setTimeout(() => {
-    applyQuickFilters();
-  }, 300);
+.category-filter-btn.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
 }
 
-// ====================== SORTING & FILTERING ======================
-// ✅ FIXED: Proper sorting that preserves filters
-function applySorting() {
-  // ✅ Always start with filtered results, not all recommendations
-  let results = [...filterState.filteredResults];
-  
-  switch (advancedRecState.options.sortBy) {
-    case 'rating':
-      results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      break;
-    case 'distance':
-      results.sort((a, b) => (a.distanceFromCenter || 0) - (b.distanceFromCenter || 0));
-      break;
-    default:
-      results.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0));
-  }
-
-  // ✅ Update both filtered results and display
-  filterState.filteredResults = results;
-  recommendationsState.recommendations = results;
-  displayRecommendations();
-  
-  console.log('✅ Applied sorting:', advancedRecState.options.sortBy);
+.category-filter-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
-// ✅ FIXED: Proper filtering that preserves original data
-function applyQuickFilters() {
-  // ✅ CRITICAL: Always start from ALL recommendations, not already-filtered ones
-  let filtered = [...filterState.allRecommendations];
-  const opts = advancedRecState.options;
-
-  console.log('🔍 Applying filters to', filtered.length, 'recommendations');
-
-  // Apply rating filter
-  if (opts.minRating > 0) {
-    const before = filtered.length;
-    filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
-    console.log(`  Rating filter (>=${opts.minRating}): ${before} → ${filtered.length}`);
-  }
-
-  // Apply hidden gems filter
-  if (opts.showHiddenGems) {
-    const before = filtered.length;
-    filtered = filtered.filter(r => (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3);
-    console.log(`  Hidden gems filter: ${before} → ${filtered.length}`);
-  }
-
-  // Apply top rated filter
-  if (opts.topRatedOnly) {
-    const before = filtered.length;
-    filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
-    console.log(`  Top rated filter: ${before} → ${filtered.length}`);
-  }
-
-  console.log('✅ Filter complete:', filtered.length, 'results');
-
-  // ✅ Update filtered results first
-  filterState.filteredResults = filtered;
-  
-  // ✅ Then apply current sort order
-  applySorting();
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
 }
 
-// ====================== QUALITY BADGES ======================
-function addQualityBadges() {
-  const cards = document.querySelectorAll('.recommendation-card');
-
-  cards.forEach((card, index) => {
-    const rec = recommendationsState.recommendations[index];
-    if (!rec) return;
-
-    card.querySelectorAll('.quality-badge, .save-for-later').forEach(b => b.remove());
-
-    let badge = null;
-    if (rec.rating >= 4.7) {
-      badge = '<div class="quality-badge top-rated"><i class="fas fa-crown"></i> Top Rated</div>';
-    } else if (rec.rating >= 4.0 && rec.distanceFromCenter > 5) {
-      badge = '<div class="quality-badge hidden-gem"><i class="fas fa-gem"></i> Hidden Gem</div>';
-    }
-
-    if (badge) card.insertAdjacentHTML('afterbegin', badge);
-
-    const isSaved = advancedRecState.savedPlaces.has(rec.name);
-    const saveBtn = `
-      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${rec.name}', event)">
-        <i class="fas fa-heart"></i>
-      </div>
-    `;
-    card.insertAdjacentHTML('afterbegin', saveBtn);
-  });
+/* ===================== CONTROLS PANEL ===================== */
+.rec-controls-panel {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
 }
 
-// ====================== COMPARISON FEATURE ======================
-function toggleCompareSelection(rec, card) {
-  const checkbox = card.querySelector('.rec-card-compare-checkbox');
-  const checkIcon = checkbox?.querySelector('i');
-  
-  if (card.classList.contains('comparing')) {
-    card.classList.remove('comparing');
-    if (checkIcon) checkIcon.style.display = 'none';
-    advancedRecState.selectedForBulk.delete(rec.name);
-  } else {
-    card.classList.add('comparing');
-    if (checkIcon) checkIcon.style.display = 'block';
-    advancedRecState.selectedForBulk.add(rec.name);
-  }
-  
-  updateBulkActionsBar();
-  
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
+.rec-controls-header {
+    padding: 24px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-function updateBulkActionsBar() {
-  const bar = document.getElementById('bulkActionsBar');
-  const count = document.getElementById('bulkCount');
-  if (!bar || !count) return;
-
-  const selected = advancedRecState.selectedForBulk.size;
-
-  if (selected > 0) {
-    bar.classList.add('show');
-    count.textContent = `${selected} selected`;
-  } else {
-    bar.classList.remove('show');
-  }
+.rec-controls-header:hover {
+    background: #f8fafc;
 }
 
-// ====================== ADD TO TRIP (FIXED) ======================
-async function addRecommendationToTrip(rec) {
-  try {
-    console.log('🔍 Adding recommendation to trip:', rec);
-    console.log('  📋 Category value:', rec.category, 'Type:', typeof rec.category);
+.rec-controls-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2332;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    // ✅ VALIDATION: Check for required coordinates
-    if (!rec.lat || !rec.lon) {
-      console.error('❌ Missing coordinates:', { lat: rec.lat, lon: rec.lon });
-      showToast('Missing location data for this place', 'error');
-      return;
-    }
+.rec-controls-header h3 i {
+    color: #0066cc;
+}
 
-    // ✅ Validate coordinate values
-    const lat = parseFloat(rec.lat);
-    const lon = parseFloat(rec.lon);
+.rec-controls-toggle {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #475569;
+}
 
-    if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
-      console.error('❌ Invalid coordinates:', { lat, lon });
-      showToast('Invalid location data for this place', 'error');
-      return;
-    }
+.rec-controls-toggle:hover {
+    background: #e2e8f0;
+}
 
-    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.error('❌ Coordinates out of range:', { lat, lon });
-      showToast('Invalid coordinate range', 'error');
-      return;
-    }
+.rec-controls-toggle.collapsed i {
+    transform: rotate(-90deg);
+}
 
-    // ✅ PROPER DATA STRUCTURE matching backend expectations
-    const placeData = {
-      // Required fields
-      name: rec.name,
-      category: (rec.category && rec.category !== 'undefined') ? rec.category.toLowerCase() : 'attraction',
-      
-      // Location with proper GeoJSON format [longitude, latitude]
-      location: {
-        type: 'Point',
-        coordinates: [lon, lat] // ✅ CORRECT ORDER: [longitude, latitude]
-      },
-      
-      // Optional fields (backend will accept these)
-      address: rec.address || '',
-      rating: parseFloat(rec.rating) || 0,
-      priceLevel: parseInt(rec.priceLevel) || 0,
-      description: rec.description || '',
-      
-      // ✅ Only include AI reasons if they exist, no prefix text
-      notes: rec.reasons && rec.reasons.length > 0
-        ? `${rec.reasons.map(r => `• ${r}`).join('\n')}`
-        : ''  // ✅ Empty string instead of generic text
-    };
+.rec-controls-body {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    transition: all 0.3s ease;
+}
 
-    console.log('📤 Sending place data:', placeData);
+.rec-controls-body.hidden {
+    display: none;
+}
 
-    // ✅ Call API with proper error handling
-    const response = await apiService.places.create(
-      recommendationsState.currentTripId, 
-      placeData
-    );
+/* ===================== CONTROL GROUPS ===================== */
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
-    console.log('✅ Place added successfully:', response);
-    showToast('✅ Place added to your trip!', 'success');
+.control-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2332;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    // ✅ Remove from ALL recommendation arrays
-    filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
-    filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
-    recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
+.control-value {
+    font-weight: 500;
+    color: #0066cc;
+}
 
-    // Update UI
-    displayRecommendations();
+.range-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
 
-    // Reload places list if function exists
-    if (typeof loadPlaces === 'function') {
-      await loadPlaces();
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #0066cc;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+.range-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #0066cc;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.range-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+/* ===================== SORT & QUICK ACTION BUTTONS ===================== */
+.sort-options {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sort-btn,
+.quick-action-btn {
+    padding: 10px 20px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sort-btn:hover,
+.quick-action-btn:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.sort-btn.active,
+.quick-action-btn.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.sort-btn i,
+.quick-action-btn i {
+    font-size: 14px;
+}
+
+/* ===================== RECOMMENDATIONS GRID ===================== */
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 28px;
+    margin-top: 32px;
+}
+
+/* ===================== RECOMMENDATION CARD ===================== */
+.recommendation-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 28px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: #e2e8f0;
+}
+
+.recommendation-card.comparing {
+    border-color: #0066cc;
+    background: #f0f9ff;
+}
+
+/* ===================== CARD COMPARE CHECKBOX ===================== */
+.rec-card-compare-checkbox {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.rec-card-compare-checkbox:hover {
+    border-color: #0066cc;
+    background: #f0f9ff;
+}
+
+.recommendation-card.comparing .rec-card-compare-checkbox {
+    background: #0066cc;
+    border-color: #0066cc;
+}
+
+.recommendation-card.comparing .rec-card-compare-checkbox i {
+    display: block !important;
+    color: white;
+}
+
+/* ===================== CARD HEADER ===================== */
+.rec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.rec-title {
+    flex: 1;
+}
+
+.rec-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a2332;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.rec-location-info {
+    font-size: 14px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.rec-location-info i {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.rec-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.rec-category i {
+    font-size: 12px;
+}
+
+.rec-score {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fef3c7;
+    border-radius: 8px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.rec-score i {
+    color: #f59e0b;
+    font-size: 16px;
+}
+
+/* ===================== CARD META INFO ===================== */
+.rec-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.rec-rating-display,
+.rec-distance,
+.rec-price {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.rec-rating-display i {
+    color: #f59e0b;
+    font-size: 14px;
+}
+
+.rec-distance i {
+    color: #0066cc;
+    font-size: 13px;
+}
+
+.rec-price i {
+    color: #10b981;
+    font-size: 13px;
+}
+
+/* ===================== REASONS SECTION ===================== */
+.rec-reasons {
+    margin-bottom: 16px;
+}
+
+.rec-reasons-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.reason-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.reason-tag i {
+    color: #10b981;
+    font-size: 12px;
+}
+
+/* ===================== DESCRIPTION & ADDRESS ===================== */
+.rec-description {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.rec-address {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.rec-address i {
+    color: #94a3b8;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* ===================== CARD ACTIONS ===================== */
+.rec-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.btn-add-to-trip {
+    flex: 1;
+    padding: 12px 20px;
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-add-to-trip:hover {
+    background: #0052a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.btn-view-details {
+    padding: 12px 16px;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-view-details:hover {
+    background: #e2e8f0;
+}
+
+/* ===================== QUALITY BADGES ===================== */
+.quality-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 5;
+}
+
+.quality-badge.top-rated {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.quality-badge.hidden-gem {
+    background: #ddd6fe;
+    color: #5b21b6;
+}
+
+.quality-badge i {
+    font-size: 13px;
+}
+
+/* ===================== SAVE FOR LATER ===================== */
+.save-for-later {
+    position: absolute;
+    top: 56px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 5;
+}
+
+.save-for-later:hover {
+    transform: scale(1.1);
+}
+
+.save-for-later i {
+    color: #cbd5e1;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+.save-for-later.saved i {
+    color: #ef4444;
+}
+
+/* ===================== BULK ACTIONS BAR ===================== */
+.bulk-actions-bar {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 20px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    transition: bottom 0.3s ease;
+    z-index: 1000;
+    min-width: 400px;
+}
+
+.bulk-actions-bar.show {
+    bottom: 32px;
+}
+
+.bulk-count {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2332;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.bulk-action-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+}
+
+.bulk-action-btn.primary {
+    background: #0066cc;
+    color: white;
+}
+
+.bulk-action-btn.primary:hover {
+    background: #0052a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.bulk-action-btn.secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.bulk-action-btn.secondary:hover {
+    background: #e2e8f0;
+}
+
+/* ===================== EMPTY STATES ===================== */
+.recommendations-empty,
+.recommendations-loading {
+    text-align: center;
+    padding: 80px 32px;
+    grid-column: 1 / -1;
+}
+
+.recommendations-empty i,
+.recommendations-loading i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 24px;
+    display: block;
+}
+
+.recommendations-empty h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2332;
+    margin-bottom: 12px;
+}
+
+.recommendations-empty p {
+    font-size: 16px;
+    color: #64748b;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+}
+
+.recommendations-loading p {
+    font-size: 17px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ===================== RESPONSIVE DESIGN ===================== */
+@media (max-width: 1024px) {
+    .recommendations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
     }
 
-    // Update map if function exists
-    if (typeof updateMapWithRecommendations === 'function') {
-      updateMapWithRecommendations();
+    .rec-controls-body {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .recommendations-section {
+        padding: 40px 20px;
     }
 
-  } catch (err) {
-    console.error('❌ Error adding place:', err);
-    
-    // ✅ Show detailed error message to user
-    let errorMessage = 'Failed to add place';
-    
-    if (err.message) {
-      // Check for specific error types
-      if (err.message.includes('Coordinates')) {
-        errorMessage = 'Invalid location coordinates';
-      } else if (err.message.includes('Category')) {
-        errorMessage = 'Invalid category';
-      } else if (err.message.includes('required')) {
-        errorMessage = 'Missing required information';
-      } else {
-        errorMessage = err.message;
-      }
+    .section-header h2 {
+        font-size: 28px;
     }
-    
-    showToast(errorMessage, 'error');
-  }
-}
 
-window.addRecommendationToTrip = addRecommendationToTrip;
-
-// ====================== BULK ACTIONS ======================
-window.bulkAddToTrip = async function() {
-  const selected = Array.from(advancedRecState.selectedForBulk);
-  if (selected.length === 0) {
-    showToast('No places selected', 'warning');
-    return;
-  }
-
-  let addedCount = 0;
-  for (const placeName of selected) {
-    const rec = recommendationsState.recommendations.find(r => r.name === placeName);
-    if (rec) {
-      try {
-        await addRecommendationToTrip(rec);
-        addedCount++;
-      } catch (err) {
-        console.error('Error adding place:', err);
-      }
+    .rec-category-filters,
+    .rec-controls-panel {
+        padding: 24px;
     }
-  }
 
-  if (addedCount > 0) {
-    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
-    clearBulkSelection();
-  }
-};
+    .category-filter-buttons {
+        gap: 8px;
+    }
 
-window.clearBulkSelection = function() {
-  advancedRecState.selectedForBulk.clear();
-  document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
-    card.classList.remove('comparing');
-    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-    if (checkbox) checkbox.style.display = 'none';
-  });
-  updateBulkActionsBar();
-};
+    .category-filter-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
 
-// ====================== DETAILS MODAL ======================
-function showRecommendationDetails(rec) {
-  const modal = document.createElement('div');
-  modal.className = 'modal active';
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
 
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-info-circle"></i> ${escapeHtml(rec.name)}</h3>
-        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
-        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)} / 5.0</p>
-        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
-        ${rec.address ? `<p><strong>Address:</strong> ${escapeHtml(rec.address)}</p>` : ''}
-        ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
-        <p><strong>Coordinates:</strong> ${rec.lat.toFixed(4)}, ${rec.lon.toFixed(4)}</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-        <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
-          <i class="fas fa-plus"></i> Add to Trip
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
+    .recommendation-card {
+        padding: 24px;
+    }
+
+    .rec-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .bulk-actions-bar {
+        min-width: auto;
+        width: calc(100% - 40px);
+        left: 20px;
+        transform: none;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bulk-actions {
+        width: 100%;
+    }
+
+    .bulk-action-btn {
+        flex: 1;
+    }
 }
 
-window.addRecommendationToTripFromModal = async function(rec) {
-  await addRecommendationToTrip(rec);
-  document.querySelector('.modal')?.remove();
-};
+@media (max-width: 480px) {
+    .section-header h2 {
+        font-size: 24px;
+    }
 
-// ====================== SAVE FOR LATER ======================
-window.toggleSaveForLater = function(placeName, event) {
-  event.stopPropagation();
-  if (advancedRecState.savedPlaces.has(placeName)) {
-    advancedRecState.savedPlaces.delete(placeName);
-    showToast('Removed from saved', 'info');
-  } else {
-    advancedRecState.savedPlaces.add(placeName);
-    showToast('Saved for later!', 'success');
-  }
-  saveSavedPreferences();
-  addQualityBadges();
-};
+    .rec-name {
+        font-size: 18px;
+    }
 
-// ====================== UI HELPERS ======================
-function showRecommendationsLoading() {
-  const container = document.getElementById('recommendationsGrid');
-  if (container) {
-    container.innerHTML = `
-      <div class="recommendations-loading">
-        <div class="loading-spinner"></div>
-        <p>🤖 AI is finding personalized recommendations...</p>
-      </div>
-    `;
-  }
+    .rec-actions {
+        flex-direction: column;
+    }
+
+    .btn-add-to-trip,
+    .btn-view-details {
+        width: 100%;
+    }
+
+    .sort-options {
+        flex-direction: column;
+    }
+
+    .sort-btn,
+    .quick-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
-
-function showRecommendationsError() {
-  const container = document.getElementById('recommendationsGrid');
-  if (container) {
-    container.innerHTML = `
-      <div class="recommendations-empty">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3>Failed to load recommendations</h3>
-        <button class="btn-primary" onclick="loadRecommendations()">
-          <i class="fas fa-redo"></i> Retry
-        </button>
-      </div>
-    `;
-  }
-}
-
-function getCategoryIcon(category) {
-  const icons = {
-    restaurant: 'utensils',
-    attraction: 'landmark',
-    accommodation: 'bed',
-    transport: 'bus',
-    shopping: 'shopping-bag',
-    entertainment: 'film',
-    other: 'map-marker-alt'
-  };
-  return icons[category?.toLowerCase()] || 'map-marker-alt';
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-console.log('✅ Unified advanced recommendations module loaded with FIXED filters');
