@@ -1,7 +1,6 @@
 //============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED VERSION
-// ✅ Bulk actions bar only shows when checkboxes are selected
-// ✅ Comparison button opens comparison panel on the right
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FINAL FIXED VERSION
+// ✅ No separate comparison block - just a Compare button in bulk actions
 //============================================================
 
 // ====================== STATE ======================
@@ -18,10 +17,9 @@ const advancedRecState = {
     nearbyOnly: false
   },
   savedPlaces: new Set(),
-  selectedForBulk: new Set() // ✅ Tracks selected items
+  selectedForBulk: new Set()
 };
 
-// ✅ FIXED: Proper filter state management
 if (!window.filterState) {
   window.filterState = {
     activeFilters: {
@@ -37,7 +35,6 @@ if (!window.filterState) {
 
 const filterState = window.filterState;
 
-// Recommendations state
 if (!window.recommendationsState) {
   window.recommendationsState = {
     currentTripId: null,
@@ -104,7 +101,6 @@ async function loadRecommendations(options = {}) {
     }
 
     console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
-    console.log('  📋 Category filter:', options.category || 'all');
 
     const params = {
       radius: (advancedRecState.options.radius * 1000) || 10000,
@@ -122,8 +118,6 @@ async function loadRecommendations(options = {}) {
     
     const responseData = res.data || {};
     let places = Array.isArray(responseData) ? responseData : responseData.places || [];
-    
-    console.log('📦 Raw API response:', places.length, 'places');
 
     places = places.map(place => {
       let lat = 0, lon = 0;
@@ -145,12 +139,6 @@ async function loadRecommendations(options = {}) {
       const validLat = parseFloat(lat);
       const validLon = parseFloat(lon);
       
-      if (!validLat || !validLon || isNaN(validLat) || isNaN(validLon) || 
-          validLat === 0 || validLon === 0 ||
-          validLat < -90 || validLat > 90 || validLon < -180 || validLon > 180) {
-        console.warn('⚠️ Missing/invalid coordinates for:', place.name, {lat: validLat, lon: validLon});
-      }
-
       return {
         ...place,
         lat: validLat || 0,
@@ -168,12 +156,6 @@ async function loadRecommendations(options = {}) {
       p.lon >= -180 && 
       p.lon <= 180
     );
-    
-    const invalidCount = places.length - validPlaces.length;
-    
-    if (invalidCount > 0) {
-      console.warn(`⚠️ Filtered out ${invalidCount} places with invalid coordinates`);
-    }
 
     filterState.allRecommendations = [...validPlaces];
     filterState.filteredResults = [...validPlaces];
@@ -185,7 +167,6 @@ async function loadRecommendations(options = {}) {
     
     setTimeout(() => {
       if (typeof updateMapWithRecommendations === 'function') {
-        console.log('🗺️ Triggering map update...');
         updateMapWithRecommendations();
       }
     }, 500);
@@ -225,12 +206,10 @@ function displayRecommendations() {
 
   container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
 
-  // ✅ FIXED: Attach event listeners properly
   recs.forEach((rec, index) => {
     const card = container.children[index];
     if (!card) return;
 
-    // Add to trip button
     const addBtn = card.querySelector('.btn-add-to-trip');
     if (addBtn) {
       addBtn.onclick = (e) => {
@@ -239,7 +218,6 @@ function displayRecommendations() {
       };
     }
 
-    // Details button
     const detailsBtn = card.querySelector('.btn-view-details');
     if (detailsBtn) {
       detailsBtn.onclick = (e) => {
@@ -248,7 +226,6 @@ function displayRecommendations() {
       };
     }
 
-    // ✅ COMPARISON CHECKBOX - FIXED EVENT HANDLER
     const checkbox = card.querySelector('.rec-card-compare-checkbox');
     if (checkbox) {
       checkbox.onclick = (e) => {
@@ -259,32 +236,26 @@ function displayRecommendations() {
   });
 
   addQualityBadges();
-  console.log('📍 Rendered', recs.length, 'recommendation cards with coordinates');
 }
 
-// ✅ NEW: Proper comparison checkbox handler
 function handleCompareCheckbox(rec, card) {
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
   
   if (card.classList.contains('comparing')) {
-    // Remove from comparison
     card.classList.remove('comparing');
     if (checkIcon) checkIcon.style.display = 'none';
     advancedRecState.selectedForBulk.delete(rec.name);
     
-    // Remove from comparison panel
     if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
       window.comparisonState.selectedPlaces.delete(rec.name);
     }
     
     showToast('Removed from selection', 'info');
   } else {
-    // Add to comparison
     card.classList.add('comparing');
     if (checkIcon) checkIcon.style.display = 'block';
     advancedRecState.selectedForBulk.add(rec.name);
     
-    // Add to comparison panel
     if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
       window.comparisonState.selectedPlaces.set(rec.name, rec);
     }
@@ -292,9 +263,8 @@ function handleCompareCheckbox(rec, card) {
     showToast('Added to selection', 'success');
   }
   
-  updateBulkActionsBar(); // ✅ This controls visibility
+  updateBulkActionsBar();
   
-  // ✅ Update comparison panel
   if (typeof updateComparisonPanel === 'function') {
     updateComparisonPanel();
   }
@@ -323,7 +293,6 @@ function createRecommendationCard(rec) {
          data-lon="${lon}"
          data-name="${escapeHtml(rec.name)}">
       
-      <!-- ✅ COMPARISON CHECKBOX -->
       <div class="rec-card-compare-checkbox" title="Select for comparison">
         <i class="fas fa-check" style="display: none;"></i>
       </div>
@@ -489,12 +458,12 @@ function renderAdvancedControls() {
       </div>
     </div>
 
-    <!-- ✅ FIXED: Bulk actions bar - hidden by default -->
+    <!-- ✅ BULK ACTIONS BAR - 3 buttons side by side -->
     <div class="bulk-actions-bar" id="bulkActionsBar">
       <span class="bulk-count" id="bulkCount">0 selected</span>
       <div class="bulk-actions">
         <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
-          <i class="fas fa-plus"></i> Add All to Trip
+          <i class="fas fa-plus"></i> Add All
         </button>
         <button class="bulk-action-btn comparison" onclick="openComparisonPanel()">
           <i class="fas fa-balance-scale"></i> Compare
@@ -513,22 +482,18 @@ function renderAdvancedControls() {
 }
 
 function attachAdvancedListeners() {
-  // Category filter buttons
   document.querySelectorAll('.category-filter-btn').forEach(btn => {
     btn.addEventListener('click', async function() {
       document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       
       const category = this.dataset.category;
-      console.log('🔍 Filtering by category:', category);
-      
       await loadRecommendations({ 
         category: category === 'all' ? undefined : category 
       });
     });
   });
 
-  // Toggle controls
   const toggle = document.getElementById('recControlsToggle');
   const body = document.getElementById('recControlsBody');
   if (toggle && body) {
@@ -538,7 +503,6 @@ function attachAdvancedListeners() {
     };
   }
 
-  // Radius slider
   const radiusSlider = document.getElementById('radiusSlider');
   const radiusValue = document.getElementById('radiusValue');
   if (radiusSlider) {
@@ -550,7 +514,6 @@ function attachAdvancedListeners() {
     };
   }
 
-  // Rating slider
   const ratingSlider = document.getElementById('ratingSlider');
   const ratingValue = document.getElementById('ratingValue');
   if (ratingSlider) {
@@ -562,7 +525,6 @@ function attachAdvancedListeners() {
     };
   }
 
-  // Sort buttons
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -572,7 +534,6 @@ function attachAdvancedListeners() {
     };
   });
 
-  // Quick filters
   document.getElementById('hiddenGemsBtn')?.addEventListener('click', function() {
     this.classList.toggle('active');
     advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
@@ -621,35 +582,23 @@ function applySorting() {
   filterState.filteredResults = results;
   recommendationsState.recommendations = results;
   displayRecommendations();
-  
-  console.log('✅ Applied sorting:', advancedRecState.options.sortBy);
 }
 
 function applyQuickFilters() {
   let filtered = [...filterState.allRecommendations];
   const opts = advancedRecState.options;
 
-  console.log('🔍 Applying filters to', filtered.length, 'recommendations');
-
   if (opts.minRating > 0) {
-    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
-    console.log(`  Rating filter (>=${opts.minRating}): ${before} → ${filtered.length}`);
   }
 
   if (opts.showHiddenGems) {
-    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3);
-    console.log(`  Hidden gems filter: ${before} → ${filtered.length}`);
   }
 
   if (opts.topRatedOnly) {
-    const before = filtered.length;
     filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
-    console.log(`  Top rated filter: ${before} → ${filtered.length}`);
   }
-
-  console.log('✅ Filter complete:', filtered.length, 'results');
 
   filterState.filteredResults = filtered;
   applySorting();
@@ -684,7 +633,7 @@ function addQualityBadges() {
   });
 }
 
-// ====================== BULK ACTIONS BAR - FIXED ======================
+// ====================== BULK ACTIONS BAR ======================
 function updateBulkActionsBar() {
   const bar = document.getElementById('bulkActionsBar');
   const count = document.getElementById('bulkCount');
@@ -693,14 +642,14 @@ function updateBulkActionsBar() {
   const selected = advancedRecState.selectedForBulk.size;
 
   if (selected > 0) {
-    bar.classList.add('show'); // ✅ Show bar
+    bar.classList.add('show');
     count.textContent = `${selected} selected`;
   } else {
-    bar.classList.remove('show'); // ✅ Hide bar
+    bar.classList.remove('show');
   }
 }
 
-// ✅ NEW: Open comparison panel
+// ✅ Open comparison panel
 window.openComparisonPanel = function() {
   if (advancedRecState.selectedForBulk.size === 0) {
     showToast('Please select places to compare', 'warning');
@@ -720,11 +669,8 @@ window.openComparisonPanel = function() {
 // ====================== ADD TO TRIP ======================
 async function addRecommendationToTrip(rec) {
   try {
-    console.log('🔍 Adding recommendation to trip:', rec);
-
     if (!rec.lat || !rec.lon) {
-      console.error('❌ Missing coordinates:', { lat: rec.lat, lon: rec.lon });
-      showToast('Missing location data for this place', 'error');
+      showToast('Missing location data', 'error');
       return;
     }
 
@@ -732,14 +678,7 @@ async function addRecommendationToTrip(rec) {
     const lon = parseFloat(rec.lon);
 
     if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
-      console.error('❌ Invalid coordinates:', { lat, lon });
-      showToast('Invalid location data for this place', 'error');
-      return;
-    }
-
-    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.error('❌ Coordinates out of range:', { lat, lon });
-      showToast('Invalid coordinate range', 'error');
+      showToast('Invalid location data', 'error');
       return;
     }
 
@@ -759,14 +698,7 @@ async function addRecommendationToTrip(rec) {
         : ''
     };
 
-    console.log('📤 Sending place data:', placeData);
-
-    const response = await apiService.places.create(
-      recommendationsState.currentTripId, 
-      placeData
-    );
-
-    console.log('✅ Place added successfully:', response);
+    await apiService.places.create(recommendationsState.currentTripId, placeData);
     showToast('✅ Place added to your trip!', 'success');
 
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
@@ -784,23 +716,8 @@ async function addRecommendationToTrip(rec) {
     }
 
   } catch (err) {
-    console.error('❌ Error adding place:', err);
-    
-    let errorMessage = 'Failed to add place';
-    
-    if (err.message) {
-      if (err.message.includes('Coordinates')) {
-        errorMessage = 'Invalid location coordinates';
-      } else if (err.message.includes('Category')) {
-        errorMessage = 'Invalid category';
-      } else if (err.message.includes('required')) {
-        errorMessage = 'Missing required information';
-      } else {
-        errorMessage = err.message;
-      }
-    }
-    
-    showToast(errorMessage, 'error');
+    console.error('Error adding place:', err);
+    showToast('Failed to add place', 'error');
   }
 }
 
@@ -841,7 +758,6 @@ window.clearBulkSelection = function() {
     if (checkbox) checkbox.style.display = 'none';
   });
   
-  // Clear comparison panel
   if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
     window.comparisonState.selectedPlaces.clear();
   }
@@ -950,4 +866,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Fixed advanced recommendations module loaded');
+console.log('✅ Final fixed advanced recommendations module loaded');
