@@ -50,6 +50,32 @@ if (!window.recommendationsState) {
 
 const recommendationsState = window.recommendationsState;
 
+// ====================== STORAGE FUNCTIONS ======================
+/**
+ * Save user preferences to session storage
+ */
+function saveSavedPreferences() {
+  try {
+    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
+  } catch (err) {
+    console.error('Error saving preferences:', err);
+  }
+}
+
+/**
+ * Load saved preferences from session storage
+ */
+function loadSavedPreferences() {
+  try {
+    const saved = sessionStorage.getItem('savedPlaces');
+    if (saved) {
+      advancedRecState.savedPlaces = new Set(JSON.parse(saved));
+    }
+  } catch (err) {
+    console.error('Error loading preferences:', err);
+  }
+}
+
 // ====================== INITIALIZATION ======================
 /**
  * Initialize all recommendation features
@@ -719,3 +745,140 @@ async function addRecommendationToTrip(rec) {
 }
 
 window.addRecommendationToTrip = addRecommendationToTrip;
+
+// ====================== BULK ACTIONS ======================
+window.bulkAddToTrip = async function() {
+  const selected = Array.from(advancedRecState.selectedForBulk);
+  if (selected.length === 0) {
+    showToast('No places selected', 'warning');
+    return;
+  }
+
+  let addedCount = 0;
+  for (const placeName of selected) {
+    const rec = recommendationsState.recommendations.find(r => r.name === placeName);
+    if (rec) {
+      try {
+        await addRecommendationToTrip(rec);
+        addedCount++;
+      } catch (err) {
+        console.error('Error adding place:', err);
+      }
+    }
+  }
+
+  if (addedCount > 0) {
+    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
+    clearBulkSelection();
+  }
+};
+
+window.clearBulkSelection = function() {
+  advancedRecState.selectedForBulk.clear();
+  document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
+    card.classList.remove('comparing');
+    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
+    if (checkbox) checkbox.style.display = 'none';
+  });
+  updateBulkActionsBar();
+};
+
+// ====================== DETAILS MODAL ======================
+function showRecommendationDetails(rec) {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-info-circle"></i> ${escapeHtml(rec.name)}</h3>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
+        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)} / 5.0</p>
+        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
+        ${rec.address ? `<p><strong>Address:</strong> ${escapeHtml(rec.address)}</p>` : ''}
+        ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
+        <p><strong>Coordinates:</strong> ${rec.lat.toFixed(4)}, ${rec.lon.toFixed(4)}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+        <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+          <i class="fas fa-plus"></i> Add to Trip
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+window.addRecommendationToTripFromModal = async function(rec) {
+  await addRecommendationToTrip(rec);
+  document.querySelector('.modal')?.remove();
+};
+
+// ====================== SAVE FOR LATER ======================
+window.toggleSaveForLater = function(placeName, event) {
+  event.stopPropagation();
+  if (advancedRecState.savedPlaces.has(placeName)) {
+    advancedRecState.savedPlaces.delete(placeName);
+    showToast('Removed from saved', 'info');
+  } else {
+    advancedRecState.savedPlaces.add(placeName);
+    showToast('Saved for later!', 'success');
+  }
+  saveSavedPreferences();
+  addQualityBadges();
+};
+
+// ====================== UI HELPERS ======================
+function showRecommendationsLoading() {
+  const container = document.getElementById('recommendationsGrid');
+  if (container) {
+    container.innerHTML = `
+      <div class="recommendations-loading">
+        <div class="loading-spinner"></div>
+        <p>🤖 AI is finding personalized recommendations...</p>
+      </div>
+    `;
+  }
+}
+
+function showRecommendationsError() {
+  const container = document.getElementById('recommendationsGrid');
+  if (container) {
+    container.innerHTML = `
+      <div class="recommendations-empty">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>Failed to load recommendations</h3>
+        <button class="btn-primary" onclick="loadRecommendations()">
+          <i class="fas fa-redo"></i> Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    restaurant: 'utensils',
+    attraction: 'landmark',
+    accommodation: 'bed',
+    transport: 'bus',
+    shopping: 'shopping-bag',
+    entertainment: 'film',
+    other: 'map-marker-alt'
+  };
+  return icons[category?.toLowerCase()] || 'map-marker-alt';
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+console.log('✅ Unified advanced recommendations module loaded with FIXED filters');
