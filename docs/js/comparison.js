@@ -1,5 +1,5 @@
 // ============================================================
-// COMPARISON MODULE - Complete Implementation with Bottom Bar
+// COMPARISON MODULE - SIDE PANEL ONLY (NO BOTTOM BAR)
 // ============================================================
 
 const comparisonState = {
@@ -15,6 +15,7 @@ function initComparisonPanel() {
   }
 
   const panelHTML = `
+    <div class="comparison-overlay" id="comparisonOverlay"></div>
     <div class="comparison-panel" id="comparisonPanel">
       <div class="comparison-header">
         <h3>
@@ -35,10 +36,27 @@ function initComparisonPanel() {
           <p>Select places to compare by clicking the checkbox on each card</p>
         </div>
       </div>
+      <div class="comparison-footer">
+        <button class="comparison-clear-all" onclick="clearAllComparisons()">
+          <i class="fas fa-trash-alt"></i>
+          Clear All
+        </button>
+        <button class="comparison-add-all" onclick="addAllFromComparison()">
+          <i class="fas fa-plus-circle"></i>
+          Add All to Trip
+        </button>
+      </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML('beforeend', panelHTML);
+  
+  // Add overlay click handler
+  const overlay = document.getElementById('comparisonOverlay');
+  if (overlay) {
+    overlay.addEventListener('click', closeComparisonPanel);
+  }
+  
   console.log('✅ Comparison panel initialized');
 }
 
@@ -56,6 +74,7 @@ window.toggleCompareSelection = function(place, card) {
   if (comparisonState.selectedPlaces.has(placeName)) {
     comparisonState.selectedPlaces.delete(placeName);
     card.classList.remove('comparing');
+    card.classList.remove('selected');
     
     const checkbox = card.querySelector('.rec-card-compare-checkbox i');
     if (checkbox) {
@@ -75,6 +94,7 @@ window.toggleCompareSelection = function(place, card) {
 
     comparisonState.selectedPlaces.set(placeName, place);
     card.classList.add('comparing');
+    card.classList.add('selected');
     
     const checkbox = card.querySelector('.rec-card-compare-checkbox i');
     if (checkbox) {
@@ -92,6 +112,7 @@ window.toggleCompareSelection = function(place, card) {
 // ====================== UPDATE PANEL ======================
 window.updateComparisonPanel = function() {
   const panel = document.getElementById('comparisonPanel');
+  const overlay = document.getElementById('comparisonOverlay');
   const grid = document.getElementById('comparisonGrid');
   const empty = document.getElementById('comparisonEmpty');
   const count = document.getElementById('comparisonCount');
@@ -106,13 +127,12 @@ window.updateComparisonPanel = function() {
   count.textContent = `(${selectedCount})`;
 
   if (selectedCount > 0) {
-    panel.classList.add('active');
     empty.style.display = 'none';
     grid.style.display = 'grid';
     renderComparisonItems();
   } else {
-    panel.classList.remove('active');
     grid.innerHTML = '';
+    empty.style.display = 'flex';
   }
 };
 
@@ -273,11 +293,78 @@ async function addFromComparison(place) {
   }
 }
 
+// ====================== ADD ALL FROM COMPARISON ======================
+window.addAllFromComparison = async function() {
+  const count = comparisonState.selectedPlaces.size;
+  
+  if (count === 0) {
+    if (typeof showToast === 'function') {
+      showToast('No places selected', 'warning');
+    }
+    return;
+  }
+  
+  if (count > 3) {
+    if (!confirm(`Add ${count} places to your trip?`)) {
+      return;
+    }
+  }
+  
+  let successCount = 0;
+  const selectedPlaces = Array.from(comparisonState.selectedPlaces.values());
+  
+  for (const place of selectedPlaces) {
+    try {
+      if (typeof addRecommendationToTrip === 'function') {
+        await addRecommendationToTrip(place);
+        successCount++;
+      }
+    } catch (err) {
+      console.error('Failed to add place:', place.name, err);
+    }
+  }
+  
+  if (successCount > 0) {
+    if (typeof showToast === 'function') {
+      showToast(`✅ Added ${successCount} place${successCount > 1 ? 's' : ''} to your trip!`, 'success');
+    }
+    clearAllComparisons();
+    closeComparisonPanel();
+  } else {
+    if (typeof showToast === 'function') {
+      showToast('Failed to add places', 'error');
+    }
+  }
+};
+
+// ====================== OPEN COMPARISON PANEL ======================
+window.openComparisonPanel = function() {
+  const panel = document.getElementById('comparisonPanel');
+  const overlay = document.getElementById('comparisonOverlay');
+  
+  if (comparisonState.selectedPlaces.size === 0) {
+    if (typeof showToast === 'function') {
+      showToast('Please select places to compare', 'info');
+    }
+    return;
+  }
+  
+  if (panel && overlay) {
+    panel.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+};
+
 // ====================== CLOSE PANEL ======================
 window.closeComparisonPanel = function() {
   const panel = document.getElementById('comparisonPanel');
-  if (panel) {
+  const overlay = document.getElementById('comparisonOverlay');
+  
+  if (panel && overlay) {
     panel.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
   }
 };
 
@@ -339,303 +426,4 @@ function escapeAttr(text) {
 window.comparisonState = comparisonState;
 window.initComparisonPanel = initComparisonPanel;
 
-console.log('✅ Comparison module loaded');
-
-// ============================================================
-// BOTTOM COMPARISON BAR - INTEGRATED FUNCTIONALITY
-// ============================================================
-
-const comparisonBarState = {
-  selectedCards: new Set(),
-  selectedData: new Map()
-};
-
-// ====================== BOTTOM BAR INITIALIZATION ======================
-function initComparisonBar() {
-  if (!document.getElementById('comparisonBottomBar')) {
-    createComparisonBarHTML();
-  }
-  attachComparisonBarListeners();
-  console.log('✅ Bottom comparison bar initialized');
-}
-
-function createComparisonBarHTML() {
-  const barHTML = `
-    <div class="comparison-bottom-bar" id="comparisonBottomBar" aria-hidden="true">
-      <div class="comparison-bar-count">
-        <i class="fas fa-check-circle"></i>
-        <span class="comparison-bar-count-text">
-          <span class="comparison-bar-count-number" id="comparisonBarNumber">0</span>
-          selected
-        </span>
-      </div>
-      
-      <div class="comparison-bar-actions">
-        <button class="comparison-bar-btn primary" id="compareBarBtn">
-          <i class="fas fa-balance-scale"></i>
-          Compare
-        </button>
-        
-        <button class="comparison-bar-btn secondary" id="addAllBarBtn">
-          <i class="fas fa-plus"></i>
-          Add All
-        </button>
-        
-        <button class="comparison-bar-btn clear" id="clearBarBtn">
-          <i class="fas fa-times"></i>
-          Clear
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', barHTML);
-}
-
-function attachComparisonBarListeners() {
-  const compareBtn = document.getElementById('compareBarBtn');
-  if (compareBtn) {
-    compareBtn.onclick = handleCompareBarClick;
-  }
-  
-  const addAllBtn = document.getElementById('addAllBarBtn');
-  if (addAllBtn) {
-    addAllBtn.onclick = handleAddAllBarClick;
-  }
-  
-  const clearBtn = document.getElementById('clearBarBtn');
-  if (clearBtn) {
-    clearBtn.onclick = handleClearBarClick;
-  }
-  
-  document.addEventListener('click', function(e) {
-    const checkbox = e.target.closest('.rec-card-compare-checkbox');
-    if (checkbox) {
-      const card = checkbox.closest('.recommendation-card');
-      if (card) {
-        handleCheckboxBarClick(card, checkbox);
-      }
-    }
-  });
-}
-
-function handleCheckboxBarClick(card, checkbox) {
-  const cardId = card.dataset.placeId || card.dataset.name;
-  
-  if (!cardId) {
-    console.warn('Card missing ID');
-    return;
-  }
-  
-  if (comparisonBarState.selectedCards.has(cardId)) {
-    deselectBarCard(card, cardId);
-  } else {
-    selectBarCard(card, cardId);
-  }
-  
-  updateComparisonBottomBar();
-}
-
-function selectBarCard(card, cardId) {
-  comparisonBarState.selectedCards.add(cardId);
-  
-  const cardData = extractBarCardData(card);
-  comparisonBarState.selectedData.set(cardId, cardData);
-  
-  card.classList.add('selected');
-  
-  const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
-  if (checkIcon) {
-    checkIcon.style.display = 'block';
-  }
-  
-  if (navigator.vibrate) {
-    navigator.vibrate(10);
-  }
-  
-  // Sync with side panel comparison
-  if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-    window.comparisonState.selectedPlaces.set(cardId, cardData);
-  }
-}
-
-function deselectBarCard(card, cardId) {
-  comparisonBarState.selectedCards.delete(cardId);
-  comparisonBarState.selectedData.delete(cardId);
-  
-  card.classList.remove('selected');
-  
-  const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
-  if (checkIcon) {
-    checkIcon.style.display = 'none';
-  }
-  
-  // Sync with side panel comparison
-  if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-    window.comparisonState.selectedPlaces.delete(cardId);
-  }
-}
-
-function extractBarCardData(card) {
-  return {
-    id: card.dataset.placeId || card.dataset.name,
-    name: card.querySelector('.rec-name')?.textContent || 'Unknown',
-    category: card.dataset.category || 'attraction',
-    rating: parseFloat(card.querySelector('.rec-rating')?.textContent) || 0,
-    distance: parseFloat(card.dataset.distance) || null,
-    distanceFromCenter: parseFloat(card.dataset.distance) || null,
-    priceLevel: parseInt(card.dataset.priceLevel) || 0,
-    lat: parseFloat(card.dataset.lat) || 0,
-    lon: parseFloat(card.dataset.lon) || 0,
-    address: card.querySelector('.rec-address')?.textContent || '',
-    description: card.querySelector('.rec-description')?.textContent || '',
-    reasons: Array.from(card.querySelectorAll('.reason-tag')).map(tag => tag.textContent.trim())
-  };
-}
-
-function updateComparisonBottomBar() {
-  const bar = document.getElementById('comparisonBottomBar');
-  const numberEl = document.getElementById('comparisonBarNumber');
-  
-  if (!bar || !numberEl) return;
-  
-  const count = comparisonBarState.selectedCards.size;
-  
-  numberEl.textContent = count;
-  
-  if (count > 0) {
-    bar.classList.add('visible');
-    bar.setAttribute('aria-hidden', 'false');
-  } else {
-    bar.classList.remove('visible');
-    bar.setAttribute('aria-hidden', 'true');
-  }
-  
-  // Sync with side panel
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
-}
-
-function handleCompareBarClick() {
-  const count = comparisonBarState.selectedCards.size;
-  
-  if (count === 0) {
-    if (typeof showToast === 'function') {
-      showToast('Please select places to compare', 'warning');
-    }
-    return;
-  }
-  
-  if (count === 1) {
-    if (typeof showToast === 'function') {
-      showToast('Select at least 2 places to compare', 'info');
-    }
-    return;
-  }
-  
-  // Sync selections
-  if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-    window.comparisonState.selectedPlaces.clear();
-    comparisonBarState.selectedData.forEach((data, id) => {
-      window.comparisonState.selectedPlaces.set(id, data);
-    });
-  }
-  
-  // Open panel
-  const panel = document.getElementById('comparisonPanel');
-  if (panel) {
-    panel.classList.add('active');
-  }
-  
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
-}
-
-async function handleAddAllBarClick() {
-  const count = comparisonBarState.selectedCards.size;
-  
-  if (count === 0) {
-    if (typeof showToast === 'function') {
-      showToast('No places selected', 'warning');
-    }
-    return;
-  }
-  
-  if (count > 3) {
-    if (!confirm(`Add ${count} places to your trip?`)) {
-      return;
-    }
-  }
-  
-  let successCount = 0;
-  const selectedData = Array.from(comparisonBarState.selectedData.values());
-  
-  for (const placeData of selectedData) {
-    try {
-      if (typeof addRecommendationToTrip === 'function') {
-        await addRecommendationToTrip(placeData);
-        successCount++;
-      }
-    } catch (err) {
-      console.error('Failed to add place:', placeData.name, err);
-    }
-  }
-  
-  if (successCount > 0) {
-    if (typeof showToast === 'function') {
-      showToast(`✅ Added ${successCount} place${successCount > 1 ? 's' : ''} to your trip!`, 'success');
-    }
-    handleClearBarClick();
-  } else {
-    if (typeof showToast === 'function') {
-      showToast('Failed to add places', 'error');
-    }
-  }
-}
-
-function handleClearBarClick() {
-  const count = comparisonBarState.selectedCards.size;
-  
-  if (count > 3) {
-    if (!confirm(`Clear ${count} selected places?`)) {
-      return;
-    }
-  }
-  
-  document.querySelectorAll('.recommendation-card.selected').forEach(card => {
-    const cardId = card.dataset.placeId || card.dataset.name;
-    if (cardId) {
-      deselectBarCard(card, cardId);
-    }
-  });
-  
-  comparisonBarState.selectedCards.clear();
-  comparisonBarState.selectedData.clear();
-  
-  // Clear side panel too
-  if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-    window.comparisonState.selectedPlaces.clear();
-  }
-  
-  updateComparisonBottomBar();
-  
-  if (typeof showToast === 'function') {
-    showToast('Selection cleared', 'info');
-  }
-}
-
-// Expose globally
-window.comparisonBarState = comparisonBarState;
-window.initComparisonBar = initComparisonBar;
-window.clearAllBarSelections = handleClearBarClick;
-
-// Auto-init
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComparisonBar);
-} else {
-  initComparisonBar();
-}
-
-console.log('✅ Bottom comparison bar integrated');
+console.log('✅ Comparison module loaded (side panel only)');
