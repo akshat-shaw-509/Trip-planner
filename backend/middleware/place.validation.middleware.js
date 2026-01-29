@@ -1,4 +1,3 @@
-
 let { body, validationResult } = require('express-validator')
 
 // Import allowed place categories from constants
@@ -11,7 +10,6 @@ let { PLACE_CATEGORIES } = require('../config/constants')
  */
 let handleValidationErrors = (req, res, next) => {
   let errors = validationResult(req)
-
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
@@ -21,7 +19,6 @@ let handleValidationErrors = (req, res, next) => {
       })),
     })
   }
-
   next()
 }
 
@@ -38,7 +35,11 @@ let optionalFields = [
     .withMessage('Description max 2000 chars'),
 
   // Optional address and phone fields
-  body('address', 'phone')
+  body('address')
+    .optional()
+    .trim(),
+
+  body('phone')
     .optional()
     .trim(),
 
@@ -54,10 +55,36 @@ let optionalFields = [
     .optional()
     .isFloat({ min: 0, max: 5 })
     .withMessage('Rating 0-5'),
+
+  // ✅ ADDED: Optional price level (0-5 scale)
+  body('priceLevel')
+    .optional()
+    .isInt({ min: 0, max: 5 })
+    .withMessage('Price level must be 0-5'),
+
+  // ✅ ADDED: Optional notes
+  body('notes')
+    .optional()
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage('Notes max 2000 chars'),
+
+  // ✅ ADDED: Optional visit date
+  body('visitDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid date required'),
+
+  // ✅ ADDED: Optional visit status
+  body('visitStatus')
+    .optional()
+    .isIn(['planned', 'visited', 'skipped'])
+    .withMessage('Visit status must be: planned, visited, or skipped'),
 ]
 
 /**
  * -------------------- Create Place Validation --------------------
+ * ✅ CHANGED: Coordinates are now OPTIONAL (will be geocoded if missing)
  */
 let validatePlace = [
   // Place name validation
@@ -73,25 +100,31 @@ let validatePlace = [
     .notEmpty()
     .withMessage('Category required')
     .isIn(Object.values(PLACE_CATEGORIES))
-    .withMessage(`Category: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
+    .withMessage(`Category must be one of: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
 
-  // GeoJSON-style coordinates validation
-  // Format: [longitude, latitude]
+  // ✅ CHANGED: Coordinates are now OPTIONAL
+  // If provided, they must be in correct format [longitude, latitude]
   body('location.coordinates')
-    .notEmpty()
-    .withMessage('Coordinates required')
+    .optional() // ✅ CHANGED FROM .notEmpty() to .optional()
     .isArray({ min: 2, max: 2 })
-    .withMessage('Coordinates: [lng, lat]')
+    .withMessage('Coordinates must be [lng, lat]')
     .custom((value) => {
+      if (!value || value.length !== 2) {
+        throw new Error('Coordinates must be [lng, lat]')
+      }
       const [lng, lat] = value
-
       // Validate longitude & latitude range
       if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-        throw new Error('Invalid coordination range')
+        throw new Error('Invalid coordinate range')
       }
-
       return true
     }),
+
+  // ✅ ADDED: If coordinates not provided, address should be provided for geocoding
+  body('address')
+    .if(body('location.coordinates').not().exists())
+    .notEmpty()
+    .withMessage('Either coordinates or address is required'),
 
   // Attach optional field validators
   ...optionalFields,
@@ -116,7 +149,7 @@ const validatePlaceUpdate = [
   body('category')
     .optional()
     .isIn(Object.values(PLACE_CATEGORIES))
-    .withMessage(`Category: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
+    .withMessage(`Category must be one of: ${Object.values(PLACE_CATEGORIES).join(', ')}`),
 
   // Coordinates update validation
   body('location.coordinates')
@@ -125,11 +158,9 @@ const validatePlaceUpdate = [
     .withMessage('Coordinates: [lng, lat]')
     .custom((value) => {
       const [lng, lat] = value
-
       if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
         throw new Error('Invalid coord range')
       }
-
       return true
     }),
 
@@ -139,6 +170,7 @@ const validatePlaceUpdate = [
   // Final validation error handler
   handleValidationErrors,
 ]
+
 module.exports = {
   validatePlace,
   validatePlaceUpdate
