@@ -1,5 +1,5 @@
 /* =====================================================================
-   ADVANCED RECOMMENDATIONS - MODERN UI STYLING
+   ADVANCED RECOMMENDATIONS - MODERN UI STYLING (FIXED)
    Inspired by style.css design system
    ===================================================================== */
 
@@ -293,12 +293,13 @@
     margin-top: 32px;
 }
 
-/* ===================== RECOMMENDATION CARD ===================== */
+/* ===================== RECOMMENDATION CARD - FIXED LAYOUT ===================== */
 .recommendation-card {
     background: white;
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-    padding: 28px;
+    padding: 24px;
+    padding-top: 16px; /* Less padding at top for badges */
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -316,13 +317,13 @@
     background: #f0f9ff;
 }
 
-/* ===================== CARD COMPARE CHECKBOX ===================== */
+/* ===================== CARD COMPARE CHECKBOX - REPOSITIONED ===================== */
 .rec-card-compare-checkbox {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 32px;
-    height: 32px;
+    top: 12px;
+    left: 12px;
+    width: 28px;
+    height: 28px;
     border: 2px solid #cbd5e1;
     border-radius: 8px;
     background: white;
@@ -332,11 +333,13 @@
     justify-content: center;
     transition: all 0.2s;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .rec-card-compare-checkbox:hover {
     border-color: #0066cc;
     background: #f0f9ff;
+    transform: scale(1.05);
 }
 
 .recommendation-card.comparing .rec-card-compare-checkbox {
@@ -347,15 +350,16 @@
 .recommendation-card.comparing .rec-card-compare-checkbox i {
     display: block !important;
     color: white;
+    font-size: 14px;
 }
 
-/* ===================== CARD HEADER ===================== */
+/* ===================== CARD HEADER - SIMPLIFIED ===================== */
 .rec-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 16px;
-    gap: 16px;
+    margin-top: 4px; /* Space for top badges */
 }
 
 .rec-title {
@@ -368,6 +372,7 @@
     color: #1a2332;
     margin-bottom: 8px;
     line-height: 1.3;
+    padding-right: 0; /* Remove right padding since score is hidden */
 }
 
 .rec-location-info {
@@ -395,26 +400,16 @@
     font-size: 13px;
     font-weight: 500;
     text-transform: capitalize;
+    width: fit-content;
 }
 
 .rec-category i {
     font-size: 12px;
 }
 
+/* ===================== SCORE - HIDDEN FROM USER ===================== */
 .rec-score {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    background: #fef3c7;
-    border-radius: 8px;
-    font-weight: 700;
-    color: #92400e;
-}
-
-.rec-score i {
-    color: #f59e0b;
-    font-size: 16px;
+    display: none; /* Hidden from UI but data still used in backend for sorting/filtering */
 }
 
 /* ===================== CARD META INFO ===================== */
@@ -554,11 +549,11 @@
     background: #e2e8f0;
 }
 
-/* ===================== QUALITY BADGES ===================== */
+/* ===================== QUALITY BADGES - REPOSITIONED ===================== */
 .quality-badge {
     position: absolute;
-    top: 16px;
-    left: 16px;
+    top: 12px;
+    right: 12px;
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 12px;
@@ -583,11 +578,11 @@
     font-size: 13px;
 }
 
-/* ===================== SAVE FOR LATER ===================== */
+/* ===================== SAVE FOR LATER - REPOSITIONED ===================== */
 .save-for-later {
     position: absolute;
-    top: 56px;
-    left: 16px;
+    top: 48px;
+    right: 12px;
     width: 36px;
     height: 36px;
     background: white;
@@ -766,12 +761,12 @@
     }
 
     .recommendation-card {
-        padding: 24px;
+        padding: 20px;
+        padding-top: 16px;
     }
 
     .rec-header {
-        flex-direction: column;
-        gap: 12px;
+        gap: 10px;
     }
 
     .bulk-actions-bar {
