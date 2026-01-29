@@ -106,8 +106,15 @@ async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
+    
+    // ✅ Add loading state to active category button
+    const activeBtn = document.querySelector('.category-filter-btn.active');
+    if (activeBtn) {
+      activeBtn.classList.add('loading');
+    }
 
     console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
+    console.log('  📋 Category filter:', options.category || 'all');
 
     const res = await apiService.recommendations.getForTrip(
       recommendationsState.currentTripId,
@@ -197,6 +204,12 @@ async function loadRecommendations(options = {}) {
     showRecommendationsError();
   } finally {
     recommendationsState.isLoading = false;
+    
+    // ✅ Remove loading state from category button
+    const loadingBtn = document.querySelector('.category-filter-btn.loading');
+    if (loadingBtn) {
+      loadingBtn.classList.remove('loading');
+    }
   }
 }
 
@@ -332,7 +345,7 @@ function createRecommendationCard(rec) {
         </div>
       ` : ''}
 
-      ${rec.address ? `
+      ${rec.address && rec.address !== 'undefined' ? `
         <div class="rec-address">
           <i class="fas fa-map-pin"></i>
           ${escapeHtml(rec.address)}
@@ -357,6 +370,32 @@ function renderAdvancedControls() {
   if (!container) return;
 
   const controlsHTML = `
+    <!-- ✅ NEW: Category Filter Buttons -->
+    <div class="rec-category-filters">
+      <h3>
+        <i class="fas fa-filter"></i>
+        Filter by Category
+      </h3>
+      <div class="category-filter-buttons">
+        <button class="category-filter-btn active" data-category="all">
+          <i class="fas fa-th"></i>
+          All Categories
+        </button>
+        <button class="category-filter-btn" data-category="restaurant">
+          <i class="fas fa-utensils"></i>
+          Restaurants
+        </button>
+        <button class="category-filter-btn" data-category="attraction">
+          <i class="fas fa-landmark"></i>
+          Attractions
+        </button>
+        <button class="category-filter-btn" data-category="accommodation">
+          <i class="fas fa-bed"></i>
+          Hotels
+        </button>
+      </div>
+    </div>
+
     <div class="rec-controls-panel">
       <div class="rec-controls-header">
         <h3>
@@ -436,6 +475,25 @@ function renderAdvancedControls() {
 }
 
 function attachAdvancedListeners() {
+  // ✅ NEW: Category filter buttons
+  document.querySelectorAll('.category-filter-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      // Update active state
+      document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Get selected category
+      const category = this.dataset.category;
+      
+      console.log('🔍 Filtering by category:', category);
+      
+      // Reload recommendations with category filter
+      await loadRecommendations({ 
+        category: category === 'all' ? undefined : category 
+      });
+    });
+  });
+
   // Toggle controls
   const toggle = document.getElementById('recControlsToggle');
   const body = document.getElementById('recControlsBody');
@@ -687,10 +745,10 @@ async function addRecommendationToTrip(rec) {
       priceLevel: parseInt(rec.priceLevel) || 0,
       description: rec.description || '',
       
-      // ✅ Combine AI reasons into notes
+      // ✅ Only include AI reasons if they exist, no prefix text
       notes: rec.reasons && rec.reasons.length > 0
-        ? `Added from AI recommendations.\n\nWhy recommended:\n${rec.reasons.map(r => `• ${r}`).join('\n')}`
-        : 'Added from AI recommendations'
+        ? `${rec.reasons.map(r => `• ${r}`).join('\n')}`
+        : ''  // ✅ Empty string instead of generic text
     };
 
     console.log('📤 Sending place data:', placeData);
