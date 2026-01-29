@@ -21,7 +21,7 @@ const getRecommendations = async (tripId, options = {}) => {
     console.log('  Destination:', trip.destination)
     console.log('  Category:', options.category || 'all')
 
-    // ✅ STEP 1: Get center location coordinates
+    // ✅ STEP 1: Get center location coordinates - NO FALLBACKS TO WRONG CITIES
     let centerLocation = null
     
     if (trip.destinationCoords && trip.destinationCoords.length === 2) {
@@ -29,10 +29,29 @@ const getRecommendations = async (tripId, options = {}) => {
         lat: trip.destinationCoords[1],
         lon: trip.destinationCoords[0]
       }
-      console.log('  Using trip coords:', centerLocation)
+      console.log('  ✓ Using saved trip coords:', centerLocation)
     } else {
-      console.log('  Geocoding destination:', trip.destination)
-      const geocoded = await geoapifyService.geocodeLocation(trip.destination)
+      // ✅ MUST GEOCODE - NO DEFAULT COORDINATES
+      console.log('  🔍 Geocoding destination:', trip.destination)
+      
+      // Try multiple geocoding attempts with variations
+      let geocoded = null
+      
+      // Attempt 1: Exact destination name
+      geocoded = await geoapifyService.geocodeLocation(trip.destination)
+      
+      // Attempt 2: Add country if available
+      if (!geocoded && trip.country) {
+        console.log('  🔍 Retry with country:', `${trip.destination}, ${trip.country}`)
+        geocoded = await geoapifyService.geocodeLocation(`${trip.destination}, ${trip.country}`)
+      }
+      
+      // Attempt 3: Try city name only if comma-separated
+      if (!geocoded && trip.destination.includes(',')) {
+        const cityOnly = trip.destination.split(',')[0].trim()
+        console.log('  🔍 Retry with city only:', cityOnly)
+        geocoded = await geoapifyService.geocodeLocation(cityOnly)
+      }
       
       if (geocoded) {
         centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
@@ -42,10 +61,20 @@ const getRecommendations = async (tripId, options = {}) => {
         // Save to trip for future use
         trip.destinationCoords = [geocoded.lon, geocoded.lat]
         await trip.save()
+        console.log('  ✓ Saved coordinates to trip')
       } else {
-        console.warn('  ⚠️ Geocoding failed, using default (Paris)')
-        centerLocation = { lat: 48.8566, lon: 2.3522 }
+        // ✅ FAIL GRACEFULLY - NO WRONG CITY FALLBACK
+        console.error('  ❌ CRITICAL: Cannot find location for:', trip.destination)
+        throw new Error(
+          `Unable to find coordinates for "${trip.destination}". ` +
+          `Please verify the destination name is correct (e.g., "Venice, Italy" instead of just "Venice").`
+        )
       }
+    }
+
+    // Verify we have valid coordinates
+    if (!centerLocation || !centerLocation.lat || !centerLocation.lon) {
+      throw new Error('Invalid center location coordinates')
     }
 
     // ✅ STEP 2: Determine categories to search
@@ -56,13 +85,14 @@ const getRecommendations = async (tripId, options = {}) => {
       categories = ['restaurant', 'attraction', 'accommodation']
     }
 
-    console.log('  Fetching categories:', categories.join(', '))
+    console.log('  📋 Fetching categories:', categories.join(', '))
+    console.log('  📍 Search center:', centerLocation)
 
     // ✅ STEP 3: Fetch AI recommendations
     let allPlaces = []
 
     for (const category of categories) {
-      console.log(`\n  📍 Fetching ${category}s...`)
+      console.log(`\n  🔍 Fetching ${category}s for ${trip.destination}...`)
       
       try {
         const result = await groqService.getAIRecommendations(
@@ -72,56 +102,83 @@ const getRecommendations = async (tripId, options = {}) => {
             budget: trip.budget,
             duration: trip.duration,
             peopleCount: trip.peopleCount,
-            centerLocation: centerLocation // Pass center for distance calc
+            centerLocation: centerLocation
           }
         )
 
         if (result.places && result.places.length > 0) {
           console.log(`    ✓ AI returned ${result.places.length} ${category}s`)
           
-          // ✅ STEP 4: GEOCODE EACH PLACE IF MISSING COORDINATES
+          // ✅ STEP 4: GEOCODE EACH PLACE IN THE CORRECT CITY
           const placesWithCoords = await Promise.all(
             result.places.map(async (place) => {
               // Check if place already has coordinates
               if (place.location?.coordinates && 
                   place.location.coordinates[0] !== 0 && 
                   place.location.coordinates[1] !== 0) {
-                console.log(`    ✓ ${place.name}: has coordinates`)
-                return place
+                
+                // ✅ VERIFY coordinates are in correct city (within reasonable radius)
+                const distance = calculateDistance(
+                  centerLocation.lat,
+                  centerLocation.lon,
+                  place.location.coordinates[1],
+                  place.location.coordinates[0]
+                )
+                
+                // If place is more than 100km away, something is wrong
+                if (distance > 100) {
+                  console.warn(`    ⚠️ ${place.name} is ${distance}km away - re-geocoding`)
+                } else {
+                  console.log(`    ✓ ${place.name}: valid coordinates (${distance.toFixed(1)}km)`)
+                  place.distanceFromCenter = distance
+                  return place
+                }
               }
 
-              // ✅ GEOCODE THE PLACE
+              // ✅ GEOCODE WITH CITY CONTEXT
               console.log(`    🔍 Geocoding: ${place.name}`)
               
               try {
-                const query = place.address || `${place.name}, ${trip.destination}`
+                // Include destination city in geocoding query for accuracy
+                const query = `${place.name}, ${trip.destination}`
+                console.log(`    🔍 Query: "${query}"`)
+                
                 const coords = await geoapifyService.geocodeLocation(query)
                 
                 if (coords) {
-                  console.log(`    ✓ Found: [${coords.lon}, ${coords.lat}]`)
-                  
-                  // Calculate distance from center
+                  // ✅ VERIFY the geocoded place is in the right city
                   const distance = calculateDistance(
                     centerLocation.lat,
                     centerLocation.lon,
                     coords.lat,
                     coords.lon
                   )
+                  
+                  // Reject if place is too far from destination (>100km)
+                  if (distance > 100) {
+                    console.warn(`    ❌ ${place.name} geocoded to wrong city (${distance}km away)`)
+                    console.warn(`    ❌ Expected: ${trip.destination}, Got: ${coords.formatted}`)
+                    return null
+                  }
 
+                  console.log(`    ✓ Found in ${trip.destination}: [${coords.lon}, ${coords.lat}] (${distance.toFixed(1)}km)`)
+                  
                   return {
                     ...place,
                     location: {
                       type: 'Point',
                       coordinates: [coords.lon, coords.lat]
                     },
-                    lat: coords.lat,  // ✅ Add explicit lat/lon
-                    lon: coords.lon,  // ✅ for frontend convenience
+                    lat: coords.lat,
+                    lon: coords.lon,
                     address: coords.formatted || place.address,
-                    distanceFromCenter: distance
+                    distanceFromCenter: distance,
+                    city: coords.city,
+                    country: coords.country
                   }
                 } else {
                   console.warn(`    ⚠️ Geocoding failed for: ${place.name}`)
-                  return null // Will be filtered out
+                  return null
                 }
               } catch (err) {
                 console.error(`    ❌ Geocoding error for ${place.name}:`, err.message)
@@ -130,9 +187,14 @@ const getRecommendations = async (tripId, options = {}) => {
             })
           )
 
-          // Filter out places that couldn't be geocoded
+          // Filter out places that couldn't be geocoded or are in wrong location
           const validPlaces = placesWithCoords.filter(p => p !== null)
-          console.log(`    ✓ Valid places with coordinates: ${validPlaces.length}`)
+          console.log(`    ✓ Valid places in ${trip.destination}: ${validPlaces.length}`)
+          
+          if (validPlaces.length < placesWithCoords.length) {
+            const rejected = placesWithCoords.length - validPlaces.length
+            console.log(`    ⚠️ Rejected ${rejected} places (wrong location or geocoding failed)`)
+          }
           
           allPlaces.push(...validPlaces)
         } else {
@@ -144,7 +206,7 @@ const getRecommendations = async (tripId, options = {}) => {
       }
     }
 
-    console.log(`\n  📊 Total places with coordinates: ${allPlaces.length}`)
+    console.log(`\n  📊 Total valid places for ${trip.destination}: ${allPlaces.length}`)
 
     // ✅ STEP 5: Score and rank
     if (allPlaces.length > 0 && centerLocation) {
@@ -155,27 +217,42 @@ const getRecommendations = async (tripId, options = {}) => {
     const limit = options.limit || 50
     allPlaces = allPlaces.slice(0, limit)
 
-    // ✅ STEP 7: Final validation - ensure all have coordinates
+    // ✅ STEP 7: Final validation - ensure all have coordinates IN THE RIGHT CITY
     const finalPlaces = allPlaces.filter(place => {
       const hasCoords = place.lat && place.lon && 
                        place.lat !== 0 && place.lon !== 0
       
       if (!hasCoords) {
         console.warn(`  ⚠️ Filtering out ${place.name} - missing coordinates`)
+        return false
       }
       
-      return hasCoords
+      // Double-check distance
+      if (place.distanceFromCenter > 100) {
+        console.warn(`  ⚠️ Filtering out ${place.name} - too far (${place.distanceFromCenter}km)`)
+        return false
+      }
+      
+      return true
     })
 
-    console.log(`  ✅ Returning ${finalPlaces.length} recommendations with valid coordinates`)
+    console.log(`  ✅ Returning ${finalPlaces.length} recommendations for ${trip.destination}`)
+
+    if (finalPlaces.length === 0) {
+      console.warn(`  ⚠️ No valid recommendations found for ${trip.destination}`)
+      return {
+        places: [],
+        centerLocation: centerLocation,
+        budgetAnalysis: null,
+        message: `No recommendations found for ${trip.destination}. Try adjusting your search.`
+      }
+    }
 
     return {
       places: finalPlaces,
       centerLocation: centerLocation,
       budgetAnalysis: null,
-      message: finalPlaces.length > 0 
-        ? `Found ${finalPlaces.length} recommendations` 
-        : 'No recommendations available'
+      message: `Found ${finalPlaces.length} recommendations in ${trip.destination}`
     }
 
   } catch (error) {
