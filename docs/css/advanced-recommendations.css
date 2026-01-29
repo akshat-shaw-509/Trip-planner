@@ -1,7 +1,6 @@
 /* =====================================================================
-   ADVANCED RECOMMENDATIONS - FIXED VERSION
-   - Bulk actions bar only shows when items selected
-   - Better control panel layout (no full screen)
+   ADVANCED RECOMMENDATIONS - FINAL VERSION
+   - Bulk actions bar with 3 buttons: Add All, Compare, Clear
    ===================================================================== */
 
 /* ===================== RECOMMENDATIONS SECTION ===================== */
@@ -119,14 +118,14 @@
     to { transform: translateY(-50%) rotate(360deg); }
 }
 
-/* ===================== CONTROLS PANEL - FIXED WIDTH ===================== */
+/* ===================== CONTROLS PANEL ===================== */
 .rec-controls-panel {
     background: white;
     border-radius: 20px;
     margin-bottom: 32px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
     overflow: hidden;
-    max-width: 1400px; /* ✅ FIXED: No full screen */
+    max-width: 1400px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -184,7 +183,7 @@
 .rec-controls-body {
     padding: 32px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* ✅ FIXED: Grid layout */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 32px;
     transition: all 0.3s ease;
 }
@@ -233,12 +232,12 @@
     background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3), 0 0 0 0 rgba(0, 102, 204, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
 }
 
 .range-slider::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4), 0 0 0 4px rgba(0, 102, 204, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
 }
 
 .range-slider::-moz-range-thumb {
@@ -296,12 +295,7 @@
     box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
 }
 
-.sort-btn i,
-.quick-action-btn i {
-    font-size: 14px;
-}
-
-/* ===================== RECOMMENDATIONS GRID - RESPONSIVE ===================== */
+/* ===================== RECOMMENDATIONS GRID ===================== */
 .recommendations-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -309,7 +303,7 @@
     margin-top: 32px;
 }
 
-/* ===================== RECOMMENDATION CARD - PREMIUM POLISH ===================== */
+/* ===================== RECOMMENDATION CARD ===================== */
 .recommendation-card {
     background: white;
     border-radius: 16px;
@@ -337,8 +331,7 @@
 
 .recommendation-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 
-                0 4px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
     border-color: #e5e7eb;
 }
 
@@ -346,19 +339,17 @@
     opacity: 1;
 }
 
-/* Selected/Comparing State */
 .recommendation-card.comparing {
     border-color: #0066cc;
     background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
-    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.15), 
-                0 0 0 3px rgba(0, 102, 204, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.15);
 }
 
 .recommendation-card.comparing::before {
     opacity: 1;
 }
 
-/* ===================== CHECKBOX - HOVER REVEALED ===================== */
+/* ===================== CHECKBOX ===================== */
 .rec-card-compare-checkbox {
     position: absolute;
     top: 14px;
@@ -379,26 +370,14 @@
     transform: scale(0.8);
 }
 
-/* CRITICAL: Show checkbox on card hover */
 .recommendation-card:hover .rec-card-compare-checkbox {
     opacity: 1;
     transform: scale(1);
 }
 
-/* Always show when card is selected */
 .recommendation-card.comparing .rec-card-compare-checkbox {
     opacity: 1;
     transform: scale(1);
-}
-
-.rec-card-compare-checkbox:hover {
-    border-color: #0066cc;
-    background: #f0f9ff;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
-}
-
-.recommendation-card.comparing .rec-card-compare-checkbox {
     background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     border-color: #0066cc;
 }
@@ -409,16 +388,12 @@
     font-size: 16px;
 }
 
-/* ===================== CARD HEADER - TYPOGRAPHY HIERARCHY ===================== */
+/* ===================== CARD CONTENT ===================== */
 .rec-header {
     display: flex;
     flex-direction: column;
     gap: 12px;
     margin-bottom: 16px;
-}
-
-.rec-title {
-    flex: 1;
 }
 
 .rec-name {
@@ -440,12 +415,6 @@
     font-weight: 500;
 }
 
-.rec-location-info i {
-    font-size: 12px;
-    color: #cbd5e1;
-}
-
-/* ===================== CATEGORY BADGE - PILL CHIP ===================== */
 .rec-category {
     display: inline-flex;
     align-items: center;
@@ -459,24 +428,12 @@
     text-transform: capitalize;
     width: fit-content;
     border: 1px solid #e5e7eb;
-    transition: all 0.2s;
 }
 
-.rec-category:hover {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e5e7eb 100%);
-    border-color: #cbd5e1;
-}
-
-.rec-category i {
-    font-size: 13px;
-}
-
-/* ===================== SCORE - HIDDEN ===================== */
 .rec-score {
     display: none;
 }
 
-/* ===================== META INFO ROW - IMPROVED SPACING ===================== */
 .rec-meta {
     display: flex;
     gap: 20px;
@@ -499,20 +456,16 @@
 
 .rec-rating-display i {
     color: #fbbf24;
-    font-size: 15px;
 }
 
 .rec-distance i {
     color: #0066cc;
-    font-size: 14px;
 }
 
 .rec-price i {
     color: #10b981;
-    font-size: 14px;
 }
 
-/* ===================== REASONS SECTION ===================== */
 .rec-reasons {
     margin-bottom: 16px;
 }
@@ -539,20 +492,8 @@
     margin-right: 8px;
     margin-bottom: 8px;
     border: 1px solid #93c5fd;
-    transition: all 0.2s;
 }
 
-.reason-tag:hover {
-    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
-    transform: translateY(-1px);
-}
-
-.reason-tag i {
-    color: #10b981;
-    font-size: 12px;
-}
-
-/* ===================== DESCRIPTION - READABLE ===================== */
 .rec-description {
     font-size: 14px;
     color: #64748b;
@@ -571,13 +512,6 @@
     font-weight: 500;
 }
 
-.rec-address i {
-    color: #cbd5e1;
-    margin-top: 3px;
-    flex-shrink: 0;
-}
-
-/* ===================== CTA BUTTON - STRONGEST VISUAL ===================== */
 .rec-actions {
     display: flex;
     gap: 10px;
@@ -600,37 +534,12 @@
     justify-content: center;
     gap: 10px;
     box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-add-to-trip::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn-add-to-trip:hover::before {
-    width: 300px;
-    height: 300px;
 }
 
 .btn-add-to-trip:hover {
     background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4);
-}
-
-.btn-add-to-trip:active {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
 .btn-view-details {
@@ -648,10 +557,9 @@
 .btn-view-details:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
-    color: #1a2332;
 }
 
-/* ===================== QUALITY BADGES - PREMIUM PILLS ===================== */
+/* ===================== QUALITY BADGES ===================== */
 .quality-badge {
     position: absolute;
     top: 14px;
@@ -680,11 +588,6 @@
     border-color: #a855f7;
 }
 
-.quality-badge i {
-    font-size: 13px;
-}
-
-/* ===================== SAVE FOR LATER ===================== */
 .save-for-later {
     position: absolute;
     top: 56px;
@@ -711,58 +614,60 @@
 .save-for-later i {
     color: #cbd5e1;
     font-size: 17px;
-    transition: color 0.2s;
 }
 
 .save-for-later.saved i {
     color: #ef4444;
 }
 
-/* ===================== BULK ACTIONS BAR - FIXED: ONLY SHOWS WHEN ITEMS SELECTED ===================== */
+/* ===================== BULK ACTIONS BAR - 3 BUTTONS ===================== */
 .bulk-actions-bar {
     position: fixed;
-    bottom: -120px; /* ✅ Hidden by default */
+    bottom: -120px;
     left: 50%;
     transform: translateX(-50%);
     background: white;
-    padding: 24px 36px;
-    border-radius: 20px;
+    padding: 20px 32px;
+    border-radius: 16px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 24px;
     transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
-    min-width: 420px;
+    min-width: 500px;
     border: 2px solid #e5e7eb;
 }
 
 .bulk-actions-bar.show {
-    bottom: 40px; /* ✅ Only shows when .show class is added */
+    bottom: 32px;
 }
 
 .bulk-count {
     font-size: 16px;
     font-weight: 700;
     color: #1a2332;
+    white-space: nowrap;
 }
 
 .bulk-actions {
     display: flex;
     gap: 12px;
+    align-items: center;
 }
 
 .bulk-action-btn {
-    padding: 12px 24px;
-    border-radius: 12px;
+    padding: 12px 20px;
+    border-radius: 10px;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     border: none;
+    white-space: nowrap;
 }
 
 .bulk-action-btn.primary {
@@ -774,7 +679,19 @@
 .bulk-action-btn.primary:hover {
     background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 102, 204, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.bulk-action-btn.comparison {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.bulk-action-btn.comparison:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
 }
 
 .bulk-action-btn.secondary {
@@ -786,19 +703,7 @@
 .bulk-action-btn.secondary:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
-}
-
-/* ✅ NEW: Comparison button in bulk actions */
-.bulk-action-btn.comparison {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-}
-
-.bulk-action-btn.comparison:hover {
-    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
 }
 
 /* ===================== EMPTY STATES ===================== */
@@ -822,13 +727,11 @@
     font-weight: 700;
     color: #1a2332;
     margin-bottom: 12px;
-    letter-spacing: -0.3px;
 }
 
 .recommendations-empty p {
     font-size: 16px;
     color: #64748b;
-    line-height: 1.6;
 }
 
 .loading-spinner {
@@ -841,12 +744,6 @@
     margin: 0 auto 28px;
 }
 
-.recommendations-loading p {
-    font-size: 18px;
-    color: #64748b;
-    font-weight: 600;
-}
-
 /* ===================== RESPONSIVE DESIGN ===================== */
 @media (max-width: 1024px) {
     .recommendations-grid {
@@ -855,7 +752,6 @@
     }
 
     .rec-controls-body {
-        padding: 24px;
         grid-template-columns: 1fr;
     }
 }
@@ -865,45 +761,13 @@
         padding: 40px 20px;
     }
 
-    .section-header h2 {
-        font-size: 30px;
-    }
-
-    .rec-category-filters,
-    .rec-controls-panel {
-        padding: 24px;
-        border-radius: 16px;
-    }
-
-    .category-filter-buttons {
-        gap: 10px;
-    }
-
-    .category-filter-btn {
-        padding: 10px 18px;
-        font-size: 14px;
-    }
-
-    .recommendations-grid {
-        grid-template-columns: 1fr;
-        gap: 18px;
-    }
-
-    .recommendation-card {
-        padding: 20px;
-    }
-
-    .rec-header {
-        gap: 10px;
-    }
-
     .bulk-actions-bar {
         min-width: auto;
         width: calc(100% - 40px);
         left: 20px;
         transform: none;
         flex-direction: column;
-        gap: 18px;
+        gap: 16px;
         padding: 20px;
     }
 
@@ -913,42 +777,7 @@
     }
 
     .bulk-action-btn {
-        flex: 1;
         width: 100%;
         justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .section-header h2 {
-        font-size: 26px;
-    }
-
-    .rec-name {
-        font-size: 18px;
-    }
-
-    .rec-actions {
-        flex-direction: column;
-    }
-
-    .btn-add-to-trip,
-    .btn-view-details {
-        width: 100%;
-    }
-
-    .sort-options {
-        flex-direction: column;
-    }
-
-    .sort-btn,
-    .quick-action-btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .rec-card-compare-checkbox {
-        width: 28px;
-        height: 28px;
     }
 }
