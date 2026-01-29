@@ -1,15 +1,17 @@
-// FIXED places.js - Map shows RECOMMENDED places, not added places!
+// FIXED places.js - DIAGNOSTIC VERSION WITH PROPER INITIALIZATION ORDER
 
 let currentTripId = null;
 let allPlaces = [];
 let currentFilter = 'all';
 let map = null;
-let markers = []; // Track markers for cleanup
+let markers = [];
 let currentTripData = null;
-let recommendedPlaces = []; // ✅ NEW: Store recommended places for map
+let recommendedPlaces = [];
 
-// ===================== Page Init =====================
+// ===================== Page Init (FIXED ORDER) =====================
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('🚀 Page loaded - Starting initialization...');
+  
   const token = sessionStorage.getItem('accessToken');
   if (!token) {
     showToast('Please login first', 'error');
@@ -29,17 +31,55 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   sessionStorage.setItem('currentTripId', currentTripId);
 
+  // ✅ STEP 1: Load trip data FIRST
+  console.log('📍 STEP 1: Loading trip context...');
   await loadTripContext();
-  await loadPlaces();
+  
+  if (!currentTripData) {
+    console.error('❌ Failed to load trip data');
+    showToast('Failed to load trip details', 'error');
+    return;
+  }
+  
+  console.log('✅ Trip data loaded:', currentTripData);
 
-  if (currentTripData && typeof initRecommendations === 'function') {
-    await initRecommendations(currentTripId, currentTripData);
+  // ✅ STEP 2: Initialize trip center selector (NEEDS trip data)
+  console.log('📍 STEP 2: Initializing trip center selector...');
+  if (typeof initTripCenterSelector === 'function') {
+    try {
+      await initTripCenterSelector(currentTripData);
+      console.log('✅ Trip center initialized');
+    } catch (err) {
+      console.error('❌ Trip center init failed:', err);
+    }
+  } else {
+    console.error('❌ initTripCenterSelector function not found!');
+    console.log('Available functions:', Object.keys(window).filter(k => k.includes('Trip')));
   }
 
+  // ✅ STEP 3: Load places
+  console.log('📍 STEP 3: Loading places...');
+  await loadPlaces();
+
+  // ✅ STEP 4: Initialize recommendations (NEEDS trip data AND trip center)
+  console.log('📍 STEP 4: Initializing recommendations...');
+  if (typeof initRecommendations === 'function') {
+    try {
+      await initRecommendations(currentTripId, currentTripData);
+      console.log('✅ Recommendations initialized');
+    } catch (err) {
+      console.error('❌ Recommendations init failed:', err);
+    }
+  } else {
+    console.error('❌ initRecommendations function not found!');
+  }
+
+  // ✅ STEP 5: Initialize filters
   initFilters();
   
-  // ✅ Initialize map after DOM is ready and places are loaded
+  // ✅ STEP 6: Initialize map
   setTimeout(() => {
+    console.log('📍 STEP 6: Initializing map...');
     initMap();
   }, 500);
 
@@ -52,13 +92,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('toggleMapBtn')?.addEventListener('click', toggleMap);
   document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
+  
+  console.log('✅ All initialization complete!');
 });
 
 // ===================== Trip Context =====================
 async function loadTripContext() {
   try {
+    console.log('📥 Fetching trip data for ID:', currentTripId);
     const res = await apiService.trips.getById(currentTripId);
     currentTripData = res.data;
+
+    console.log('📦 Trip data received:', {
+      destination: currentTripData.destination,
+      country: currentTripData.country,
+      hasCoords: !!currentTripData.destinationCoords,
+      coords: currentTripData.destinationCoords
+    });
 
     const tripInfoEl = document.getElementById('tripInfo');
     if (tripInfoEl && currentTripData) {
@@ -73,8 +123,12 @@ async function loadTripContext() {
         currentTripData.country ? ', ' + currentTripData.country : ''
       } • ${days} Days`;
     }
+    
+    return currentTripData;
   } catch (err) {
-    console.error('Failed to load trip context:', err);
+    console.error('❌ Failed to load trip context:', err);
+    showToast('Failed to load trip details', 'error');
+    throw err;
   }
 }
 
@@ -110,7 +164,6 @@ function displayPlaces() {
   grid.style.display = 'grid';
   grid.innerHTML = filtered.map(createPlaceCard).join('');
 
-  // Attach card-level actions
   filtered.forEach(place => {
     const card = document.querySelector(`[data-place-id="${place._id}"]`);
     if (!card) return;
@@ -132,7 +185,6 @@ function displayPlaces() {
   });
 }
 
-// ===================== Place Card =====================
 function createPlaceCard(place) {
   const icon = getCategoryIcon(place.category);
   const isFavorite = place.isFavorite || false;
@@ -187,7 +239,6 @@ function createPlaceCard(place) {
   `;
 }
 
-// ===================== Filters =====================
 function initFilters() {
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -199,7 +250,6 @@ function initFilters() {
   });
 }
 
-// ===================== Modals =====================
 function openAddPlaceModal() {
   document.getElementById('placeForm')?.reset();
   document.getElementById('placeModal').style.display = 'block';
@@ -209,39 +259,47 @@ function closePlaceModal() {
   document.getElementById('placeModal').style.display = 'none';
 }
 
-// ===================== Geocoding Helper =====================
 async function geocodePlace(placeName, address) {
   try {
     const query = address || placeName;
-    const response = await fetch(`${API_BASE_URL}/places/geocode`, {
+    
+    // ✅ Use the correct API endpoint
+    const baseURL = apiService?.baseURL || 'http://localhost:5000/api';
+    const token = sessionStorage.getItem('accessToken');
+    
+    console.log('🔍 Geocoding:', query);
+    console.log('📍 Using API:', baseURL);
+    
+    const response = await fetch(`${baseURL}/places/geocode`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${sessionStorage.getItem('accessToken')}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ location: query })
     });
 
     if (!response.ok) {
-      throw new Error('Geocoding failed');
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Geocoding API error:', errorData);
+      throw new Error(errorData.error || 'Geocoding failed');
     }
 
     const result = await response.json();
+    console.log('✅ Geocoding result:', result);
     return result.data;
   } catch (err) {
-    console.error('Geocoding error:', err);
+    console.error('❌ Geocoding error:', err);
     return null;
   }
 }
 
-// ===================== Create Place (FIXED) =====================
 async function handlePlaceSubmit(e) {
   e.preventDefault();
 
   const name = document.getElementById('placeName').value.trim();
   const address = document.getElementById('placeAddress').value.trim();
 
-  // ✅ GEOCODE THE PLACE FIRST
   showToast('Finding location...', 'info');
   const coords = await geocodePlace(name, address);
 
@@ -259,10 +317,9 @@ async function handlePlaceSubmit(e) {
     description: document.getElementById('placeDescription').value.trim(),
     priceLevel: parseInt(document.getElementById('placePrice').value) || 0,
     notes: document.getElementById('placeNotes').value.trim(),
-    // ✅ ADD COORDINATES (REQUIRED BY MODEL)
     location: {
       type: 'Point',
-      coordinates: [coords.lon, coords.lat] // [longitude, latitude]
+      coordinates: [coords.lon, coords.lat]
     }
   };
 
@@ -279,7 +336,6 @@ async function handlePlaceSubmit(e) {
   }
 }
 
-// ===================== Favorites =====================
 async function toggleFavorite(placeId, btn) {
   const wasFavorited = btn.classList.contains('favorited');
   btn.classList.toggle('favorited');
@@ -303,7 +359,6 @@ async function toggleFavorite(placeId, btn) {
   }
 }
 
-// ===================== Delete =====================
 async function deletePlace(placeId) {
   if (!confirm('Delete this place?')) return;
 
@@ -317,7 +372,6 @@ async function deletePlace(placeId) {
   }
 }
 
-// ===================== Map Functions (FIXED FOR RECOMMENDATIONS) =====================
 function toggleMap() {
   const mapEl = document.getElementById('map');
   mapEl.style.display = 'block';
@@ -326,11 +380,10 @@ function toggleMap() {
     initMap();
   }
   
-  // Force resize after showing
   setTimeout(() => {
     if (map) {
       map.invalidateSize();
-      updateRecommendedMarkers(); // ✅ Show recommended places
+      updateRecommendedMarkers();
     }
   }, 100);
 }
@@ -340,14 +393,12 @@ function closeMap() {
 }
 
 function initMap() {
-  // Check if Leaflet is loaded
   if (typeof L === 'undefined') {
     console.error('❌ Leaflet library not loaded!');
     showToast('Map library not loaded. Please refresh the page.', 'error');
     return;
   }
 
-  // Check if map already exists
   if (map) {
     console.log('ℹ️ Map already initialized');
     map.invalidateSize();
@@ -363,7 +414,6 @@ function initMap() {
   console.log('🗺️ Initializing Leaflet map...');
 
   try {
-    // Create map with default center (India)
     map = L.map('map', {
       center: [20.5937, 78.9629],
       zoom: 5,
@@ -371,7 +421,6 @@ function initMap() {
       scrollWheelZoom: true
     });
 
-    // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
@@ -379,11 +428,10 @@ function initMap() {
 
     console.log('✅ Map initialized successfully');
 
-    // Force container size recalculation
     setTimeout(() => {
       if (map) {
         map.invalidateSize();
-        updateRecommendedMarkers(); // ✅ Show recommended places
+        updateRecommendedMarkers();
       }
     }, 300);
 
@@ -393,14 +441,12 @@ function initMap() {
   }
 }
 
-// ✅ NEW: Function to update recommended place markers
 function updateRecommendedMarkers() {
   if (!map) {
     console.warn('⚠️ Cannot update markers - map not initialized');
     return;
   }
 
-  // Clear existing markers
   markers.forEach(marker => {
     try {
       map.removeLayer(marker);
@@ -410,7 +456,6 @@ function updateRecommendedMarkers() {
   });
   markers = [];
 
-  // Get recommended places from the recommendations grid
   const recommendationCards = document.querySelectorAll('.recommendation-card');
   
   if (recommendationCards.length === 0) {
@@ -425,23 +470,19 @@ function updateRecommendedMarkers() {
   let markersAdded = 0;
 
   recommendationCards.forEach(card => {
-    // Extract place data from card
     const name = card.querySelector('.rec-name')?.textContent || 'Unknown Place';
     const category = card.dataset.category || 'attraction';
     const rating = card.querySelector('.rec-rating')?.textContent || 'N/A';
     const description = card.querySelector('.rec-description')?.textContent || '';
     
-    // Get coordinates from data attributes if available
     const lat = parseFloat(card.dataset.lat);
     const lon = parseFloat(card.dataset.lon);
 
-    // Skip if no valid coordinates
     if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
       console.warn('⚠️ Skipping place with invalid coordinates:', name);
       return;
     }
 
-    // Validate coordinates
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
       console.warn('⚠️ Invalid coordinate range for:', name, [lat, lon]);
       return;
@@ -449,7 +490,6 @@ function updateRecommendedMarkers() {
 
     const icon = getCategoryIcon(category);
 
-    // Category colors
     const categoryColors = {
       restaurant: '#EF4444',
       attraction: '#3B82F6',
@@ -473,7 +513,6 @@ function updateRecommendedMarkers() {
     });
 
     try {
-      // Create marker
       const marker = L.marker([lat, lon], { icon: markerIcon })
         .addTo(map)
         .bindPopup(`
@@ -516,7 +555,6 @@ function updateRecommendedMarkers() {
     }
   });
 
-  // Fit map to show all markers
   if (bounds.length > 0) {
     try {
       map.fitBounds(bounds, { 
@@ -535,20 +573,16 @@ function updateRecommendedMarkers() {
   }
 }
 
-// ✅ NEW: Handle adding recommended place to user's places
 window.handleAddRecommendedPlace = function(name, category) {
-  // Pre-fill the add place modal
   document.getElementById('placeName').value = name;
   document.getElementById('placeCategory').value = category.toLowerCase();
   openAddPlaceModal();
   
-  // Close the popup
   if (map) {
     map.closePopup();
   }
 };
 
-// ===================== Utilities =====================
 function getCategoryIcon(cat) {
   return {
     restaurant: 'utensils',
@@ -566,15 +600,15 @@ function escapeHtml(text = '') {
   return div.innerHTML;
 }
 
-// ===================== Add to Schedule (Placeholder) =====================
 function addToSchedule(placeId) {
   showToast('Schedule feature coming soon!', 'info');
   console.log('Add to schedule:', placeId);
 }
 
-// ✅ EXPORT function so recommendations can trigger map update
 window.updateMapWithRecommendations = function() {
   if (map) {
     updateRecommendedMarkers();
   }
 };
+
+console.log('✅ Fixed places.js loaded with proper initialization order');
