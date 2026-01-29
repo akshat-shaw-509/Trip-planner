@@ -1,6 +1,7 @@
 /* =====================================================================
-   ADVANCED RECOMMENDATIONS - PREMIUM POLISHED DESIGN
-   Modern, clean, and professional styling
+   ADVANCED RECOMMENDATIONS - FIXED VERSION
+   - Bulk actions bar only shows when items selected
+   - Better control panel layout (no full screen)
    ===================================================================== */
 
 /* ===================== RECOMMENDATIONS SECTION ===================== */
@@ -118,13 +119,16 @@
     to { transform: translateY(-50%) rotate(360deg); }
 }
 
-/* ===================== CONTROLS PANEL ===================== */
+/* ===================== CONTROLS PANEL - FIXED WIDTH ===================== */
 .rec-controls-panel {
     background: white;
     border-radius: 20px;
     margin-bottom: 32px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
     overflow: hidden;
+    max-width: 1400px; /* ✅ FIXED: No full screen */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .rec-controls-header {
@@ -179,8 +183,8 @@
 
 .rec-controls-body {
     padding: 32px;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* ✅ FIXED: Grid layout */
     gap: 32px;
     transition: all 0.3s ease;
 }
@@ -714,10 +718,10 @@
     color: #ef4444;
 }
 
-/* ===================== BULK ACTIONS BAR ===================== */
+/* ===================== BULK ACTIONS BAR - FIXED: ONLY SHOWS WHEN ITEMS SELECTED ===================== */
 .bulk-actions-bar {
     position: fixed;
-    bottom: -120px;
+    bottom: -120px; /* ✅ Hidden by default */
     left: 50%;
     transform: translateX(-50%);
     background: white;
@@ -734,7 +738,7 @@
 }
 
 .bulk-actions-bar.show {
-    bottom: 40px;
+    bottom: 40px; /* ✅ Only shows when .show class is added */
 }
 
 .bulk-count {
@@ -782,6 +786,19 @@
 .bulk-action-btn.secondary:hover {
     background: #f1f5f9;
     border-color: #cbd5e1;
+}
+
+/* ✅ NEW: Comparison button in bulk actions */
+.bulk-action-btn.comparison {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.bulk-action-btn.comparison:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
 }
 
 /* ===================== EMPTY STATES ===================== */
@@ -839,6 +856,7 @@
 
     .rec-controls-body {
         padding: 24px;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -891,10 +909,13 @@
 
     .bulk-actions {
         width: 100%;
+        flex-direction: column;
     }
 
     .bulk-action-btn {
         flex: 1;
+        width: 100%;
+        justify-content: center;
     }
 }
 
