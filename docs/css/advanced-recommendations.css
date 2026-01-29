@@ -797,3 +797,136 @@ input:checked + .toggle-slider:before {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
+/* ============================================ */
+/* CATEGORY FILTER BUTTONS */
+/* ============================================ */
+
+.rec-category-filters {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.rec-category-filters h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rec-category-filters h3 i {
+  font-size: 20px;
+}
+
+.category-filter-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.category-filter-btn {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.category-filter-btn i {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.category-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.category-filter-btn:hover i {
+  transform: scale(1.1);
+}
+
+.category-filter-btn.active {
+  background: white;
+  color: #667eea;
+  border-color: white;
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+.category-filter-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  pointer-events: none;
+}
+
+.category-filter-btn:active {
+  transform: translateY(0);
+}
+
+/* Loading state for category buttons */
+.category-filter-btn.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.category-filter-btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .category-filter-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .category-filter-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-filter-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .rec-category-filters {
+    padding: 16px;
+  }
+}
