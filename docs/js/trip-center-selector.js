@@ -1,5 +1,5 @@
 // =====================================================================
-// TRIP CENTER SELECTOR - FINAL VERSION WITH API KEY FALLBACKS
+// TRIP CENTER SELECTOR - FIXED VERSION WITH CONFIG SUPPORT
 // =====================================================================
 
 let tripCenterState = {
@@ -7,11 +7,11 @@ let tripCenterState = {
   searchResults: [],
   isSearching: false,
   selectedLocation: null,
-  geoapifyApiKey: null // Will be loaded from backend or config
+  geoapifyApiKey: null
 }
 
 // -------------------------------------------------------
-// UTILITY FUNCTIONS (defined first)
+// UTILITY FUNCTIONS
 // -------------------------------------------------------
 function escapeHtml(text) {
   const div = document.createElement('div')
@@ -20,12 +20,19 @@ function escapeHtml(text) {
 }
 
 // -------------------------------------------------------
-// API KEY LOADING WITH MULTIPLE FALLBACK OPTIONS
+// API KEY LOADING - FIXED TO USE CONFIG
 // -------------------------------------------------------
 async function loadGeoapifyApiKey() {
-  // Option 1: Try to load from backend endpoint
+  // ✅ PRIORITY 1: Try window.CONFIG (from config.js)
+  if (window.CONFIG && window.CONFIG.GEOAPIFY_API_KEY) {
+    tripCenterState.geoapifyApiKey = window.CONFIG.GEOAPIFY_API_KEY
+    console.log('✅ Geoapify API key loaded from CONFIG')
+    return true
+  }
+
+  // Option 2: Try to load from backend endpoint
   try {
-    const baseURL = apiService.baseURL || 'http://localhost:5000/api'
+    const baseURL = window.CONFIG?.API_BASE_URL || apiService?.baseURL || 'http://localhost:5000/api'
     const token = sessionStorage.getItem('accessToken')
     
     const response = await fetch(`${baseURL}/config/geoapify-api-key`, {
@@ -40,7 +47,7 @@ async function loadGeoapifyApiKey() {
       
       if (data.success && data.apiKey) {
         tripCenterState.geoapifyApiKey = data.apiKey
-        console.log('✓ Geoapify API key loaded from backend')
+        console.log('✅ Geoapify API key loaded from backend')
         return true
       }
     }
@@ -48,25 +55,15 @@ async function loadGeoapifyApiKey() {
     console.warn('Backend API key endpoint not available:', error.message)
   }
 
-  // Option 2: Try to load from window config (if set in HTML)
+  // Option 3: Fallback to window variable
   if (window.GEOAPIFY_API_KEY) {
     tripCenterState.geoapifyApiKey = window.GEOAPIFY_API_KEY
-    console.log('✓ Geoapify API key loaded from window config')
-    return true
-  }
-
-  // Option 3: Try to load from config.js if it exists
-  if (typeof CONFIG !== 'undefined' && CONFIG.GEOAPIFY_API_KEY) {
-    tripCenterState.geoapifyApiKey = CONFIG.GEOAPIFY_API_KEY
-    console.log('✓ Geoapify API key loaded from CONFIG')
+    console.log('✅ Geoapify API key loaded from window variable')
     return true
   }
 
   console.error('❌ Failed to load Geoapify API key from any source')
-  console.info('ℹ️  To fix this, add the API key in one of these ways:')
-  console.info('   1. Create backend endpoint: GET /api/config/geoapify-api-key')
-  console.info('   2. Add to HTML: <script>window.GEOAPIFY_API_KEY = "your_key"</script>')
-  console.info('   3. Add to config.js: CONFIG.GEOAPIFY_API_KEY = "your_key"')
+  console.info('ℹ️  Make sure config.js is loaded before this script')
   return false
 }
 
@@ -116,7 +113,7 @@ async function saveTripCoordinates(tripId, coords) {
       destinationCoords: coords
     })
     
-    console.log('✓ Saved coordinates to trip:', coords)
+    console.log('✅ Saved coordinates to trip:', coords)
   } catch (err) {
     console.error('Failed to save coordinates:', err.message)
   }
@@ -134,7 +131,6 @@ async function calculateCenterFromPlaces(tripId) {
 
     if (places.length === 0) return null
 
-    // Calculate average coordinates
     let totalLat = 0
     let totalLon = 0
     let count = 0
@@ -169,9 +165,11 @@ async function calculateTripCenter(tripData) {
     return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
   }
 
+  console.log('📍 Calculating trip center for:', tripData.destination)
+
   // Priority 1: Use saved coordinates if they exist
   if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
-    console.log('✓ Using saved trip coordinates')
+    console.log('✅ Using saved trip coordinates')
     return {
       lat: tripData.destinationCoords[1],
       lon: tripData.destinationCoords[0],
@@ -181,13 +179,20 @@ async function calculateTripCenter(tripData) {
 
   // Priority 2: Geocode the destination automatically (only if API key is loaded)
   if (tripData.destination && tripCenterState.geoapifyApiKey) {
-    console.log('📍 Auto-geocoding destination:', tripData.destination)
+    console.log('🔍 Auto-geocoding destination:', tripData.destination)
     
     try {
-      const geocoded = await geocodeDestination(tripData.destination)
+      // Build a precise query
+      const searchQuery = tripData.country 
+        ? `${tripData.destination}, ${tripData.country}`
+        : tripData.destination
+      
+      console.log('🔍 Search query:', searchQuery)
+      
+      const geocoded = await geocodeDestination(searchQuery)
       
       if (geocoded) {
-        console.log('✓ Geocoded successfully:', geocoded.formatted)
+        console.log('✅ Geocoded successfully:', geocoded.formatted)
         
         // Save coordinates to trip for future use
         await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
@@ -202,7 +207,7 @@ async function calculateTripCenter(tripData) {
       console.error('Geocoding failed:', err.message)
     }
   } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
-    console.warn('⚠️  Skipping geocoding - API key not available')
+    console.warn('⚠️ Skipping geocoding - API key not available')
   }
 
   // Priority 3: Calculate from added places
@@ -210,7 +215,7 @@ async function calculateTripCenter(tripData) {
     try {
       const center = await calculateCenterFromPlaces(tripData._id)
       if (center) {
-        console.log('✓ Calculated center from places:', center)
+        console.log('✅ Calculated center from places:', center)
         return center
       }
     } catch (err) {
@@ -218,8 +223,8 @@ async function calculateTripCenter(tripData) {
     }
   }
 
-  // Fallback: Default location (center of India)
-  console.warn('⚠️  Using default location - consider adding coordinates or enabling geocoding')
+  // Fallback: Default location
+  console.warn('⚠️ Using default location - no coordinates available')
   return { 
     lat: 20.5937, 
     lon: 78.9629, 
@@ -232,7 +237,10 @@ async function calculateTripCenter(tripData) {
 // -------------------------------------------------------
 function renderTripCenterUI() {
   const section = document.querySelector('.recommendations-section')
-  if (!section) return
+  if (!section) {
+    console.warn('⚠️ Cannot render trip center UI - recommendations section not found')
+    return
+  }
 
   const center = tripCenterState.currentCenter
   const centerName = center?.formatted || 'Trip Center'
@@ -258,18 +266,20 @@ function renderTripCenterUI() {
     </div>
   `
 
-  // Insert above filters if they exist
-  const filters = section.querySelector('.recommendations-filters')
-  if (filters) {
-    filters.insertAdjacentHTML('beforebegin', html)
-  } else {
-    section.insertAdjacentHTML('afterbegin', html)
-  }
+  // Insert at the very beginning of recommendations section
+  section.insertAdjacentHTML('afterbegin', html)
+  
+  console.log('✅ Trip center UI rendered')
 }
 
 function attachTripCenterListeners() {
   const btn = document.getElementById('btnChangeCenter')
-  if (btn) btn.onclick = openTripCenterModal
+  if (btn) {
+    btn.onclick = openTripCenterModal
+    console.log('✅ Trip center button listener attached')
+  } else {
+    console.warn('⚠️ Change center button not found')
+  }
 }
 
 function updateTripCenterBanner() {
@@ -287,10 +297,15 @@ function updateTripCenterBanner() {
 // MAIN INITIALIZATION FUNCTION
 // -------------------------------------------------------
 async function initTripCenterSelector(tripData) {
-  console.log('🚀 Initializing trip center with data:', tripData)
+  console.log('🚀 Initializing trip center selector')
+  console.log('   Trip data:', tripData?.destination, tripData?.country)
   
   // Load API key first
   await loadGeoapifyApiKey()
+  
+  if (!tripCenterState.geoapifyApiKey) {
+    console.warn('⚠️ Geoapify API key not available - search will be limited')
+  }
   
   // Calculate center automatically from trip destination
   tripCenterState.currentCenter = await calculateTripCenter(tripData)
@@ -300,13 +315,14 @@ async function initTripCenterSelector(tripData) {
   // Render UI and attach events
   renderTripCenterUI()
   attachTripCenterListeners()
+  
+  console.log('✅ Trip center selector initialized')
 }
 
 // -------------------------------------------------------
 // MODAL FUNCTIONS
 // -------------------------------------------------------
 function openTripCenterModal() {
-  // Check if geocoding is available
   const canSearch = tripCenterState.geoapifyApiKey !== null
   
   const modal = document.createElement('div')
@@ -333,7 +349,6 @@ function openTripCenterModal() {
         </div>
 
         ${canSearch ? `
-        <!-- Search -->
         <div class="trip-center-search">
           <div class="search-input-group">
             <i class="fas fa-search"></i>
@@ -357,7 +372,6 @@ function openTripCenterModal() {
         </div>
         `}
 
-        <!-- Quick Options -->
         <div class="trip-center-quick-options">
           <h4>Quick Options</h4>
           <div class="quick-options-grid">
@@ -373,7 +387,6 @@ function openTripCenterModal() {
           </div>
         </div>
 
-        <!-- Selected Preview -->
         <div id="selectedLocationPreview" style="display:none">
           <div class="preview-header">
             <h4>Selected Location</h4>
@@ -435,9 +448,6 @@ function setupSearchHandlers() {
   saveBtn.onclick = saveTripCenter
 }
 
-// -------------------------------------------------------
-// SEARCH FUNCTIONS
-// -------------------------------------------------------
 async function searchLocations(query) {
   if (!tripCenterState.geoapifyApiKey) {
     console.error('Geoapify API key not loaded')
@@ -507,9 +517,6 @@ function selectLocation(index) {
   document.getElementById('btnSaveCenter').disabled = false
 }
 
-// -------------------------------------------------------
-// QUICK OPTIONS
-// -------------------------------------------------------
 async function useDestinationCenter() {
   const tripData = recommendationsState?.tripData
   if (!tripData?.destination) {
@@ -522,7 +529,6 @@ async function useDestinationCenter() {
     return
   }
 
-  // Show loading state
   const previewEl = document.getElementById('selectedLocationPreview')
   const previewContent = document.getElementById('previewContent')
   const saveBtn = document.getElementById('btnSaveCenter')
@@ -533,7 +539,11 @@ async function useDestinationCenter() {
     saveBtn.disabled = true
   }
 
-  const geocoded = await geocodeDestination(tripData.destination)
+  const searchQuery = tripData.country 
+    ? `${tripData.destination}, ${tripData.country}`
+    : tripData.destination
+  
+  const geocoded = await geocodeDestination(searchQuery)
   
   if (geocoded) {
     tripCenterState.selectedLocation = {
@@ -543,7 +553,6 @@ async function useDestinationCenter() {
       lon: geocoded.lon
     }
     
-    // Show preview
     if (previewContent) {
       previewContent.innerHTML = `
         <strong>${escapeHtml(tripData.destination)}</strong><br>
@@ -645,9 +654,6 @@ function clearSelection() {
   document.getElementById('btnSaveCenter').disabled = true
 }
 
-// -------------------------------------------------------
-// SAVE CENTER
-// -------------------------------------------------------
 async function saveTripCenter() {
   if (!tripCenterState.selectedLocation) return
 
@@ -687,3 +693,5 @@ window.useFirstPlace = useFirstPlace
 window.usePlacesAverage = usePlacesAverage
 window.clearSelection = clearSelection
 window.closeTripCenterModal = closeTripCenterModal
+
+console.log('✅ Trip center selector loaded with CONFIG support')
