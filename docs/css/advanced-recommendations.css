@@ -1,12 +1,12 @@
 /* =====================================================================
-   ADVANCED RECOMMENDATIONS - MODERN UI STYLING (FIXED)
-   Inspired by style.css design system
+   ADVANCED RECOMMENDATIONS - PREMIUM POLISHED DESIGN
+   Modern, clean, and professional styling
    ===================================================================== */
 
 /* ===================== RECOMMENDATIONS SECTION ===================== */
 .recommendations-section {
     padding: 60px 0;
-    background: #ffffff;
+    background: #fafbfc;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -21,7 +21,7 @@
     font-weight: 700;
     color: #1a2332;
     margin-bottom: 12px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.5px;
 }
 
 .section-header p {
@@ -33,20 +33,21 @@
 /* ===================== CATEGORY FILTER BUTTONS ===================== */
 .rec-category-filters {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 32px;
     margin-bottom: 32px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .rec-category-filters h3 {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1a2332;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
+    letter-spacing: -0.3px;
 }
 
 .rec-category-filters h3 i {
@@ -61,14 +62,14 @@
 
 .category-filter-btn {
     padding: 12px 24px;
-    border: 1.5px solid #e2e8f0;
+    border: 2px solid #e5e7eb;
     background: white;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
     color: #475569;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -77,18 +78,26 @@
 
 .category-filter-btn i {
     font-size: 16px;
+    transition: transform 0.25s;
 }
 
 .category-filter-btn:hover {
     border-color: #cbd5e1;
     background: #f8fafc;
-    transform: translateY(-1px);
+    color: #0066cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+}
+
+.category-filter-btn:hover i {
+    transform: scale(1.1);
 }
 
 .category-filter-btn.active {
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     border-color: #0066cc;
     color: white;
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
 }
 
 .category-filter-btn.loading::after {
@@ -112,9 +121,9 @@
 /* ===================== CONTROLS PANEL ===================== */
 .rec-controls-panel {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     margin-bottom: 32px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
@@ -123,22 +132,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #f3f4f6;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .rec-controls-header:hover {
-    background: #f8fafc;
+    background: #fafbfc;
 }
 
 .rec-controls-header h3 {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1a2332;
     display: flex;
     align-items: center;
     gap: 10px;
+    letter-spacing: -0.3px;
 }
 
 .rec-controls-header h3 i {
@@ -150,7 +160,7 @@
     height: 36px;
     border: none;
     background: #f1f5f9;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -196,15 +206,15 @@
 }
 
 .control-value {
-    font-weight: 500;
+    font-weight: 700;
     color: #0066cc;
 }
 
 .range-slider {
     width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: #e2e8f0;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 100%);
     outline: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -213,25 +223,25 @@
 .range-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3), 0 0 0 0 rgba(0, 102, 204, 0.2);
 }
 
 .range-slider::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4), 0 0 0 4px rgba(0, 102, 204, 0.1);
 }
 
 .range-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     cursor: pointer;
     border: none;
     transition: all 0.2s;
@@ -253,14 +263,14 @@
 .sort-btn,
 .quick-action-btn {
     padding: 10px 20px;
-    border: 1.5px solid #e2e8f0;
+    border: 2px solid #e5e7eb;
     background: white;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: #475569;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -270,14 +280,16 @@
 .quick-action-btn:hover {
     border-color: #cbd5e1;
     background: #f8fafc;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .sort-btn.active,
 .quick-action-btn.active {
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     border-color: #0066cc;
     color: white;
+    box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
 }
 
 .sort-btn i,
@@ -285,81 +297,120 @@
     font-size: 14px;
 }
 
-/* ===================== RECOMMENDATIONS GRID ===================== */
+/* ===================== RECOMMENDATIONS GRID - RESPONSIVE ===================== */
 .recommendations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
     margin-top: 32px;
 }
 
-/* ===================== RECOMMENDATION CARD - FIXED LAYOUT ===================== */
+/* ===================== RECOMMENDATION CARD - PREMIUM POLISH ===================== */
 .recommendation-card {
     background: white;
     border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 
+                0 1px 2px rgba(0, 0, 0, 0.06);
     padding: 24px;
-    padding-top: 16px; /* Less padding at top for badges */
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
     border: 2px solid transparent;
+    overflow: hidden;
+}
+
+.recommendation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0066cc, #0052a3);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .recommendation-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    border-color: #e2e8f0;
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 
+                0 4px 8px rgba(0, 0, 0, 0.08);
+    border-color: #e5e7eb;
 }
 
+.recommendation-card:hover::before {
+    opacity: 1;
+}
+
+/* Selected/Comparing State */
 .recommendation-card.comparing {
     border-color: #0066cc;
-    background: #f0f9ff;
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.15), 
+                0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
-/* ===================== CARD COMPARE CHECKBOX - REPOSITIONED ===================== */
+.recommendation-card.comparing::before {
+    opacity: 1;
+}
+
+/* ===================== CHECKBOX - HOVER REVEALED ===================== */
 .rec-card-compare-checkbox {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 28px;
-    height: 28px;
+    top: 14px;
+    left: 14px;
+    width: 32px;
+    height: 32px;
     border: 2px solid #cbd5e1;
-    border-radius: 8px;
+    border-radius: 10px;
     background: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+/* CRITICAL: Show checkbox on card hover */
+.recommendation-card:hover .rec-card-compare-checkbox {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Always show when card is selected */
+.recommendation-card.comparing .rec-card-compare-checkbox {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .rec-card-compare-checkbox:hover {
     border-color: #0066cc;
     background: #f0f9ff;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 .recommendation-card.comparing .rec-card-compare-checkbox {
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     border-color: #0066cc;
 }
 
 .recommendation-card.comparing .rec-card-compare-checkbox i {
     display: block !important;
     color: white;
-    font-size: 14px;
+    font-size: 16px;
 }
 
-/* ===================== CARD HEADER - SIMPLIFIED ===================== */
+/* ===================== CARD HEADER - TYPOGRAPHY HIERARCHY ===================== */
 .rec-header {
     display: flex;
     flex-direction: column;
     gap: 12px;
     margin-bottom: 16px;
-    margin-top: 4px; /* Space for top badges */
 }
 
 .rec-title {
@@ -370,56 +421,65 @@
     font-size: 20px;
     font-weight: 700;
     color: #1a2332;
-    margin-bottom: 8px;
-    line-height: 1.3;
-    padding-right: 0; /* Remove right padding since score is hidden */
+    margin-bottom: 10px;
+    line-height: 1.4;
+    letter-spacing: -0.3px;
 }
 
 .rec-location-info {
     font-size: 14px;
-    color: #64748b;
+    color: #94a3b8;
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    font-weight: 500;
 }
 
 .rec-location-info i {
     font-size: 12px;
-    color: #94a3b8;
+    color: #cbd5e1;
 }
 
+/* ===================== CATEGORY BADGE - PILL CHIP ===================== */
 .rec-category {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: #f1f5f9;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     color: #475569;
-    border-radius: 6px;
+    border-radius: 20px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: capitalize;
     width: fit-content;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+.rec-category:hover {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e5e7eb 100%);
+    border-color: #cbd5e1;
 }
 
 .rec-category i {
-    font-size: 12px;
+    font-size: 13px;
 }
 
-/* ===================== SCORE - HIDDEN FROM USER ===================== */
+/* ===================== SCORE - HIDDEN ===================== */
 .rec-score {
-    display: none; /* Hidden from UI but data still used in backend for sorting/filtering */
+    display: none;
 }
 
-/* ===================== CARD META INFO ===================== */
+/* ===================== META INFO ROW - IMPROVED SPACING ===================== */
 .rec-meta {
     display: flex;
-    gap: 16px;
+    gap: 20px;
     flex-wrap: wrap;
     margin-bottom: 16px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #f3f4f6;
 }
 
 .rec-rating-display,
@@ -427,24 +487,25 @@
 .rec-price {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 14px;
     color: #64748b;
+    font-weight: 600;
 }
 
 .rec-rating-display i {
-    color: #f59e0b;
-    font-size: 14px;
+    color: #fbbf24;
+    font-size: 15px;
 }
 
 .rec-distance i {
     color: #0066cc;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .rec-price i {
     color: #10b981;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 /* ===================== REASONS SECTION ===================== */
@@ -453,26 +514,33 @@
 }
 
 .rec-reasons-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
     margin-bottom: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.5px;
 }
 
 .reason-tag {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    background: #dbeafe;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1e40af;
-    border-radius: 6px;
+    border-radius: 16px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     margin-right: 8px;
     margin-bottom: 8px;
+    border: 1px solid #93c5fd;
+    transition: all 0.2s;
+}
+
+.reason-tag:hover {
+    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+    transform: translateY(-1px);
 }
 
 .reason-tag i {
@@ -480,129 +548,165 @@
     font-size: 12px;
 }
 
-/* ===================== DESCRIPTION & ADDRESS ===================== */
+/* ===================== DESCRIPTION - READABLE ===================== */
 .rec-description {
     font-size: 14px;
-    color: #475569;
-    line-height: 1.6;
+    color: #64748b;
+    line-height: 1.7;
     margin-bottom: 12px;
 }
 
 .rec-address {
     font-size: 13px;
-    color: #64748b;
+    color: #94a3b8;
     display: flex;
     align-items: flex-start;
     gap: 8px;
     margin-bottom: 16px;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-weight: 500;
 }
 
 .rec-address i {
-    color: #94a3b8;
-    margin-top: 2px;
+    color: #cbd5e1;
+    margin-top: 3px;
     flex-shrink: 0;
 }
 
-/* ===================== CARD ACTIONS ===================== */
+/* ===================== CTA BUTTON - STRONGEST VISUAL ===================== */
 .rec-actions {
     display: flex;
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
 .btn-add-to-trip {
     flex: 1;
-    padding: 12px 20px;
-    background: #0066cc;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-add-to-trip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-add-to-trip:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-add-to-trip:hover {
-    background: #0052a3;
+    background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4);
+}
+
+.btn-add-to-trip:active {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
 .btn-view-details {
-    padding: 12px 16px;
-    background: #f1f5f9;
+    padding: 14px 20px;
+    background: #f8fafc;
     color: #475569;
-    border: none;
-    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .btn-view-details:hover {
-    background: #e2e8f0;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1a2332;
 }
 
-/* ===================== QUALITY BADGES - REPOSITIONED ===================== */
+/* ===================== QUALITY BADGES - PREMIUM PILLS ===================== */
 .quality-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 6px 12px;
-    border-radius: 6px;
+    top: 14px;
+    right: 14px;
+    padding: 8px 16px;
+    border-radius: 20px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid;
 }
 
 .quality-badge.top-rated {
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    border-color: #fbbf24;
 }
 
 .quality-badge.hidden-gem {
-    background: #ddd6fe;
+    background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
     color: #5b21b6;
+    border-color: #a855f7;
 }
 
 .quality-badge i {
     font-size: 13px;
 }
 
-/* ===================== SAVE FOR LATER - REPOSITIONED ===================== */
+/* ===================== SAVE FOR LATER ===================== */
 .save-for-later {
     position: absolute;
-    top: 48px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    top: 56px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
     background: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     z-index: 5;
+    border: 2px solid #f3f4f6;
 }
 
 .save-for-later:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .save-for-later i {
     color: #cbd5e1;
-    font-size: 16px;
+    font-size: 17px;
     transition: color 0.2s;
 }
 
@@ -613,28 +717,29 @@
 /* ===================== BULK ACTIONS BAR ===================== */
 .bulk-actions-bar {
     position: fixed;
-    bottom: -100px;
+    bottom: -120px;
     left: 50%;
     transform: translateX(-50%);
     background: white;
-    padding: 20px 32px;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 24px 36px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
-    gap: 24px;
-    transition: bottom 0.3s ease;
+    gap: 28px;
+    transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
-    min-width: 400px;
+    min-width: 420px;
+    border: 2px solid #e5e7eb;
 }
 
 .bulk-actions-bar.show {
-    bottom: 32px;
+    bottom: 40px;
 }
 
 .bulk-count {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     color: #1a2332;
 }
 
@@ -644,87 +749,92 @@
 }
 
 .bulk-action-btn {
-    padding: 10px 20px;
-    border-radius: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     border: none;
 }
 
 .bulk-action-btn.primary {
-    background: #0066cc;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
-}
-
-.bulk-action-btn.primary:hover {
-    background: #0052a3;
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
+.bulk-action-btn.primary:hover {
+    background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 102, 204, 0.4);
+}
+
 .bulk-action-btn.secondary {
-    background: #f1f5f9;
+    background: #f8fafc;
     color: #475569;
+    border: 2px solid #e5e7eb;
 }
 
 .bulk-action-btn.secondary:hover {
-    background: #e2e8f0;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
 }
 
 /* ===================== EMPTY STATES ===================== */
 .recommendations-empty,
 .recommendations-loading {
     text-align: center;
-    padding: 80px 32px;
+    padding: 100px 32px;
     grid-column: 1 / -1;
 }
 
 .recommendations-empty i,
 .recommendations-loading i {
-    font-size: 64px;
-    color: #cbd5e1;
-    margin-bottom: 24px;
+    font-size: 72px;
+    color: #e5e7eb;
+    margin-bottom: 28px;
     display: block;
 }
 
 .recommendations-empty h3 {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     color: #1a2332;
     margin-bottom: 12px;
+    letter-spacing: -0.3px;
 }
 
 .recommendations-empty p {
     font-size: 16px;
     color: #64748b;
+    line-height: 1.6;
 }
 
 .loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid #e2e8f0;
+    width: 56px;
+    height: 56px;
+    border: 5px solid #e5e7eb;
     border-top-color: #0066cc;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 24px;
+    margin: 0 auto 28px;
 }
 
 .recommendations-loading p {
-    font-size: 17px;
+    font-size: 18px;
     color: #64748b;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* ===================== RESPONSIVE DESIGN ===================== */
 @media (max-width: 1024px) {
     .recommendations-grid {
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
     }
 
     .rec-controls-body {
@@ -738,31 +848,31 @@
     }
 
     .section-header h2 {
-        font-size: 28px;
+        font-size: 30px;
     }
 
     .rec-category-filters,
     .rec-controls-panel {
         padding: 24px;
+        border-radius: 16px;
     }
 
     .category-filter-buttons {
-        gap: 8px;
+        gap: 10px;
     }
 
     .category-filter-btn {
-        padding: 10px 16px;
+        padding: 10px 18px;
         font-size: 14px;
     }
 
     .recommendations-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 18px;
     }
 
     .recommendation-card {
         padding: 20px;
-        padding-top: 16px;
     }
 
     .rec-header {
@@ -775,7 +885,8 @@
         left: 20px;
         transform: none;
         flex-direction: column;
-        gap: 16px;
+        gap: 18px;
+        padding: 20px;
     }
 
     .bulk-actions {
@@ -789,7 +900,7 @@
 
 @media (max-width: 480px) {
     .section-header h2 {
-        font-size: 24px;
+        font-size: 26px;
     }
 
     .rec-name {
@@ -813,5 +924,10 @@
     .quick-action-btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .rec-card-compare-checkbox {
+        width: 28px;
+        height: 28px;
     }
 }
