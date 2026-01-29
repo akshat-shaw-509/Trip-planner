@@ -1,7 +1,8 @@
 //============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED WITH WORKING COMPARISON
-// Handles AI recommendations, filters, sorting, comparison, and map integration
-// ============================================================
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED VERSION
+// ✅ Bulk actions bar only shows when checkboxes are selected
+// ✅ Comparison button opens comparison panel on the right
+//============================================================
 
 // ====================== STATE ======================
 const advancedRecState = {
@@ -17,7 +18,7 @@ const advancedRecState = {
     nearbyOnly: false
   },
   savedPlaces: new Set(),
-  selectedForBulk: new Set()
+  selectedForBulk: new Set() // ✅ Tracks selected items
 };
 
 // ✅ FIXED: Proper filter state management
@@ -276,7 +277,7 @@ function handleCompareCheckbox(rec, card) {
       window.comparisonState.selectedPlaces.delete(rec.name);
     }
     
-    showToast('Removed from comparison', 'info');
+    showToast('Removed from selection', 'info');
   } else {
     // Add to comparison
     card.classList.add('comparing');
@@ -288,10 +289,10 @@ function handleCompareCheckbox(rec, card) {
       window.comparisonState.selectedPlaces.set(rec.name, rec);
     }
     
-    showToast('Added to comparison', 'success');
+    showToast('Added to selection', 'success');
   }
   
-  updateBulkActionsBar();
+  updateBulkActionsBar(); // ✅ This controls visibility
   
   // ✅ Update comparison panel
   if (typeof updateComparisonPanel === 'function') {
@@ -323,7 +324,7 @@ function createRecommendationCard(rec) {
          data-name="${escapeHtml(rec.name)}">
       
       <!-- ✅ COMPARISON CHECKBOX -->
-      <div class="rec-card-compare-checkbox" title="Compare places">
+      <div class="rec-card-compare-checkbox" title="Select for comparison">
         <i class="fas fa-check" style="display: none;"></i>
       </div>
 
@@ -488,11 +489,15 @@ function renderAdvancedControls() {
       </div>
     </div>
 
+    <!-- ✅ FIXED: Bulk actions bar - hidden by default -->
     <div class="bulk-actions-bar" id="bulkActionsBar">
       <span class="bulk-count" id="bulkCount">0 selected</span>
       <div class="bulk-actions">
         <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
-          <i class="fas fa-plus"></i> Add All
+          <i class="fas fa-plus"></i> Add All to Trip
+        </button>
+        <button class="bulk-action-btn comparison" onclick="openComparisonPanel()">
+          <i class="fas fa-balance-scale"></i> Compare
         </button>
         <button class="bulk-action-btn secondary" onclick="clearBulkSelection()">
           <i class="fas fa-times"></i> Clear
@@ -679,11 +684,7 @@ function addQualityBadges() {
   });
 }
 
-// ====================== COMPARISON FEATURE ======================
-function toggleCompareSelection(rec, card) {
-  handleCompareCheckbox(rec, card);
-}
-
+// ====================== BULK ACTIONS BAR - FIXED ======================
 function updateBulkActionsBar() {
   const bar = document.getElementById('bulkActionsBar');
   const count = document.getElementById('bulkCount');
@@ -692,12 +693,29 @@ function updateBulkActionsBar() {
   const selected = advancedRecState.selectedForBulk.size;
 
   if (selected > 0) {
-    bar.classList.add('show');
+    bar.classList.add('show'); // ✅ Show bar
     count.textContent = `${selected} selected`;
   } else {
-    bar.classList.remove('show');
+    bar.classList.remove('show'); // ✅ Hide bar
   }
 }
+
+// ✅ NEW: Open comparison panel
+window.openComparisonPanel = function() {
+  if (advancedRecState.selectedForBulk.size === 0) {
+    showToast('Please select places to compare', 'warning');
+    return;
+  }
+
+  const panel = document.getElementById('comparisonPanel');
+  if (panel) {
+    panel.classList.add('active');
+  }
+
+  if (typeof updateComparisonPanel === 'function') {
+    updateComparisonPanel();
+  }
+};
 
 // ====================== ADD TO TRIP ======================
 async function addRecommendationToTrip(rec) {
@@ -932,4 +950,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Unified advanced recommendations module loaded with WORKING COMPARISON');
+console.log('✅ Fixed advanced recommendations module loaded');
