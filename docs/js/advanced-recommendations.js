@@ -302,6 +302,12 @@ function createRecommendationCard(rec) {
       <div class="rec-header">
         <div class="rec-title">
           <h3 class="rec-name">${escapeHtml(rec.name)}</h3>
+          ${rec.city || rec.country ? `
+            <div class="rec-location-info">
+              <i class="fas fa-map-marker-alt"></i>
+              ${rec.city ? escapeHtml(rec.city) : ''}${rec.city && rec.country ? ', ' : ''}${rec.country ? escapeHtml(rec.country) : ''}
+            </div>
+          ` : ''}
           <span class="rec-category">
             <i class="fas fa-${icon}"></i>
             ${escapeHtml(rec.category)}
