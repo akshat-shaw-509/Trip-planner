@@ -1,429 +1,558 @@
-// ============================================================
-// COMPARISON MODULE - SIDE PANEL ONLY (NO BOTTOM BAR)
-// ============================================================
+/* =====================================================================
+   COMPARISON PANEL - MODAL STYLE DESIGN (NO BOTTOM BAR)
+   Side panel with overlay similar to Filter & Sort modal
+   ===================================================================== */
 
-const comparisonState = {
-  selectedPlaces: new Map(), // Map<placeName, placeData>
-  maxCompare: 4
-};
-
-// ====================== INITIALIZATION ======================
-function initComparisonPanel() {
-  // Check if panel already exists
-  if (document.getElementById('comparisonPanel')) {
-    return;
-  }
-
-  const panelHTML = `
-    <div class="comparison-overlay" id="comparisonOverlay"></div>
-    <div class="comparison-panel" id="comparisonPanel">
-      <div class="comparison-header">
-        <h3>
-          <i class="fas fa-balance-scale"></i>
-          Compare Places
-          <span class="comparison-count" id="comparisonCount">(0)</span>
-        </h3>
-        <button class="comparison-close" onclick="closeComparisonPanel()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="comparison-body">
-        <div class="comparison-grid" id="comparisonGrid">
-          <!-- Comparison items will be inserted here -->
-        </div>
-        <div class="comparison-empty" id="comparisonEmpty" style="display: none;">
-          <i class="fas fa-info-circle"></i>
-          <p>Select places to compare by clicking the checkbox on each card</p>
-        </div>
-      </div>
-      <div class="comparison-footer">
-        <button class="comparison-clear-all" onclick="clearAllComparisons()">
-          <i class="fas fa-trash-alt"></i>
-          Clear All
-        </button>
-        <button class="comparison-add-all" onclick="addAllFromComparison()">
-          <i class="fas fa-plus-circle"></i>
-          Add All to Trip
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', panelHTML);
-  
-  // Add overlay click handler
-  const overlay = document.getElementById('comparisonOverlay');
-  if (overlay) {
-    overlay.addEventListener('click', closeComparisonPanel);
-  }
-  
-  console.log('✅ Comparison panel initialized');
+/* ===================== COMPARISON PANEL - FLOATING SIDEBAR ===================== */
+.comparison-panel {
+  position: fixed;
+  top: 0;
+  right: -500px;
+  width: 500px;
+  max-width: 90vw;
+  height: 100vh;
+  background: white;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15), 
+              -4px 0 16px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none; /* ✅ HIDDEN BY DEFAULT - Only shows when you select places */
+  flex-direction: column;
+  overflow: hidden;
+  border-top-left-radius: 24px;
+  border-bottom-left-radius: 24px;
 }
 
-// Initialize on DOM load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComparisonPanel);
-} else {
-  initComparisonPanel();
+.comparison-panel.active {
+  right: 0;
+  display: flex; /* ✅ Show when active */
 }
 
-// ====================== TOGGLE SELECTION ======================
-window.toggleCompareSelection = function(place, card) {
-  const placeName = place.name || place._id;
-
-  if (comparisonState.selectedPlaces.has(placeName)) {
-    comparisonState.selectedPlaces.delete(placeName);
-    card.classList.remove('comparing');
-    card.classList.remove('selected');
-    
-    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-    if (checkbox) {
-      checkbox.style.display = 'none';
-    }
-
-    if (typeof showToast === 'function') {
-      showToast('Removed from comparison', 'info');
-    }
-  } else {
-    if (comparisonState.selectedPlaces.size >= comparisonState.maxCompare) {
-      if (typeof showToast === 'function') {
-        showToast(`You can compare up to ${comparisonState.maxCompare} places`, 'warning');
-      }
-      return;
-    }
-
-    comparisonState.selectedPlaces.set(placeName, place);
-    card.classList.add('comparing');
-    card.classList.add('selected');
-    
-    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-    if (checkbox) {
-      checkbox.style.display = 'block';
-    }
-
-    if (typeof showToast === 'function') {
-      showToast('Added to comparison', 'success');
-    }
-  }
-
-  updateComparisonPanel();
-};
-
-// ====================== UPDATE PANEL ======================
-window.updateComparisonPanel = function() {
-  const panel = document.getElementById('comparisonPanel');
-  const overlay = document.getElementById('comparisonOverlay');
-  const grid = document.getElementById('comparisonGrid');
-  const empty = document.getElementById('comparisonEmpty');
-  const count = document.getElementById('comparisonCount');
-
-  if (!panel || !grid || !empty || !count) {
-    console.warn('Comparison panel elements not found');
-    return;
-  }
-
-  const selectedCount = comparisonState.selectedPlaces.size;
-
-  count.textContent = `(${selectedCount})`;
-
-  if (selectedCount > 0) {
-    empty.style.display = 'none';
-    grid.style.display = 'grid';
-    renderComparisonItems();
-  } else {
-    grid.innerHTML = '';
-    empty.style.display = 'flex';
-  }
-};
-
-// ====================== RENDER ITEMS ======================
-function renderComparisonItems() {
-  const grid = document.getElementById('comparisonGrid');
-  if (!grid) return;
-
-  const items = Array.from(comparisonState.selectedPlaces.values());
-
-  grid.innerHTML = items.map(place => createComparisonItem(place)).join('');
-
-  items.forEach(place => {
-    const item = grid.querySelector(`[data-place-name="${escapeAttr(place.name)}"]`);
-    if (!item) return;
-
-    const removeBtn = item.querySelector('.comparison-remove');
-    if (removeBtn) {
-      removeBtn.onclick = () => removeFromComparison(place.name);
-    }
-
-    const addBtn = item.querySelector('.comparison-btn-add');
-    if (addBtn) {
-      addBtn.onclick = () => addFromComparison(place);
-    }
-
-    const detailsBtn = item.querySelector('.comparison-btn-details');
-    if (detailsBtn) {
-      detailsBtn.onclick = () => {
-        if (typeof showRecommendationDetails === 'function') {
-          showRecommendationDetails(place);
-        }
-      };
-    }
-  });
+.comparison-panel.hidden {
+  display: none;
 }
 
-// ====================== CREATE COMPARISON ITEM ======================
-function createComparisonItem(place) {
-  const rating = place.rating || place.recommendationScore || 0;
-  const distance = place.distanceFromCenter || 0;
-  const priceLevel = place.priceLevel || 0;
-
-  const allPlaces = Array.from(comparisonState.selectedPlaces.values());
-  const bestRating = Math.max(...allPlaces.map(p => p.rating || 0));
-  const bestDistance = Math.min(...allPlaces.map(p => p.distanceFromCenter || 999));
-  const bestPrice = Math.min(...allPlaces.map(p => p.priceLevel || 5));
-
-  const isHighlightRating = rating === bestRating && allPlaces.length > 1;
-  const isHighlightDistance = distance === bestDistance && allPlaces.length > 1;
-  const isHighlightPrice = priceLevel === bestPrice && allPlaces.length > 1;
-
-  return `
-    <div class="comparison-item" data-place-name="${escapeAttr(place.name)}">
-      <div class="comparison-item-header">
-        <div>
-          <div class="comparison-item-name">${escapeHtml(place.name)}</div>
-          <div class="comparison-item-category">
-            <i class="fas fa-${getCategoryIcon(place.category)}"></i>
-            ${escapeHtml(place.category)}
-          </div>
-        </div>
-        <button class="comparison-remove" title="Remove">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="comparison-stats">
-        <div class="comparison-stat">
-          <span class="comparison-stat-label">
-            <i class="fas fa-star"></i> Rating
-          </span>
-          <span class="comparison-stat-value ${isHighlightRating ? 'highlight' : ''}">
-            ${rating.toFixed(1)} / 5.0
-          </span>
-        </div>
-
-        ${distance > 0 ? `
-          <div class="comparison-stat">
-            <span class="comparison-stat-label">
-              <i class="fas fa-map-marker-alt"></i> Distance
-            </span>
-            <span class="comparison-stat-value ${isHighlightDistance ? 'highlight' : ''}">
-              ${distance.toFixed(1)} km
-            </span>
-          </div>
-        ` : ''}
-
-        ${priceLevel > 0 ? `
-          <div class="comparison-stat">
-            <span class="comparison-stat-label">
-              <i class="fas fa-dollar-sign"></i> Price Level
-            </span>
-            <span class="comparison-stat-value ${isHighlightPrice ? 'highlight' : ''}">
-              ${'$'.repeat(priceLevel)} / $$$$$
-            </span>
-          </div>
-        ` : ''}
-
-        ${place.address ? `
-          <div class="comparison-stat">
-            <span class="comparison-stat-label">
-              <i class="fas fa-map-pin"></i> Location
-            </span>
-            <span class="comparison-stat-value" style="font-size: 11px; text-align: right;">
-              ${escapeHtml(place.address.substring(0, 30))}${place.address.length > 30 ? '...' : ''}
-            </span>
-          </div>
-        ` : ''}
-      </div>
-
-      <div class="comparison-actions">
-        <button class="comparison-btn-add">
-          <i class="fas fa-plus"></i> Add
-        </button>
-        <button class="comparison-btn-details">
-          <i class="fas fa-info"></i> Details
-        </button>
-      </div>
-    </div>
-  `;
+/* ===================== COMPARISON HEADER ===================== */
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 32px;
+  border-bottom: 2px solid #f3f4f6;
+  background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
 }
 
-// ====================== REMOVE FROM COMPARISON ======================
-function removeFromComparison(placeName) {
-  comparisonState.selectedPlaces.delete(placeName);
+.comparison-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2332;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
 
-  const cards = document.querySelectorAll('.recommendation-card');
-  cards.forEach(card => {
-    const cardName = card.querySelector('.rec-name')?.textContent;
-    if (cardName === placeName) {
-      card.classList.remove('comparing');
-      card.classList.remove('selected');
-      const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-      if (checkbox) {
-        checkbox.style.display = 'none';
-      }
-    }
-  });
+.comparison-header h3 i {
+  color: #0066cc;
+  font-size: 22px;
+}
 
-  updateComparisonPanel();
-  
-  if (typeof showToast === 'function') {
-    showToast('Removed from comparison', 'info');
+.comparison-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-left: 8px;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.comparison-close {
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+  transition: all 0.2s;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comparison-close:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1a2332;
+  transform: rotate(90deg);
+}
+
+/* ===================== COMPARISON BODY ===================== */
+.comparison-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+  background: #fafbfc;
+}
+
+.comparison-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comparison-body::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.comparison-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  border-radius: 4px;
+}
+
+.comparison-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+}
+
+/* ===================== COMPARISON GRID ===================== */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+/* ===================== COMPARISON ITEM CARD - PREMIUM ===================== */
+.comparison-item {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
+              0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.comparison-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.comparison-item:hover {
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.comparison-item:hover::before {
+  opacity: 1;
+}
+
+.comparison-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f8fafc;
+}
+
+.comparison-item-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+}
+
+.comparison-item-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  font-size: 12px;
+  color: #475569;
+  text-transform: capitalize;
+  width: fit-content;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.comparison-item-category i {
+  font-size: 12px;
+}
+
+.comparison-remove {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #fecaca;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.comparison-remove:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #fca5a5;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.comparison-remove i {
+  font-size: 16px;
+}
+
+/* ===================== COMPARISON STATS - ENHANCED ===================== */
+.comparison-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.comparison-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  border-radius: 10px;
+  border-left: 4px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comparison-stat:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-left-color: #cbd5e1;
+  transform: translateX(4px);
+}
+
+.comparison-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.comparison-stat-label i {
+  color: #94a3b8;
+  font-size: 14px;
+  width: 18px;
+}
+
+.comparison-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2332;
+}
+
+/* Best Value Highlight */
+.comparison-stat-value.highlight {
+  color: #059669;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  padding: 6px 14px;
+  border-radius: 12px;
+  border: 2px solid #86efac;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.comparison-stat-value.highlight::before {
+  content: '✓';
+  font-size: 12px;
+  margin-right: 6px;
+  font-weight: 700;
+  color: #047857;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4);
   }
 }
 
-// ====================== ADD FROM COMPARISON ======================
-async function addFromComparison(place) {
-  if (typeof addRecommendationToTrip === 'function') {
-    await addRecommendationToTrip(place);
-    removeFromComparison(place.name);
-  } else {
-    console.error('addRecommendationToTrip function not found');
-    if (typeof showToast === 'function') {
-      showToast('Failed to add place', 'error');
-    }
+/* ===================== COMPARISON ACTIONS ===================== */
+.comparison-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #f8fafc;
+}
+
+.comparison-btn-add,
+.comparison-btn-details {
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.comparison-btn-add {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.comparison-btn-add:hover {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.comparison-btn-details {
+  background: #f8fafc;
+  color: #475569;
+  border: 2px solid #e5e7eb;
+}
+
+.comparison-btn-details:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1a2332;
+  transform: translateY(-2px);
+}
+
+.comparison-btn-add i,
+.comparison-btn-details i {
+  font-size: 13px;
+}
+
+/* ===================== EMPTY STATE ===================== */
+.comparison-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.comparison-empty i {
+  font-size: 64px;
+  color: #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.comparison-empty p {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 320px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ===================== OVERLAY - SUBTLE BLUR ===================== */
+.comparison-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comparison-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===================== FOOTER ACTIONS ===================== */
+.comparison-footer {
+  padding: 24px 32px;
+  border-top: 2px solid #f3f4f6;
+  background: white;
+  display: flex;
+  gap: 14px;
+}
+
+.comparison-footer button {
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.comparison-clear-all {
+  background: #f8fafc;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+}
+
+.comparison-clear-all:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1a2332;
+}
+
+.comparison-add-all {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.comparison-add-all:hover {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.comparison-add-all:disabled {
+  background: #e5e7eb;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ===================== SELECTED CARD STATE ===================== */
+.recommendation-card.selected {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0066cc;
+  box-shadow: 0 4px 16px rgba(0, 102, 204, 0.15),
+              0 0 0 4px rgba(0, 102, 204, 0.08);
+  transform: translateY(-2px);
+}
+
+.recommendation-card.selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+  opacity: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+/* Checkbox visual feedback when selected */
+.recommendation-card.selected .rec-card-compare-checkbox {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  border-color: #0066cc;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.recommendation-card.selected .rec-card-compare-checkbox i {
+  display: block !important;
+  color: white;
+  animation: checkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===================== RESPONSIVE DESIGN ===================== */
+@media (max-width: 768px) {
+  .comparison-panel {
+    width: 100vw;
+    right: -100vw;
+    border-radius: 0;
+  }
+
+  .comparison-body {
+    padding: 24px 20px;
+  }
+
+  .comparison-header {
+    padding: 24px 20px;
+  }
+
+  .comparison-item {
+    padding: 20px;
+  }
+
+  .comparison-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-footer {
+    padding: 20px;
   }
 }
 
-// ====================== ADD ALL FROM COMPARISON ======================
-window.addAllFromComparison = async function() {
-  const count = comparisonState.selectedPlaces.size;
-  
-  if (count === 0) {
-    if (typeof showToast === 'function') {
-      showToast('No places selected', 'warning');
-    }
-    return;
-  }
-  
-  if (count > 3) {
-    if (!confirm(`Add ${count} places to your trip?`)) {
-      return;
-    }
-  }
-  
-  let successCount = 0;
-  const selectedPlaces = Array.from(comparisonState.selectedPlaces.values());
-  
-  for (const place of selectedPlaces) {
-    try {
-      if (typeof addRecommendationToTrip === 'function') {
-        await addRecommendationToTrip(place);
-        successCount++;
-      }
-    } catch (err) {
-      console.error('Failed to add place:', place.name, err);
-    }
-  }
-  
-  if (successCount > 0) {
-    if (typeof showToast === 'function') {
-      showToast(`✅ Added ${successCount} place${successCount > 1 ? 's' : ''} to your trip!`, 'success');
-    }
-    clearAllComparisons();
-    closeComparisonPanel();
-  } else {
-    if (typeof showToast === 'function') {
-      showToast('Failed to add places', 'error');
-    }
-  }
-};
-
-// ====================== OPEN COMPARISON PANEL ======================
-window.openComparisonPanel = function() {
-  const panel = document.getElementById('comparisonPanel');
-  const overlay = document.getElementById('comparisonOverlay');
-  
-  if (comparisonState.selectedPlaces.size === 0) {
-    if (typeof showToast === 'function') {
-      showToast('Please select places to compare', 'info');
-    }
-    return;
-  }
-  
-  if (panel && overlay) {
-    panel.classList.add('active');
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-};
-
-// ====================== CLOSE PANEL ======================
-window.closeComparisonPanel = function() {
-  const panel = document.getElementById('comparisonPanel');
-  const overlay = document.getElementById('comparisonOverlay');
-  
-  if (panel && overlay) {
-    panel.classList.remove('active');
-    overlay.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-};
-
-// ====================== CLEAR ALL ======================
-window.clearAllComparisons = function() {
-  if (comparisonState.selectedPlaces.size === 0) {
-    return;
+@media (max-width: 480px) {
+  .comparison-header h3 {
+    font-size: 18px;
   }
 
-  if (!confirm(`Remove all ${comparisonState.selectedPlaces.size} places from comparison?`)) {
-    return;
+  .comparison-item-name {
+    font-size: 16px;
   }
 
-  comparisonState.selectedPlaces.clear();
-
-  document.querySelectorAll('.recommendation-card.comparing, .recommendation-card.selected').forEach(card => {
-    card.classList.remove('comparing');
-    card.classList.remove('selected');
-    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-    if (checkbox) {
-      checkbox.style.display = 'none';
-    }
-  });
-
-  updateComparisonPanel();
-  
-  if (typeof showToast === 'function') {
-    showToast('Comparison cleared', 'info');
+  .comparison-stat {
+    padding: 10px 14px;
   }
-};
 
-// ====================== UTILITIES ======================
-function getCategoryIcon(category) {
-  const icons = {
-    restaurant: 'utensils',
-    attraction: 'landmark',
-    accommodation: 'bed',
-    transport: 'bus',
-    shopping: 'shopping-bag',
-    entertainment: 'film',
-    other: 'map-marker-alt'
-  };
-  return icons[category?.toLowerCase()] || 'map-marker-alt';
+  .comparison-stat-label,
+  .comparison-stat-value {
+    font-size: 13px;
+  }
+
+  .comparison-count {
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
 }
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function escapeAttr(text) {
-  if (!text) return '';
-  return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-// Make available globally
-window.comparisonState = comparisonState;
-window.initComparisonPanel = initComparisonPanel;
-
-console.log('✅ Comparison module loaded (side panel only)');
