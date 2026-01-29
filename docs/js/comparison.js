@@ -313,6 +313,19 @@ window.clearAllComparisons = function() {
   updateComparisonPanel();
   showToast('Comparison cleared', 'info');
 };
+function updateComparisonUI() {
+  const count = compareList.length;
+
+  comparisonCount.textContent = count;
+
+  if (count === 0) {
+    comparisonPanel.classList.remove("active");
+    comparisonPanel.classList.add("hidden");
+    overlay.classList.remove("active");
+  } else {
+    comparisonPanel.classList.remove("hidden");
+  }
+}
 
 // ====================== UTILITIES ======================
 function getCategoryIcon(category) {
