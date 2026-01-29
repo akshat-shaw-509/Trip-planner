@@ -116,15 +116,20 @@ async function loadRecommendations(options = {}) {
     console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
     console.log('  📋 Category filter:', options.category || 'all');
 
-    const res = await apiService.recommendations.getForTrip(
-      recommendationsState.currentTripId,
-      {
-        radius: (advancedRecState.options.radius * 1000) || 10000,
-        limit: advancedRecState.options.maxResults || 50,
-        category: options.category
-      }
-    );
+   // ✅ Only include category if it's actually defined
+const params = {
+  radius: (advancedRecState.options.radius * 1000) || 10000,
+  limit: advancedRecState.options.maxResults || 50
+};
 
+if (options.category && options.category !== 'all') {
+  params.category = options.category;
+}
+
+const res = await apiService.recommendations.getForTrip(
+  recommendationsState.currentTripId,
+  params
+);
     const responseData = res.data || {};
     let places = Array.isArray(responseData) ? responseData : responseData.places || [];
     
