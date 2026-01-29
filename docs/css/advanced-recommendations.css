@@ -1,932 +1,949 @@
-/* ====================================
-   ADVANCED-RECOMMENDATIONS.CSS - FIXED & IMPROVED
-   ==================================== */
+//============================================================
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED
+// Handles AI recommendations, filters, sorting, comparison, and map integration
+// ============================================================
 
-/* ====================================
-   RECOMMENDATION CONTROLS PANEL
-   ==================================== */
-.rec-controls-panel {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 2px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+// ====================== STATE ======================
+const advancedRecState = {
+  options: {
+    radius: 10, 
+    minRating: 3.0, 
+    maxResults: 50, 
+    sortBy: 'score',
+    viewMode: 'grid',
+    showHiddenGems: false, 
+    budgetFriendly: false, 
+    topRatedOnly: false,
+    nearbyOnly: false
+  },
+  savedPlaces: new Set(),
+  selectedForBulk: new Set()
+};
+
+// ✅ FIXED: Proper filter state management
+if (!window.filterState) {
+  window.filterState = {
+    activeFilters: {
+      categories: [],
+      minRating: 0,
+      maxDistance: 999,
+      priceLevel: null
+    },
+    allRecommendations: [], // ✅ NEVER mutate this
+    filteredResults: []     // ✅ This is what gets displayed
+  };
 }
 
-.rec-controls-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+const filterState = window.filterState;
+
+// Recommendations state
+if (!window.recommendationsState) {
+  window.recommendationsState = {
+    currentTripId: null,
+    recommendations: [],
+    dayPlans: [],
+    userPreferences: null,
+    isLoading: false,
+    tripData: null
+  };
 }
 
-.rec-controls-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
+const recommendationsState = window.recommendationsState;
 
-.rec-controls-toggle {
-  background: none;
-  border: none;
-  color: #6366f1;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 4px;
-  transition: transform 0.2s;
-}
-
-.rec-controls-toggle:hover {
-  color: #4f46e5;
-}
-
-.rec-controls-toggle.collapsed {
-  transform: rotate(-90deg);
-}
-
-.rec-controls-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.rec-controls-body.hidden {
-  display: none;
-}
-
-/* ====================================
-   CONTROL GROUP
-   ==================================== */
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.control-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.control-value {
-  color: #6366f1;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-/* ====================================
-   RANGE SLIDER
-   ==================================== */
-.range-slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #e5e7eb;
-  outline: none;
-  transition: all 0.2s;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.range-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #6366f1;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
-  transition: all 0.2s;
-}
-
-.range-slider::-webkit-slider-thumb:hover {
-  background: #4f46e5;
-  transform: scale(1.1);
-}
-
-.range-slider::-webkit-slider-thumb:active {
-  transform: scale(1.15);
-}
-
-.range-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #6366f1;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
-  transition: all 0.2s;
-}
-
-.range-slider::-moz-range-thumb:hover {
-  background: #4f46e5;
-  transform: scale(1.1);
-}
-
-.range-slider::-moz-range-track {
-  width: 100%;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-}
-
-/* ====================================
-   TOGGLE SWITCH
-   ==================================== */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 24px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #e5e7eb;
-  transition: 0.3s;
-  border-radius: 24px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-  background-color: #6366f1;
-}
-
-input:focus + .toggle-slider {
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(24px);
-}
-
-/* ====================================
-   SORT OPTIONS
-   ==================================== */
-.sort-options {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sort-btn {
-  padding: 8px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sort-btn:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
-  transform: translateY(-1px);
-}
-
-.sort-btn.active {
-  background: #6366f1;
-  border-color: #6366f1;
-  color: white;
-  transform: translateY(0);
-}
-
-.sort-btn i {
-  font-size: 12px;
-}
-
-/* ====================================
-   VIEW MODE TOGGLE
-   ==================================== */
-.view-mode-toggle {
-  display: flex;
-  gap: 8px;
-  background: #f3f4f6;
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.view-mode-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.view-mode-btn:hover {
-  color: #374151;
-}
-
-.view-mode-btn.active {
-  background: white;
-  color: #6366f1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* ====================================
-   GRID VIEW MODES
-   ==================================== */
-/* Compact View */
-.recommendations-grid.compact {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.recommendations-grid.compact .recommendation-card {
-  padding: 16px;
-}
-
-.recommendations-grid.compact .rec-header {
-  margin-bottom: 12px;
-}
-
-.recommendations-grid.compact .rec-title h3 {
-  font-size: 16px;
-}
-
-.recommendations-grid.compact .rec-reasons {
-  display: none;
-}
-
-/* List View */
-.recommendations-grid.list {
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-.recommendations-grid.list .recommendation-card {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 16px 20px;
-}
-
-.recommendations-grid.list .rec-header {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-.recommendations-grid.list .rec-meta {
-  margin-bottom: 0;
-}
-
-.recommendations-grid.list .rec-reasons {
-  display: none;
-}
-
-.recommendations-grid.list .rec-actions {
-  flex-shrink: 0;
-}
-
-/* ====================================
-   QUICK ACTIONS BAR
-   ==================================== */
-.quick-actions-bar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 10px;
-  flex-wrap: wrap;
-}
-
-.quick-actions-bar label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-  margin: 0;
-}
-
-.quick-action-btn {
-  padding: 8px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.quick-action-btn:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-  background: #f0f1ff;
-}
-
-.quick-action-btn.active {
-  background: #6366f1;
-  border-color: #6366f1;
-  color: white;
-}
-
-/* ====================================
-   BULK ACTIONS BAR
-   ==================================== */
-.bulk-actions-bar {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 16px 24px;
-  border-radius: 50px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  display: none;
-  align-items: center;
-  gap: 16px;
-  z-index: 1000;
-  max-width: 90%;
-}
-
-.bulk-actions-bar.show {
-  display: flex;
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+// ====================== STORAGE FUNCTIONS ======================
+/**
+ * Save user preferences to session storage
+ */
+function saveSavedPreferences() {
+  try {
+    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
+  } catch (err) {
+    console.error('Error saving preferences:', err);
   }
 }
 
-.bulk-count {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.bulk-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.bulk-action-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bulk-action-btn.primary {
-  background: #6366f1;
-  color: white;
-}
-
-.bulk-action-btn.primary:hover {
-  background: #4f46e5;
-  transform: translateY(-1px);
-}
-
-.bulk-action-btn.secondary {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.bulk-action-btn.secondary:hover {
-  background: #e5e7eb;
-}
-
-/* ====================================
-   QUALITY INDICATORS
-   ==================================== */
-.quality-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 10;
-}
-
-.quality-badge.top-rated {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
-}
-
-.quality-badge.hidden-gem {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-}
-
-.quality-badge.popular {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-.quality-badge.budget {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
-/* ====================================
-   DISTANCE RING INDICATOR
-   ==================================== */
-.distance-ring {
-  width: 48px;
-  height: 48px;
-  position: relative;
-  margin-left: auto;
-}
-
-.distance-ring svg {
-  transform: rotate(-90deg);
-  width: 100%;
-  height: 100%;
-}
-
-.distance-ring-bg {
-  fill: none;
-  stroke: #e5e7eb;
-  stroke-width: 4;
-}
-
-.distance-ring-fill {
-  fill: none;
-  stroke: #6366f1;
-  stroke-width: 4;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.3s;
-}
-
-.distance-ring-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 11px;
-  font-weight: 700;
-  color: #6366f1;
-}
-
-/* ====================================
-   SAVE FOR LATER HEART
-   ==================================== */
-.save-for-later {
-  position: absolute;
-  top: 12px;
-  left: 48px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: white;
-  border: 2px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 10;
-}
-
-.save-for-later:hover {
-  border-color: #ef4444;
-  background: #fef2f2;
-  transform: scale(1.1);
-}
-
-.save-for-later.saved {
-  background: #ef4444;
-  border-color: #ef4444;
-  animation: heartPop 0.3s ease-in-out;
-}
-
-@keyframes heartPop {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-}
-
-.save-for-later i {
-  color: #e5e7eb;
-  font-size: 16px;
-  transition: all 0.2s;
-}
-
-.save-for-later:hover i {
-  color: #ef4444;
-}
-
-.save-for-later.saved i {
-  color: white;
-}
-
-/* ====================================
-   LOADING STATES
-   ==================================== */
-.rec-controls-panel.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.recommendations-grid.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* ====================================
-   RESPONSIVE - TABLET
-   ==================================== */
-@media (max-width: 1024px) {
-  .rec-controls-body {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-  }
-
-  .recommendations-grid.compact {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-
-  .bulk-actions-bar {
-    bottom: 16px;
-    padding: 14px 20px;
+/**
+ * Load saved preferences from session storage
+ */
+function loadSavedPreferences() {
+  try {
+    const saved = sessionStorage.getItem('savedPlaces');
+    if (saved) {
+      advancedRecState.savedPlaces = new Set(JSON.parse(saved));
+    }
+  } catch (err) {
+    console.error('Error loading preferences:', err);
   }
 }
 
-/* ====================================
-   RESPONSIVE - MOBILE
-   ==================================== */
-@media (max-width: 768px) {
-  .rec-controls-panel {
-    padding: 16px;
-    margin-bottom: 20px;
-  }
+// ====================== INITIALIZATION ======================
+/**
+ * Initialize all recommendation features
+ */
+async function initRecommendations(tripId, tripData) {
+  console.log('🚀 Initializing unified recommendations module');
+  
+  recommendationsState.currentTripId = tripId;
+  recommendationsState.tripData = tripData;
+  
+  // Render controls UI
+  renderAdvancedControls();
+  attachAdvancedListeners();
+  loadSavedPreferences();
+  
+  // Load recommendations from API
+  await loadRecommendations();
+}
 
-  .rec-controls-header h3 {
-    font-size: 14px;
-  }
+// Make globally available
+window.initRecommendations = initRecommendations;
 
-  .rec-controls-body {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
+// ====================== LOAD RECOMMENDATIONS ======================
+/**
+ * Load recommendations from API with proper coordinate handling
+ */
+async function loadRecommendations(options = {}) {
+  try {
+    recommendationsState.isLoading = true;
+    showRecommendationsLoading();
+    
+    // ✅ Add loading state to active category button
+    const activeBtn = document.querySelector('.category-filter-btn.active');
+    if (activeBtn) {
+      activeBtn.classList.add('loading');
+    }
 
-  .sort-options {
-    width: 100%;
-  }
+    console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
+    console.log('  📋 Category filter:', options.category || 'all');
 
-  .sort-btn {
-    flex: 1;
-    justify-content: center;
-    padding: 10px 12px;
-    font-size: 12px;
-  }
+    const res = await apiService.recommendations.getForTrip(
+      recommendationsState.currentTripId,
+      {
+        radius: (advancedRecState.options.radius * 1000) || 10000,
+        limit: advancedRecState.options.maxResults || 50,
+        category: options.category
+      }
+    );
 
-  .view-mode-toggle {
-    width: 100%;
-  }
+    const responseData = res.data || {};
+    let places = Array.isArray(responseData) ? responseData : responseData.places || [];
+    
+    console.log('📦 Raw API response:', places.length, 'places');
 
-  .view-mode-btn {
-    flex: 1;
-    justify-content: center;
-  }
+    // ✅ ENSURE COORDINATES ARE PROPERLY EXTRACTED
+    places = places.map(place => {
+      let lat = 0, lon = 0;
+      
+      if (place.location?.coordinates) {
+        lon = place.location.coordinates[0];
+        lat = place.location.coordinates[1];
+      } else if (place.lat && place.lon) {
+        lat = place.lat;
+        lon = place.lon;
+      } else if (place.location?.lat && place.location?.lon) {
+        lat = place.location.lat;
+        lon = place.location.lon;
+      } else if (place.coordinates) {
+        lon = place.coordinates[0];
+        lat = place.coordinates[1];
+      }
 
-  .quick-actions-bar {
-    padding: 12px;
-    gap: 8px;
-  }
+      const validLat = parseFloat(lat);
+      const validLon = parseFloat(lon);
+      
+      if (!validLat || !validLon || isNaN(validLat) || isNaN(validLon) || 
+          validLat === 0 || validLon === 0 ||
+          validLat < -90 || validLat > 90 || validLon < -180 || validLon > 180) {
+        console.warn('⚠️ Missing/invalid coordinates for:', place.name, {lat: validLat, lon: validLon});
+      }
 
-  .quick-action-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
+      return {
+        ...place,
+        lat: validLat || 0,
+        lon: validLon || 0
+      };
+    });
 
-  .bulk-actions-bar {
-    width: calc(100% - 32px);
-    left: 16px;
-    right: 16px;
-    transform: none;
-    border-radius: 12px;
-    flex-wrap: wrap;
-    padding: 12px 16px;
-    bottom: 12px;
-  }
+    // Filter out places with no valid coordinates
+    const validPlaces = places.filter(p => 
+      p.lat !== 0 && 
+      p.lon !== 0 && 
+      !isNaN(p.lat) && 
+      !isNaN(p.lon) &&
+      p.lat >= -90 && 
+      p.lat <= 90 && 
+      p.lon >= -180 && 
+      p.lon <= 180
+    );
+    
+    const invalidCount = places.length - validPlaces.length;
+    
+    if (invalidCount > 0) {
+      console.warn(`⚠️ Filtered out ${invalidCount} places with invalid coordinates`);
+    }
 
-  .bulk-count {
-    width: 100%;
-    text-align: center;
-    font-size: 13px;
-  }
+    // ✅ CRITICAL: Initialize filter state with ALL recommendations
+    filterState.allRecommendations = [...validPlaces];
+    filterState.filteredResults = [...validPlaces];
+    recommendationsState.recommendations = [...validPlaces];
 
-  .bulk-actions {
-    width: 100%;
-    justify-content: center;
-  }
+    console.log('✅ Loaded', validPlaces.length, 'valid recommendations');
 
-  .bulk-action-btn {
-    flex: 1;
-    justify-content: center;
-    padding: 8px 12px;
-    font-size: 12px;
-  }
+    // Display and update map
+    displayRecommendations();
+    
+    setTimeout(() => {
+      if (typeof updateMapWithRecommendations === 'function') {
+        console.log('🗺️ Triggering map update...');
+        updateMapWithRecommendations();
+      }
+    }, 500);
 
-  .recommendations-grid.list .recommendation-card {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px;
-  }
-
-  .recommendations-grid.list .rec-actions {
-    width: 100%;
-  }
-
-  .quality-badge {
-    top: 8px;
-    right: 8px;
-    padding: 3px 8px;
-    font-size: 10px;
-  }
-
-  .save-for-later {
-    top: 8px;
-    left: 40px;
-    width: 28px;
-    height: 28px;
-  }
-
-  .save-for-later i {
-    font-size: 14px;
-  }
-
-  .distance-ring {
-    width: 40px;
-    height: 40px;
-  }
-
-  .distance-ring-text {
-    font-size: 10px;
+  } catch (err) {
+    console.error('❌ Error loading recommendations:', err);
+    showRecommendationsError();
+  } finally {
+    recommendationsState.isLoading = false;
+    
+    // ✅ Remove loading state from category button
+    const loadingBtn = document.querySelector('.category-filter-btn.loading');
+    if (loadingBtn) {
+      loadingBtn.classList.remove('loading');
+    }
   }
 }
 
-/* ====================================
-   RESPONSIVE - SMALL MOBILE
-   ==================================== */
-@media (max-width: 480px) {
-  .rec-controls-panel {
-    padding: 12px;
-    margin-bottom: 16px;
+window.loadRecommendations = loadRecommendations;
+
+// ====================== DISPLAY RECOMMENDATIONS ======================
+/**
+ * Display recommendations with proper data attributes for map
+ */
+function displayRecommendations() {
+  const container = document.getElementById('recommendationsGrid');
+  if (!container) return;
+
+  const recs = recommendationsState.recommendations;
+
+  if (recs.length === 0) {
+    container.innerHTML = `
+      <div class="recommendations-empty">
+        <i class="fas fa-compass"></i>
+        <h3>No recommendations match your filters</h3>
+        <p>Try adjusting your filters or search criteria</p>
+      </div>
+    `;
+    return;
   }
 
-  .control-label {
-    font-size: 13px;
+  container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
+
+  // Attach event listeners
+  recs.forEach((rec, index) => {
+    const card = container.children[index];
+    if (!card) return;
+
+    const addBtn = card.querySelector('.btn-add-to-trip');
+    if (addBtn) {
+      addBtn.onclick = (e) => {
+        e.stopPropagation();
+        addRecommendationToTrip(rec);
+      };
+    }
+
+    const detailsBtn = card.querySelector('.btn-view-details');
+    if (detailsBtn) {
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        showRecommendationDetails(rec);
+      };
+    }
+
+    const checkbox = card.querySelector('.rec-card-compare-checkbox');
+    if (checkbox) {
+      checkbox.onclick = (e) => {
+        e.stopPropagation();
+        toggleCompareSelection(rec, card);
+      };
+    }
+  });
+
+  addQualityBadges();
+  console.log('📍 Rendered', recs.length, 'recommendation cards with coordinates');
+}
+
+window.displayRecommendations = displayRecommendations;
+
+// ====================== CREATE RECOMMENDATION CARD ======================
+function createRecommendationCard(rec) {
+  const icon = getCategoryIcon(rec.category);
+  const lat = parseFloat(rec.lat) || 0;
+  const lon = parseFloat(rec.lon) || 0;
+
+  const reasonsHTML = (rec.reasons || []).map(reason => `
+    <span class="reason-tag">
+      <i class="fas fa-check-circle"></i>
+      ${escapeHtml(reason)}
+    </span>
+  `).join('');
+
+  return `
+    <div class="recommendation-card" 
+         data-place-id="${rec._id || rec.externalId || rec.name}" 
+         data-category="${rec.category}" 
+         data-lat="${lat}" 
+         data-lon="${lon}"
+         data-name="${escapeHtml(rec.name)}">
+      
+      <div class="rec-card-compare-checkbox" title="Compare places">
+        <i class="fas fa-check" style="display: none;"></i>
+      </div>
+
+      <div class="rec-header">
+        <div class="rec-title">
+          <h3 class="rec-name">${escapeHtml(rec.name)}</h3>
+          ${rec.city || rec.country ? `
+            <div class="rec-location-info">
+              <i class="fas fa-map-marker-alt"></i>
+              ${rec.city ? escapeHtml(rec.city) : ''}${rec.city && rec.country ? ', ' : ''}${rec.country ? escapeHtml(rec.country) : ''}
+            </div>
+          ` : ''}
+          <span class="rec-category">
+            <i class="fas fa-${icon}"></i>
+            ${escapeHtml(rec.category)}
+          </span>
+        </div>
+        <div class="rec-score">
+          <i class="fas fa-star"></i>
+          <span class="rec-rating">${(rec.recommendationScore || rec.rating || 0).toFixed(1)}</span>
+        </div>
+      </div>
+
+      <div class="rec-meta">
+        <div class="rec-rating-display">
+          <i class="fas fa-star"></i>
+          ${(rec.rating || 0).toFixed(1)}
+        </div>
+        ${rec.distanceFromCenter ? `
+          <div class="rec-distance">
+            <i class="fas fa-map-marker-alt"></i>
+            ${rec.distanceFromCenter.toFixed(1)} km away
+          </div>
+        ` : ''}
+        ${rec.priceLevel ? `
+          <div class="rec-price">
+            <i class="fas fa-dollar-sign"></i>
+            ${'$'.repeat(rec.priceLevel)}
+          </div>
+        ` : ''}
+      </div>
+
+      ${reasonsHTML ? `
+        <div class="rec-reasons">
+          <div class="rec-reasons-title">Why we recommend this</div>
+          ${reasonsHTML}
+        </div>
+      ` : ''}
+
+      ${rec.description ? `
+        <div class="rec-description">
+          ${escapeHtml(rec.description.substring(0, 150))}${rec.description.length > 150 ? '...' : ''}
+        </div>
+      ` : ''}
+
+      ${rec.address && rec.address !== 'undefined' ? `
+        <div class="rec-address">
+          <i class="fas fa-map-pin"></i>
+          ${escapeHtml(rec.address)}
+        </div>
+      ` : ''}
+
+      <div class="rec-actions">
+        <button class="btn-add-to-trip">
+          <i class="fas fa-plus"></i> Add to Trip
+        </button>
+        <button class="btn-view-details">
+          <i class="fas fa-info-circle"></i>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ====================== ADVANCED CONTROLS UI ======================
+function renderAdvancedControls() {
+  const container = document.querySelector('.recommendations-section');
+  if (!container) return;
+
+  const controlsHTML = `
+    <!-- ✅ NEW: Category Filter Buttons -->
+    <div class="rec-category-filters">
+      <h3>
+        <i class="fas fa-filter"></i>
+        Filter by Category
+      </h3>
+      <div class="category-filter-buttons">
+        <button class="category-filter-btn active" data-category="all">
+          <i class="fas fa-th"></i>
+          All Categories
+        </button>
+        <button class="category-filter-btn" data-category="restaurant">
+          <i class="fas fa-utensils"></i>
+          Restaurants
+        </button>
+        <button class="category-filter-btn" data-category="attraction">
+          <i class="fas fa-landmark"></i>
+          Attractions
+        </button>
+        <button class="category-filter-btn" data-category="accommodation">
+          <i class="fas fa-bed"></i>
+          Hotels
+        </button>
+      </div>
+    </div>
+
+    <div class="rec-controls-panel">
+      <div class="rec-controls-header">
+        <h3>
+          <i class="fas fa-sliders-h"></i>
+          Recommendation Options
+        </h3>
+        <button class="rec-controls-toggle" id="recControlsToggle">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </div>
+      
+      <div class="rec-controls-body" id="recControlsBody">
+        <div class="control-group">
+          <label class="control-label">
+            Search Radius
+            <span class="control-value" id="radiusValue">10 km</span>
+          </label>
+          <input type="range" class="range-slider" id="radiusSlider" 
+                min="1" max="50" value="10" step="1">
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">
+            Minimum Rating
+            <span class="control-value" id="ratingValue">3.0 ⭐</span>
+          </label>
+          <input type="range" class="range-slider" id="ratingSlider" 
+                min="0" max="5" value="3" step="0.5">
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Sort By</label>
+          <div class="sort-options">
+            <button class="sort-btn active" data-sort="score">
+              <i class="fas fa-star"></i> Best Match
+            </button>
+            <button class="sort-btn" data-sort="rating">
+              <i class="fas fa-trophy"></i> Highest Rated
+            </button>
+            <button class="sort-btn" data-sort="distance">
+              <i class="fas fa-location-arrow"></i> Nearest
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Quick Filters</label>
+          <div class="sort-options">
+            <button class="quick-action-btn" id="hiddenGemsBtn">
+              <i class="fas fa-gem"></i> Hidden Gems
+            </button>
+            <button class="quick-action-btn" id="topRatedBtn">
+              <i class="fas fa-award"></i> Top Rated Only
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bulk-actions-bar" id="bulkActionsBar">
+      <span class="bulk-count" id="bulkCount">0 selected</span>
+      <div class="bulk-actions">
+        <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
+          <i class="fas fa-plus"></i> Add All
+        </button>
+        <button class="bulk-action-btn secondary" onclick="clearBulkSelection()">
+          <i class="fas fa-times"></i> Clear
+        </button>
+      </div>
+    </div>
+  `;
+
+  const grid = document.getElementById('recommendationsGrid');
+  if (grid) {
+    grid.insertAdjacentHTML('beforebegin', controlsHTML);
+  }
+}
+
+function attachAdvancedListeners() {
+  // ✅ NEW: Category filter buttons
+  document.querySelectorAll('.category-filter-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      // Update active state
+      document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Get selected category
+      const category = this.dataset.category;
+      
+      console.log('🔍 Filtering by category:', category);
+      
+      // Reload recommendations with category filter
+      await loadRecommendations({ 
+        category: category === 'all' ? undefined : category 
+      });
+    });
+  });
+
+  // Toggle controls
+  const toggle = document.getElementById('recControlsToggle');
+  const body = document.getElementById('recControlsBody');
+  if (toggle && body) {
+    toggle.onclick = () => {
+      body.classList.toggle('hidden');
+      toggle.classList.toggle('collapsed');
+    };
   }
 
-  .control-value {
-    font-size: 13px;
+  // Radius slider - reloads from API
+  const radiusSlider = document.getElementById('radiusSlider');
+  const radiusValue = document.getElementById('radiusValue');
+  if (radiusSlider) {
+    radiusSlider.oninput = (e) => {
+      const value = e.target.value;
+      if (radiusValue) radiusValue.textContent = `${value} km`;
+      advancedRecState.options.radius = parseInt(value);
+      debouncedReload();
+    };
   }
 
-  .sort-btn,
-  .view-mode-btn,
-  .quick-action-btn {
-    font-size: 11px;
-    padding: 6px 10px;
+  // Rating slider - filters existing data
+  const ratingSlider = document.getElementById('ratingSlider');
+  const ratingValue = document.getElementById('ratingValue');
+  if (ratingSlider) {
+    ratingSlider.oninput = (e) => {
+      const value = parseFloat(e.target.value);
+      if (ratingValue) ratingValue.textContent = value === 0 ? 'Any' : `${value.toFixed(1)} ⭐`;
+      advancedRecState.options.minRating = value;
+      debouncedFilter();
+    };
   }
 
-  .recommendations-grid.compact {
-    grid-template-columns: 1fr;
+  // Sort buttons
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      advancedRecState.options.sortBy = btn.dataset.sort;
+      applySorting();
+    };
+  });
+
+  // Quick filters
+  document.getElementById('hiddenGemsBtn')?.addEventListener('click', function() {
+    this.classList.toggle('active');
+    advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
+    applyQuickFilters();
+  });
+
+  document.getElementById('topRatedBtn')?.addEventListener('click', function() {
+    this.classList.toggle('active');
+    advancedRecState.options.topRatedOnly = !advancedRecState.options.topRatedOnly;
+    applyQuickFilters();
+  });
+}
+
+// ====================== DEBOUNCED FUNCTIONS ======================
+let reloadTimeout;
+function debouncedReload() {
+  clearTimeout(reloadTimeout);
+  reloadTimeout = setTimeout(() => {
+    loadRecommendations();
+  }, 500);
+}
+
+let filterTimeout;
+function debouncedFilter() {
+  clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(() => {
+    applyQuickFilters();
+  }, 300);
+}
+
+// ====================== SORTING & FILTERING ======================
+// ✅ FIXED: Proper sorting that preserves filters
+function applySorting() {
+  // ✅ Always start with filtered results, not all recommendations
+  let results = [...filterState.filteredResults];
+  
+  switch (advancedRecState.options.sortBy) {
+    case 'rating':
+      results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      break;
+    case 'distance':
+      results.sort((a, b) => (a.distanceFromCenter || 0) - (b.distanceFromCenter || 0));
+      break;
+    default:
+      results.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0));
   }
+
+  // ✅ Update both filtered results and display
+  filterState.filteredResults = results;
+  recommendationsState.recommendations = results;
+  displayRecommendations();
+  
+  console.log('✅ Applied sorting:', advancedRecState.options.sortBy);
 }
 
-/* ====================================
-   ACCESSIBILITY
-   ==================================== */
-.range-slider:focus {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
+// ✅ FIXED: Proper filtering that preserves original data
+function applyQuickFilters() {
+  // ✅ CRITICAL: Always start from ALL recommendations, not already-filtered ones
+  let filtered = [...filterState.allRecommendations];
+  const opts = advancedRecState.options;
 
-.toggle-switch input:focus + .toggle-slider {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
+  console.log('🔍 Applying filters to', filtered.length, 'recommendations');
 
-.sort-btn:focus,
-.view-mode-btn:focus,
-.quick-action-btn:focus,
-.bulk-action-btn:focus {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
-
-/* ====================================
-   PRINT STYLES
-   ==================================== */
-@media print {
-  .rec-controls-panel,
-  .quick-actions-bar,
-  .bulk-actions-bar,
-  .save-for-later {
-    display: none !important;
+  // Apply rating filter
+  if (opts.minRating > 0) {
+    const before = filtered.length;
+    filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
+    console.log(`  Rating filter (>=${opts.minRating}): ${before} → ${filtered.length}`);
   }
 
-  .recommendations-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  // Apply hidden gems filter
+  if (opts.showHiddenGems) {
+    const before = filtered.length;
+    filtered = filtered.filter(r => (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3);
+    console.log(`  Hidden gems filter: ${before} → ${filtered.length}`);
   }
+
+  // Apply top rated filter
+  if (opts.topRatedOnly) {
+    const before = filtered.length;
+    filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
+    console.log(`  Top rated filter: ${before} → ${filtered.length}`);
+  }
+
+  console.log('✅ Filter complete:', filtered.length, 'results');
+
+  // ✅ Update filtered results first
+  filterState.filteredResults = filtered;
+  
+  // ✅ Then apply current sort order
+  applySorting();
 }
 
-/* ============================================ */
-/* CATEGORY FILTER BUTTONS */
-/* ============================================ */
+// ====================== QUALITY BADGES ======================
+function addQualityBadges() {
+  const cards = document.querySelectorAll('.recommendation-card');
 
-.rec-category-filters {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 24px;
-  border-radius: 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  cards.forEach((card, index) => {
+    const rec = recommendationsState.recommendations[index];
+    if (!rec) return;
+
+    card.querySelectorAll('.quality-badge, .save-for-later').forEach(b => b.remove());
+
+    let badge = null;
+    if (rec.rating >= 4.7) {
+      badge = '<div class="quality-badge top-rated"><i class="fas fa-crown"></i> Top Rated</div>';
+    } else if (rec.rating >= 4.0 && rec.distanceFromCenter > 5) {
+      badge = '<div class="quality-badge hidden-gem"><i class="fas fa-gem"></i> Hidden Gem</div>';
+    }
+
+    if (badge) card.insertAdjacentHTML('afterbegin', badge);
+
+    const isSaved = advancedRecState.savedPlaces.has(rec.name);
+    const saveBtn = `
+      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${rec.name}', event)">
+        <i class="fas fa-heart"></i>
+      </div>
+    `;
+    card.insertAdjacentHTML('afterbegin', saveBtn);
+  });
 }
 
-.rec-category-filters h3 {
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.rec-category-filters h3 i {
-  font-size: 20px;
-}
-
-.category-filter-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-}
-
-.category-filter-btn {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 14px 20px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.category-filter-btn i {
-  font-size: 18px;
-  transition: transform 0.3s ease;
-}
-
-.category-filter-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-.category-filter-btn:hover i {
-  transform: scale(1.1);
-}
-
-.category-filter-btn.active {
-  background: white;
-  color: #667eea;
-  border-color: white;
-  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
-}
-
-.category-filter-btn.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  pointer-events: none;
-}
-
-.category-filter-btn:active {
-  transform: translateY(0);
-}
-
-/* Loading state for category buttons */
-.category-filter-btn.loading {
-  pointer-events: none;
-  opacity: 0.6;
-}
-
-.category-filter-btn.loading::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  margin-left: 8px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .category-filter-buttons {
-    grid-template-columns: repeat(2, 1fr);
+// ====================== COMPARISON FEATURE ======================
+function toggleCompareSelection(rec, card) {
+  const checkbox = card.querySelector('.rec-card-compare-checkbox');
+  const checkIcon = checkbox?.querySelector('i');
+  
+  if (card.classList.contains('comparing')) {
+    card.classList.remove('comparing');
+    if (checkIcon) checkIcon.style.display = 'none';
+    advancedRecState.selectedForBulk.delete(rec.name);
+  } else {
+    card.classList.add('comparing');
+    if (checkIcon) checkIcon.style.display = 'block';
+    advancedRecState.selectedForBulk.add(rec.name);
   }
   
-  .category-filter-btn {
-    padding: 12px 16px;
-    font-size: 14px;
+  updateBulkActionsBar();
+  
+  if (typeof updateComparisonPanel === 'function') {
+    updateComparisonPanel();
   }
 }
 
-@media (max-width: 480px) {
-  .category-filter-buttons {
-    grid-template-columns: 1fr;
-  }
-  
-  .rec-category-filters {
-    padding: 16px;
+function updateBulkActionsBar() {
+  const bar = document.getElementById('bulkActionsBar');
+  const count = document.getElementById('bulkCount');
+  if (!bar || !count) return;
+
+  const selected = advancedRecState.selectedForBulk.size;
+
+  if (selected > 0) {
+    bar.classList.add('show');
+    count.textContent = `${selected} selected`;
+  } else {
+    bar.classList.remove('show');
   }
 }
+
+// ====================== ADD TO TRIP (FIXED) ======================
+async function addRecommendationToTrip(rec) {
+  try {
+    console.log('🔍 Adding recommendation to trip:', rec);
+    console.log('  📋 Category value:', rec.category, 'Type:', typeof rec.category);
+
+    // ✅ VALIDATION: Check for required coordinates
+    if (!rec.lat || !rec.lon) {
+      console.error('❌ Missing coordinates:', { lat: rec.lat, lon: rec.lon });
+      showToast('Missing location data for this place', 'error');
+      return;
+    }
+
+    // ✅ Validate coordinate values
+    const lat = parseFloat(rec.lat);
+    const lon = parseFloat(rec.lon);
+
+    if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+      console.error('❌ Invalid coordinates:', { lat, lon });
+      showToast('Invalid location data for this place', 'error');
+      return;
+    }
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      console.error('❌ Coordinates out of range:', { lat, lon });
+      showToast('Invalid coordinate range', 'error');
+      return;
+    }
+
+    // ✅ PROPER DATA STRUCTURE matching backend expectations
+    const placeData = {
+      // Required fields
+      name: rec.name,
+      category: (rec.category && rec.category !== 'undefined') ? rec.category.toLowerCase() : 'attraction',
+      
+      // Location with proper GeoJSON format [longitude, latitude]
+      location: {
+        type: 'Point',
+        coordinates: [lon, lat] // ✅ CORRECT ORDER: [longitude, latitude]
+      },
+      
+      // Optional fields (backend will accept these)
+      address: rec.address || '',
+      rating: parseFloat(rec.rating) || 0,
+      priceLevel: parseInt(rec.priceLevel) || 0,
+      description: rec.description || '',
+      
+      // ✅ Only include AI reasons if they exist, no prefix text
+      notes: rec.reasons && rec.reasons.length > 0
+        ? `${rec.reasons.map(r => `• ${r}`).join('\n')}`
+        : ''  // ✅ Empty string instead of generic text
+    };
+
+    console.log('📤 Sending place data:', placeData);
+
+    // ✅ Call API with proper error handling
+    const response = await apiService.places.create(
+      recommendationsState.currentTripId, 
+      placeData
+    );
+
+    console.log('✅ Place added successfully:', response);
+    showToast('✅ Place added to your trip!', 'success');
+
+    // ✅ Remove from ALL recommendation arrays
+    filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
+    filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
+    recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
+
+    // Update UI
+    displayRecommendations();
+
+    // Reload places list if function exists
+    if (typeof loadPlaces === 'function') {
+      await loadPlaces();
+    }
+
+    // Update map if function exists
+    if (typeof updateMapWithRecommendations === 'function') {
+      updateMapWithRecommendations();
+    }
+
+  } catch (err) {
+    console.error('❌ Error adding place:', err);
+    
+    // ✅ Show detailed error message to user
+    let errorMessage = 'Failed to add place';
+    
+    if (err.message) {
+      // Check for specific error types
+      if (err.message.includes('Coordinates')) {
+        errorMessage = 'Invalid location coordinates';
+      } else if (err.message.includes('Category')) {
+        errorMessage = 'Invalid category';
+      } else if (err.message.includes('required')) {
+        errorMessage = 'Missing required information';
+      } else {
+        errorMessage = err.message;
+      }
+    }
+    
+    showToast(errorMessage, 'error');
+  }
+}
+
+window.addRecommendationToTrip = addRecommendationToTrip;
+
+// ====================== BULK ACTIONS ======================
+window.bulkAddToTrip = async function() {
+  const selected = Array.from(advancedRecState.selectedForBulk);
+  if (selected.length === 0) {
+    showToast('No places selected', 'warning');
+    return;
+  }
+
+  let addedCount = 0;
+  for (const placeName of selected) {
+    const rec = recommendationsState.recommendations.find(r => r.name === placeName);
+    if (rec) {
+      try {
+        await addRecommendationToTrip(rec);
+        addedCount++;
+      } catch (err) {
+        console.error('Error adding place:', err);
+      }
+    }
+  }
+
+  if (addedCount > 0) {
+    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
+    clearBulkSelection();
+  }
+};
+
+window.clearBulkSelection = function() {
+  advancedRecState.selectedForBulk.clear();
+  document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
+    card.classList.remove('comparing');
+    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
+    if (checkbox) checkbox.style.display = 'none';
+  });
+  updateBulkActionsBar();
+};
+
+// ====================== DETAILS MODAL ======================
+function showRecommendationDetails(rec) {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-info-circle"></i> ${escapeHtml(rec.name)}</h3>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
+        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)} / 5.0</p>
+        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
+        ${rec.address ? `<p><strong>Address:</strong> ${escapeHtml(rec.address)}</p>` : ''}
+        ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
+        <p><strong>Coordinates:</strong> ${rec.lat.toFixed(4)}, ${rec.lon.toFixed(4)}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+        <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+          <i class="fas fa-plus"></i> Add to Trip
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+window.addRecommendationToTripFromModal = async function(rec) {
+  await addRecommendationToTrip(rec);
+  document.querySelector('.modal')?.remove();
+};
+
+// ====================== SAVE FOR LATER ======================
+window.toggleSaveForLater = function(placeName, event) {
+  event.stopPropagation();
+  if (advancedRecState.savedPlaces.has(placeName)) {
+    advancedRecState.savedPlaces.delete(placeName);
+    showToast('Removed from saved', 'info');
+  } else {
+    advancedRecState.savedPlaces.add(placeName);
+    showToast('Saved for later!', 'success');
+  }
+  saveSavedPreferences();
+  addQualityBadges();
+};
+
+// ====================== UI HELPERS ======================
+function showRecommendationsLoading() {
+  const container = document.getElementById('recommendationsGrid');
+  if (container) {
+    container.innerHTML = `
+      <div class="recommendations-loading">
+        <div class="loading-spinner"></div>
+        <p>🤖 AI is finding personalized recommendations...</p>
+      </div>
+    `;
+  }
+}
+
+function showRecommendationsError() {
+  const container = document.getElementById('recommendationsGrid');
+  if (container) {
+    container.innerHTML = `
+      <div class="recommendations-empty">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>Failed to load recommendations</h3>
+        <button class="btn-primary" onclick="loadRecommendations()">
+          <i class="fas fa-redo"></i> Retry
+        </button>
+      </div>
+    `;
+  }
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    restaurant: 'utensils',
+    attraction: 'landmark',
+    accommodation: 'bed',
+    transport: 'bus',
+    shopping: 'shopping-bag',
+    entertainment: 'film',
+    other: 'map-marker-alt'
+  };
+  return icons[category?.toLowerCase()] || 'map-marker-alt';
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+console.log('✅ Unified advanced recommendations module loaded with FIXED filters');
