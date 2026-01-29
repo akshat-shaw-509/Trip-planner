@@ -614,202 +614,108 @@ function updateBulkActionsBar() {
   }
 }
 
-// ====================== ADD TO TRIP ======================
+// ====================== ADD TO TRIP (FIXED) ======================
 async function addRecommendationToTrip(rec) {
   try {
+    console.log('🔍 Adding recommendation to trip:', rec);
+
+    // ✅ VALIDATION: Check for required coordinates
     if (!rec.lat || !rec.lon) {
+      console.error('❌ Missing coordinates:', { lat: rec.lat, lon: rec.lon });
       showToast('Missing location data for this place', 'error');
       return;
     }
 
+    // ✅ Validate coordinate values
+    const lat = parseFloat(rec.lat);
+    const lon = parseFloat(rec.lon);
+
+    if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+      console.error('❌ Invalid coordinates:', { lat, lon });
+      showToast('Invalid location data for this place', 'error');
+      return;
+    }
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      console.error('❌ Coordinates out of range:', { lat, lon });
+      showToast('Invalid coordinate range', 'error');
+      return;
+    }
+
+    // ✅ PROPER DATA STRUCTURE matching backend expectations
     const placeData = {
+      // Required fields
       name: rec.name,
-      category: rec.category,
-      address: rec.address || '',
+      category: rec.category?.toLowerCase() || 'other',
+      
+      // Location with proper GeoJSON format [longitude, latitude]
       location: {
         type: 'Point',
-        coordinates: [rec.lon, rec.lat]
+        coordinates: [lon, lat] // ✅ CORRECT ORDER: [longitude, latitude]
       },
-      rating: rec.rating || 0,
-      priceLevel: rec.priceLevel || 0,
+      
+      // Optional fields (backend will accept these)
+      address: rec.address || '',
+      rating: parseFloat(rec.rating) || 0,
+      priceLevel: parseInt(rec.priceLevel) || 0,
       description: rec.description || '',
-      notes: `Added from AI recommendations. ${(rec.reasons || []).join('. ')}`
+      
+      // ✅ Combine AI reasons into notes
+      notes: rec.reasons && rec.reasons.length > 0
+        ? `Added from AI recommendations.\n\nWhy recommended:\n${rec.reasons.map(r => `• ${r}`).join('\n')}`
+        : 'Added from AI recommendations'
     };
 
-    await apiService.places.create(recommendationsState.currentTripId, placeData);
+    console.log('📤 Sending place data:', placeData);
+
+    // ✅ Call API with proper error handling
+    const response = await apiService.places.create(
+      recommendationsState.currentTripId, 
+      placeData
+    );
+
+    console.log('✅ Place added successfully:', response);
     showToast('✅ Place added to your trip!', 'success');
 
-    // ✅ Remove from ALL arrays
+    // ✅ Remove from ALL recommendation arrays
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
     filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
     recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
 
+    // Update UI
     displayRecommendations();
 
+    // Reload places list if function exists
     if (typeof loadPlaces === 'function') {
       await loadPlaces();
     }
 
+    // Update map if function exists
+    if (typeof updateMapWithRecommendations === 'function') {
+      updateMapWithRecommendations();
+    }
+
   } catch (err) {
     console.error('❌ Error adding place:', err);
-    showToast('Failed to add place', 'error');
+    
+    // ✅ Show detailed error message to user
+    let errorMessage = 'Failed to add place';
+    
+    if (err.message) {
+      // Check for specific error types
+      if (err.message.includes('Coordinates')) {
+        errorMessage = 'Invalid location coordinates';
+      } else if (err.message.includes('Category')) {
+        errorMessage = 'Invalid category';
+      } else if (err.message.includes('required')) {
+        errorMessage = 'Missing required information';
+      } else {
+        errorMessage = err.message;
+      }
+    }
+    
+    showToast(errorMessage, 'error');
   }
 }
 
 window.addRecommendationToTrip = addRecommendationToTrip;
-
-// ====================== BULK ACTIONS ======================
-window.bulkAddToTrip = async function() {
-  const selected = Array.from(advancedRecState.selectedForBulk);
-  if (selected.length === 0) {
-    showToast('No places selected', 'warning');
-    return;
-  }
-
-  let addedCount = 0;
-  for (const placeName of selected) {
-    const rec = recommendationsState.recommendations.find(r => r.name === placeName);
-    if (rec) {
-      try {
-        await addRecommendationToTrip(rec);
-        addedCount++;
-      } catch (err) {
-        console.error('Error adding place:', err);
-      }
-    }
-  }
-
-  if (addedCount > 0) {
-    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
-    clearBulkSelection();
-  }
-};
-
-window.clearBulkSelection = function() {
-  advancedRecState.selectedForBulk.clear();
-  document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
-    card.classList.remove('comparing');
-    const checkbox = card.querySelector('.rec-card-compare-checkbox i');
-    if (checkbox) checkbox.style.display = 'none';
-  });
-  updateBulkActionsBar();
-};
-
-// ====================== DETAILS MODAL ======================
-function showRecommendationDetails(rec) {
-  const modal = document.createElement('div');
-  modal.className = 'modal active';
-
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><i class="fas fa-info-circle"></i> ${escapeHtml(rec.name)}</h3>
-        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
-        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)} / 5.0</p>
-        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
-        ${rec.address ? `<p><strong>Address:</strong> ${escapeHtml(rec.address)}</p>` : ''}
-        ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
-        <p><strong>Coordinates:</strong> ${rec.lat.toFixed(4)}, ${rec.lon.toFixed(4)}</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-        <button class="btn-primary" onclick="addRecommendationToTripFromModal(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
-          <i class="fas fa-plus"></i> Add to Trip
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-}
-
-window.addRecommendationToTripFromModal = async function(rec) {
-  await addRecommendationToTrip(rec);
-  document.querySelector('.modal')?.remove();
-};
-
-// ====================== STORAGE ======================
-window.toggleSaveForLater = function(placeName, event) {
-  event.stopPropagation();
-  if (advancedRecState.savedPlaces.has(placeName)) {
-    advancedRecState.savedPlaces.delete(placeName);
-    showToast('Removed from saved', 'info');
-  } else {
-    advancedRecState.savedPlaces.add(placeName);
-    showToast('Saved for later!', 'success');
-  }
-  saveSavedPreferences();
-  addQualityBadges();
-};
-
-function saveSavedPreferences() {
-  try {
-    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
-  } catch (err) {
-    console.error('Error saving preferences:', err);
-  }
-}
-
-function loadSavedPreferences() {
-  try {
-    const saved = sessionStorage.getItem('savedPlaces');
-    if (saved) {
-      advancedRecState.savedPlaces = new Set(JSON.parse(saved));
-    }
-  } catch (err) {
-    console.error('Error loading preferences:', err);
-  }
-}
-
-// ====================== UI HELPERS ======================
-function showRecommendationsLoading() {
-  const container = document.getElementById('recommendationsGrid');
-  if (container) {
-    container.innerHTML = `
-      <div class="recommendations-loading">
-        <div class="loading-spinner"></div>
-        <p>🤖 AI is finding personalized recommendations...</p>
-      </div>
-    `;
-  }
-}
-
-function showRecommendationsError() {
-  const container = document.getElementById('recommendationsGrid');
-  if (container) {
-    container.innerHTML = `
-      <div class="recommendations-empty">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3>Failed to load recommendations</h3>
-        <button class="btn-primary" onclick="loadRecommendations()">
-          <i class="fas fa-redo"></i> Retry
-        </button>
-      </div>
-    `;
-  }
-}
-
-function getCategoryIcon(category) {
-  const icons = {
-    restaurant: 'utensils',
-    attraction: 'landmark',
-    accommodation: 'bed',
-    transport: 'bus',
-    shopping: 'shopping-bag',
-    entertainment: 'film',
-    other: 'map-marker-alt'
-  };
-  return icons[category?.toLowerCase()] || 'map-marker-alt';
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-console.log('✅ Unified advanced recommendations module loaded with FIXED filters');
