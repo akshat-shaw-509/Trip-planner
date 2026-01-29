@@ -1,4 +1,3 @@
-
 // Import mongoose for schema and model creation
 let mongoose = require('mongoose')
 
@@ -98,6 +97,17 @@ let placeSchema = new mongoose.Schema(
     },
 
     /**
+     * ✅ ADDED: Price level (0-5 scale)
+     * 0 = Free, 1 = $, 2 = $$, 3 = $$$, 4 = $$$$, 5 = $$$$$
+     */
+    priceLevel: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0
+    },
+
+    /**
      * Visit status of the place
      */
     visitStatus: {
@@ -121,6 +131,23 @@ let placeSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: [2000, 'Notes must not exceed 2000 characters'],
+    },
+
+    /**
+     * ✅ ADDED: Favorite flag
+     */
+    isFavorite: {
+      type: Boolean,
+      default: false
+    },
+
+    /**
+     * ✅ ADDED: Source of the place (manual, ai, etc.)
+     */
+    source: {
+      type: String,
+      enum: ['manual', 'ai', 'imported'],
+      default: 'manual'
     }
   },
   {
@@ -186,7 +213,8 @@ placeSchema.methods.getSummary = function () {
     category: this.category,
     status: this.visitStatus,
     location: this.location,
-    rating: this.rating
+    rating: this.rating,
+    priceLevel: this.priceLevel
   }
 }
 
