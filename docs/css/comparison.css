@@ -514,3 +514,294 @@
     font-size: 12px;
   }
 }
+
+/* =====================================================================
+   BOTTOM COMPARISON BAR - INTEGRATED
+   Appears only when checkboxes are selected
+   ===================================================================== */
+
+/* ===================== SELECTED CARD STATE ===================== */
+.recommendation-card.selected {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0066cc;
+  box-shadow: 0 4px 16px rgba(0, 102, 204, 0.15),
+              0 0 0 4px rgba(0, 102, 204, 0.08);
+  transform: translateY(-2px);
+}
+
+.recommendation-card.selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+  opacity: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+/* Checkbox visual feedback when selected */
+.recommendation-card.selected .rec-card-compare-checkbox {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  border-color: #0066cc;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.recommendation-card.selected .rec-card-compare-checkbox i {
+  display: block !important;
+  color: white;
+  animation: checkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===================== BOTTOM COMPARISON BAR ===================== */
+.comparison-bottom-bar {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  background: white;
+  border-radius: 16px;
+  padding: 16px 28px;
+  
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
+              0 4px 16px rgba(0, 0, 0, 0.08),
+              0 0 0 1px rgba(0, 0, 0, 0.04);
+  
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  
+  z-index: 999;
+  
+  transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(0, 102, 204, 0.1);
+  
+  min-width: 400px;
+  max-width: 90vw;
+}
+
+.comparison-bottom-bar.visible {
+  bottom: 32px;
+  animation: slideUpPulse 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpPulse {
+  0% {
+    bottom: -100px;
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95);
+  }
+  60% {
+    bottom: 36px;
+    transform: translateX(-50%) scale(1.02);
+  }
+  100% {
+    bottom: 32px;
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* ===================== BAR CONTENT ===================== */
+.comparison-bar-count {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 24px;
+  border-right: 2px solid #f1f5f9;
+}
+
+.comparison-bar-count i {
+  font-size: 20px;
+  color: #0066cc;
+}
+
+.comparison-bar-count-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2332;
+  letter-spacing: -0.2px;
+}
+
+.comparison-bar-count-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+  margin-left: 4px;
+}
+
+/* ===================== BAR ACTIONS ===================== */
+.comparison-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comparison-bar-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.comparison-bar-btn i {
+  font-size: 14px;
+  transition: transform 0.3s;
+}
+
+.comparison-bar-btn.primary {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.comparison-bar-btn.primary:hover {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.comparison-bar-btn.primary:hover i {
+  transform: scale(1.1);
+}
+
+.comparison-bar-btn.secondary {
+  background: #f8fafc;
+  color: #475569;
+  border: 2px solid #e5e7eb;
+}
+
+.comparison-bar-btn.secondary:hover {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+}
+
+.comparison-bar-btn.clear {
+  background: transparent;
+  color: #64748b;
+  border: 2px solid transparent;
+  padding: 10px 16px;
+}
+
+.comparison-bar-btn.clear:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.comparison-bar-btn.clear:hover i {
+  transform: rotate(90deg);
+}
+
+.comparison-bar-btn:active {
+  transform: translateY(0);
+}
+
+.comparison-bar-btn:focus-visible {
+  outline: 3px solid rgba(0, 102, 204, 0.4);
+  outline-offset: 2px;
+}
+
+.comparison-bottom-bar[aria-hidden="true"] {
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ===================== BOTTOM BAR RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .comparison-bottom-bar {
+    min-width: unset;
+    width: calc(100% - 32px);
+    left: 16px;
+    right: 16px;
+    transform: none;
+    padding: 14px 20px;
+    gap: 16px;
+  }
+  
+  .comparison-bottom-bar.visible {
+    bottom: 20px;
+    transform: none;
+  }
+  
+  .comparison-bar-count {
+    padding-right: 16px;
+  }
+  
+  .comparison-bar-count-text {
+    font-size: 14px;
+  }
+  
+  .comparison-bar-actions {
+    gap: 8px;
+  }
+  
+  .comparison-bar-btn {
+    padding: 9px 16px;
+    font-size: 13px;
+  }
+  
+  .comparison-bar-btn i {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .comparison-bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .comparison-bar-count {
+    padding-right: 0;
+    padding-bottom: 12px;
+    border-right: none;
+    border-bottom: 2px solid #f1f5f9;
+    justify-content: center;
+  }
+  
+  .comparison-bar-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .comparison-bar-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
