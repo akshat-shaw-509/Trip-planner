@@ -1,6 +1,6 @@
 //============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FINAL FIXED VERSION
-// ✅ No separate comparison block - just a Compare button in bulk actions
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED FOR NO COMPARISON PANEL
+// ✅ Comparison panel removed - checkboxes work independently
 //============================================================
 
 // ====================== STATE ======================
@@ -78,11 +78,6 @@ async function initRecommendations(tripId, tripData) {
   renderAdvancedControls();
   attachAdvancedListeners();
   loadSavedPreferences();
-  
-  // ✅ Initialize comparison panel
-  if (typeof initComparisonPanel === 'function') {
-    initComparisonPanel();
-  }
   
   await loadRecommendations();
 }
@@ -245,29 +240,15 @@ function handleCompareCheckbox(rec, card) {
     card.classList.remove('comparing');
     if (checkIcon) checkIcon.style.display = 'none';
     advancedRecState.selectedForBulk.delete(rec.name);
-    
-    if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-      window.comparisonState.selectedPlaces.delete(rec.name);
-    }
-    
     showToast('Removed from selection', 'info');
   } else {
     card.classList.add('comparing');
     if (checkIcon) checkIcon.style.display = 'block';
     advancedRecState.selectedForBulk.add(rec.name);
-    
-    if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-      window.comparisonState.selectedPlaces.set(rec.name, rec);
-    }
-    
     showToast('Added to selection', 'success');
   }
   
   updateBulkActionsBar();
-  
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
 }
 
 window.displayRecommendations = displayRecommendations;
@@ -293,7 +274,7 @@ function createRecommendationCard(rec) {
          data-lon="${lon}"
          data-name="${escapeHtml(rec.name)}">
       
-      <div class="rec-card-compare-checkbox" title="Select for comparison">
+      <div class="rec-card-compare-checkbox" title="Select for bulk actions">
         <i class="fas fa-check" style="display: none;"></i>
       </div>
 
@@ -458,18 +439,15 @@ function renderAdvancedControls() {
       </div>
     </div>
 
-    <!-- ✅ BULK ACTIONS BAR - 3 buttons side by side -->
+    <!-- ✅ BULK ACTIONS BAR - SIMPLIFIED WITHOUT COMPARE -->
     <div class="bulk-actions-bar" id="bulkActionsBar">
       <span class="bulk-count" id="bulkCount">0 selected</span>
       <div class="bulk-actions">
         <button class="bulk-action-btn primary" onclick="bulkAddToTrip()">
-          <i class="fas fa-plus"></i> Add All
-        </button>
-        <button class="bulk-action-btn comparison" onclick="openComparisonPanel()">
-          <i class="fas fa-balance-scale"></i> Compare
+          <i class="fas fa-plus"></i> Add All Selected
         </button>
         <button class="bulk-action-btn secondary" onclick="clearBulkSelection()">
-          <i class="fas fa-times"></i> Clear
+          <i class="fas fa-times"></i> Clear Selection
         </button>
       </div>
     </div>
@@ -649,23 +627,6 @@ function updateBulkActionsBar() {
   }
 }
 
-// ✅ Open comparison panel
-window.openComparisonPanel = function() {
-  if (advancedRecState.selectedForBulk.size === 0) {
-    showToast('Please select places to compare', 'warning');
-    return;
-  }
-
-  const panel = document.getElementById('comparisonPanel');
-  if (panel) {
-    panel.classList.add('active');
-  }
-
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
-};
-
 // ====================== ADD TO TRIP ======================
 async function addRecommendationToTrip(rec) {
   try {
@@ -701,11 +662,16 @@ async function addRecommendationToTrip(rec) {
     await apiService.places.create(recommendationsState.currentTripId, placeData);
     showToast('✅ Place added to your trip!', 'success');
 
+    // Remove from recommendations
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
     filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
     recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
 
+    // Remove from selection if it was selected
+    advancedRecState.selectedForBulk.delete(rec.name);
+
     displayRecommendations();
+    updateBulkActionsBar();
 
     if (typeof loadPlaces === 'function') {
       await loadPlaces();
@@ -731,6 +697,8 @@ window.bulkAddToTrip = async function() {
     return;
   }
 
+  showToast(`Adding ${selected.length} places...`, 'info');
+
   let addedCount = 0;
   for (const placeName of selected) {
     const rec = recommendationsState.recommendations.find(r => r.name === placeName);
@@ -745,7 +713,7 @@ window.bulkAddToTrip = async function() {
   }
 
   if (addedCount > 0) {
-    showToast(`Added ${addedCount} place(s) to your trip!`, 'success');
+    showToast(`✅ Added ${addedCount} place(s) to your trip!`, 'success');
     clearBulkSelection();
   }
 };
@@ -757,13 +725,6 @@ window.clearBulkSelection = function() {
     const checkbox = card.querySelector('.rec-card-compare-checkbox i');
     if (checkbox) checkbox.style.display = 'none';
   });
-  
-  if (typeof window.comparisonState !== 'undefined' && window.comparisonState.selectedPlaces) {
-    window.comparisonState.selectedPlaces.clear();
-  }
-  if (typeof updateComparisonPanel === 'function') {
-    updateComparisonPanel();
-  }
   
   updateBulkActionsBar();
 };
@@ -866,4 +827,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Final fixed advanced recommendations module loaded');
+console.log('✅ Fixed advanced recommendations module loaded (no comparison panel)');
