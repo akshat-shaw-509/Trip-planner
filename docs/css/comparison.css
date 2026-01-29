@@ -26,6 +26,10 @@
 .comparison-panel.active {
   right: 0;
 }
+.comparison-panel.hidden {
+  display: none;
+}
+
 
 /* ===================== COMPARISON HEADER ===================== */
 .comparison-header {
