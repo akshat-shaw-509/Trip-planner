@@ -644,6 +644,7 @@ function updateBulkActionsBar() {
 async function addRecommendationToTrip(rec) {
   try {
     console.log('🔍 Adding recommendation to trip:', rec);
+    console.log('  📋 Category value:', rec.category, 'Type:', typeof rec.category);
 
     // ✅ VALIDATION: Check for required coordinates
     if (!rec.lat || !rec.lon) {
@@ -672,7 +673,7 @@ async function addRecommendationToTrip(rec) {
     const placeData = {
       // Required fields
       name: rec.name,
-      category: rec.category?.toLowerCase() || 'other',
+      category: (rec.category && rec.category !== 'undefined') ? rec.category.toLowerCase() : 'attraction',
       
       // Location with proper GeoJSON format [longitude, latitude]
       location: {
