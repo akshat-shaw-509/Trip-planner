@@ -86,7 +86,7 @@ const getRecommendations = async (tripId, options = {}) => {
     let allPlaces = []
 
     for (const category of categories) {
-      console.log(`\n  🤖 Requesting ${category}s from AI for ${trip.destination}...`)
+      console.log(`\n Requesting ${category}s from AI for ${trip.destination}...`)
       
       try {
         const result = await groqService.getAIRecommendations(
@@ -101,7 +101,7 @@ const getRecommendations = async (tripId, options = {}) => {
         )
 
         if (result.places && result.places.length > 0) {
-          console.log(`    ✓ AI returned ${result.places.length} ${category}s`)
+          console.log(`✓ AI returned ${result.places.length} ${category}s`)
           
           // ✅ STEP 4: GEOCODE & VALIDATE EACH PLACE
           const validatedPlaces = []
@@ -111,15 +111,26 @@ const getRecommendations = async (tripId, options = {}) => {
               // Build precise geocoding query including destination city
               const placeQuery = `${place.name}, ${trip.destination}${trip.country ? ', ' + trip.country : ''}`
               
-              console.log(`    🔍 Geocoding: ${placeQuery}`)
+              console.log(`Geocoding: ${placeQuery}`)
               
               const coords = await geoapifyService.geocodeLocation(placeQuery)
               
               if (!coords) {
-                console.warn(`    ⚠️ Geocoding failed for: ${place.name}`)
+                console.warn(`Geocoding failed for: ${place.name}`)
                 continue
               }
-              
+              // ✅ HARD COUNTRY VALIDATION (CRITICAL FIX)
+if (
+  trip.country &&
+  coords.country &&
+  coords.country.toLowerCase() !== trip.country.toLowerCase()
+) {
+  console.warn(`    ❌ REJECTED ${place.name}: Wrong country`)
+  console.warn(`       Found: ${coords.country}`)
+  console.warn(`       Expected: ${trip.country}`)
+  continue
+}
+
               // ✅ STRICT VALIDATION: Check distance from trip center
               const distance = calculateDistance(
                 centerLocation.lat,
@@ -130,24 +141,45 @@ const getRecommendations = async (tripId, options = {}) => {
               
               // ✅ REJECT if place is more than 50km from destination center
               if (distance > 50) {
-                console.warn(`    ❌ REJECTED ${place.name}: ${distance.toFixed(1)}km away (expected <50km)`)
-                console.warn(`       AI suggested: ${coords.formatted}`)
-                console.warn(`       Expected near: ${trip.destination}`)
+                console.warn(`REJECTED ${place.name}: ${distance.toFixed(1)}km away (expected <50km)`)
+                console.warn(`AI suggested: ${coords.formatted}`)
+                console.warn(`Expected near: ${trip.destination}`)
                 continue
               }
               
-              // ✅ ADDITIONAL VALIDATION: Check if city name matches
-              const resultCity = coords.city || coords.county || ''
-              const expectedCity = trip.destination.toLowerCase()
+              const resultCity =
+  coords.city ||
+  coords.town ||
+  coords.village ||
+  coords.county ||
+  ''
+
+const expectedCity = trip.destination
+  .split(',')[0]
+  .trim()
+  .toLowerCase()
               
-              if (resultCity && !resultCity.toLowerCase().includes(expectedCity.split(',')[0].trim().toLowerCase())) {
-                console.warn(`    ❌ REJECTED ${place.name}: Wrong city`)
-                console.warn(`       Found: ${resultCity}`)
-                console.warn(`       Expected: ${trip.destination}`)
-                continue
-              }
-              
-              console.log(`    ✅ VALIDATED ${place.name}: ${distance.toFixed(1)}km from center`)
+             // ✅ City validation ONLY if destination is a city, not a country
+// ✅ Determine if destination is a city (not a country)
+const isCityTrip =
+  trip.destination &&
+  trip.country &&
+  trip.destination.toLowerCase() !== trip.country.toLowerCase()
+
+if (
+  isCityTrip &&
+  resultCity &&
+  expectedCity &&
+  !resultCity.toLowerCase().includes(expectedCity)
+) {
+  console.warn(`❌ REJECTED ${place.name}: Wrong city`)
+  console.warn(`   Found: ${resultCity}`)
+  console.warn(`   Expected: ${expectedCity}`)
+  continue
+}
+
+ 
+              console.log(`VALIDATED ${place.name}: ${distance.toFixed(1)}km from center`)
               
               // Add the validated place
               validatedPlaces.push({
@@ -168,26 +200,26 @@ const getRecommendations = async (tripId, options = {}) => {
               await sleep(100)
               
             } catch (err) {
-              console.error(`    ❌ Error processing ${place.name}:`, err.message)
+              console.error(`Error processing ${place.name}:`, err.message)
             }
           }
           
-          console.log(`    ✅ Validated ${validatedPlaces.length}/${result.places.length} ${category}s`)
+          console.log(`Validated ${validatedPlaces.length}/${result.places.length} ${category}s`)
           allPlaces.push(...validatedPlaces)
           
         } else {
-          console.log(`    ⚠️ No AI results for ${category}`)
+          console.log(`No AI results for ${category}`)
         }
 
       } catch (err) {
-        console.error(`    ❌ AI request failed for ${category}:`, err.message)
+        console.error(`AI request failed for ${category}:`, err.message)
       }
     }
 
-    console.log(`\n  📊 Total validated places for ${trip.destination}: ${allPlaces.length}`)
+    console.log(`\n Total validated places for ${trip.destination}: ${allPlaces.length}`)
 
     if (allPlaces.length === 0) {
-      console.warn(`  ⚠️ No valid recommendations found for ${trip.destination}`)
+      console.warn(`No valid recommendations found for ${trip.destination}`)
       return {
         places: [],
         centerLocation: centerLocation,
@@ -205,7 +237,7 @@ const getRecommendations = async (tripId, options = {}) => {
     const limit = options.limit || 50
     allPlaces = allPlaces.slice(0, limit)
 
-    console.log(`  ✅ Returning ${allPlaces.length} recommendations for ${trip.destination}`)
+    console.log(`Returning ${allPlaces.length} recommendations for ${trip.destination}`)
 
     return {
       places: allPlaces,
@@ -215,8 +247,8 @@ const getRecommendations = async (tripId, options = {}) => {
     }
 
   } catch (error) {
-    console.error('❌ Error in getRecommendations:', error.message)
-    console.error('   Stack:', error.stack)
+    console.error('Error in getRecommendations:', error.message)
+    console.error('Stack:', error.stack)
     throw error
   }
 }
@@ -315,4 +347,4 @@ module.exports = {
   getDayPlans
 }
 
-console.log('✅ recommendation.service.js loaded with STRICT CITY VALIDATION')
+console.log('recommendation.service.js loaded with STRICT CITY VALIDATION')
