@@ -1,6 +1,6 @@
 //============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - FIXED FOR NO COMPARISON PANEL
-// ✅ Comparison panel removed - checkboxes work independently
+// UNIFIED ADVANCED RECOMMENDATIONS MODULE - WITH COMPARISON INTEGRATION
+// ✅ Integrated with comparison panel
 //============================================================
 
 // ====================== STATE ======================
@@ -233,7 +233,17 @@ function displayRecommendations() {
   addQualityBadges();
 }
 
+// ✅ FIXED: This now integrates with comparison panel
 function handleCompareCheckbox(rec, card) {
+  // ✅ Use the comparison panel if available
+  if (typeof window.handleCompareCheckboxClick === 'function') {
+    console.log('📊 Using comparison panel for:', rec.name);
+    window.handleCompareCheckboxClick(rec, card);
+    return;
+  }
+  
+  // Fallback: old bulk selection behavior
+  console.log('⚠️ Comparison panel not available, using fallback');
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
   
   if (card.classList.contains('comparing')) {
@@ -274,7 +284,7 @@ function createRecommendationCard(rec) {
          data-lon="${lon}"
          data-name="${escapeHtml(rec.name)}">
       
-      <div class="rec-card-compare-checkbox" title="Select for bulk actions">
+      <div class="rec-card-compare-checkbox" title="Select for comparison">
         <i class="fas fa-check" style="display: none;"></i>
       </div>
 
@@ -827,4 +837,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Fixed advanced recommendations module loaded (no comparison panel)');
+console.log('✅ Advanced recommendations module loaded WITH COMPARISON INTEGRATION');
