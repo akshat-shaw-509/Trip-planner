@@ -1,5 +1,5 @@
 //============================================================
-// COMPARISON PANEL - JavaScript Logic
+// COMPARISON PANEL - FIXED VERSION
 // Handles side-by-side comparison of recommended places
 //============================================================
 
@@ -21,6 +21,15 @@ function initComparisonPanel() {
   
   // Attach event listeners
   attachComparisonListeners();
+}
+
+// ✅ AUTO-INITIALIZE IMMEDIATELY (not on DOMContentLoaded)
+// This ensures the panel exists when recommendation cards are created
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initComparisonPanel);
+} else {
+  // DOM already loaded, init immediately
+  initComparisonPanel();
 }
 
 // ====================== CREATE PANEL HTML ======================
@@ -61,6 +70,7 @@ function createComparisonPanelHTML() {
   `;
   
   document.body.insertAdjacentHTML('beforeend', panelHTML);
+  console.log('✅ Comparison panel HTML created');
 }
 
 // ====================== ATTACH LISTENERS ======================
@@ -161,11 +171,6 @@ function updateComparisonPanel() {
       });
     }
   }
-  
-  // Update bulk actions bar if it exists
-  if (typeof updateBulkActionsBar === 'function') {
-    updateBulkActionsBar();
-  }
 }
 
 window.updateComparisonPanel = updateComparisonPanel;
@@ -184,7 +189,7 @@ function createComparisonCard(place) {
             ${escapeHtml(place.category)}
           </span>
         </div>
-        <button class="comparison-remove" onclick="removeFromComparison('${escapeHtml(place.name)}')">
+        <button class="comparison-remove" onclick="removeFromComparison('${escapeHtml(place.name).replace(/'/g, "\\'")}')">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -238,10 +243,10 @@ function createComparisonCard(place) {
       </div>
       
       <div class="comparison-actions">
-        <button class="comparison-btn-add" onclick="addSinglePlaceToTrip('${escapeHtml(place.name)}')">
+        <button class="comparison-btn-add" onclick="addSinglePlaceToTrip('${escapeHtml(place.name).replace(/'/g, "\\'")}')">
           <i class="fas fa-plus"></i> Add to Trip
         </button>
-        <button class="comparison-btn-details" onclick="showPlaceDetails('${escapeHtml(place.name)}')">
+        <button class="comparison-btn-details" onclick="showPlaceDetails('${escapeHtml(place.name).replace(/'/g, "\\'")}')">
           <i class="fas fa-info-circle"></i> Details
         </button>
       </div>
@@ -283,6 +288,12 @@ function openComparisonPanel() {
     document.body.style.overflow = 'hidden';
     
     console.log('📊 Comparison panel opened');
+  } else {
+    console.error('❌ Comparison panel or overlay not found!');
+    console.log('Attempting to create panel...');
+    createComparisonPanelHTML();
+    // Try again
+    setTimeout(openComparisonPanel, 100);
   }
 }
 
@@ -441,15 +452,11 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ====================== AUTO-INITIALIZE ======================
-document.addEventListener('DOMContentLoaded', () => {
-  initComparisonPanel();
-  console.log('✅ Comparison panel initialized');
-});
-
 // ====================== INTEGRATION WITH RECOMMENDATION CARDS ======================
-// This function is called when a checkbox on a recommendation card is clicked
+// ✅ THIS IS THE KEY FUNCTION - Make it available immediately
 window.handleCompareCheckboxClick = function(rec, card) {
+  console.log('📊 handleCompareCheckboxClick called for:', rec.name);
+  
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
   
   if (card.classList.contains('comparing')) {
@@ -465,4 +472,5 @@ window.handleCompareCheckboxClick = function(rec, card) {
   }
 };
 
-console.log('✅ comparison.js loaded');
+console.log('✅ comparison.js loaded and initialized');
+console.log('✅ window.handleCompareCheckboxClick is available:', typeof window.handleCompareCheckboxClick);
