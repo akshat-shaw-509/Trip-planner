@@ -1,7 +1,9 @@
 //============================================================
-// COMPARISON PANEL - FIXED VERSION
+// COMPARISON PANEL - DIAGNOSTIC VERSION
 // Handles side-by-side comparison of recommended places
 //============================================================
+
+console.log('🔍 COMPARISON.JS LOADING...');
 
 // ====================== STATE ======================
 window.comparisonState = {
@@ -10,33 +12,12 @@ window.comparisonState = {
   isOpen: false
 };
 
-// ====================== INITIALIZATION ======================
-function initComparisonPanel() {
-  console.log('🔄 Initializing comparison panel');
-  
-  // Create comparison panel HTML if it doesn't exist
-  if (!document.querySelector('.comparison-panel')) {
-    createComparisonPanelHTML();
-  }
-  
-  // Create floating compare button
-  createFloatingCompareButton();
-  
-  // Attach event listeners
-  attachComparisonListeners();
-}
-
-// ✅ AUTO-INITIALIZE IMMEDIATELY (not on DOMContentLoaded)
-// This ensures the panel exists when recommendation cards are created
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComparisonPanel);
-} else {
-  // DOM already loaded, init immediately
-  initComparisonPanel();
-}
+console.log('✅ Comparison state initialized:', window.comparisonState);
 
 // ====================== CREATE PANEL HTML ======================
 function createComparisonPanelHTML() {
+  console.log('📦 Creating comparison panel HTML...');
+  
   const panelHTML = `
     <!-- Comparison Overlay -->
     <div class="comparison-overlay" id="comparisonOverlay" onclick="closeComparisonPanel()"></div>
@@ -76,20 +57,81 @@ function createComparisonPanelHTML() {
   console.log('✅ Comparison panel HTML created');
 }
 
+// ====================== CREATE FLOATING BUTTON ======================
+function createFloatingCompareButton() {
+  console.log('🔘 Creating floating compare button...');
+  
+  // Check if button already exists
+  if (document.getElementById('floatingCompareBtn')) {
+    console.log('⚠️ Floating button already exists');
+    return;
+  }
+  
+  const buttonHTML = `
+    <button class="floating-compare-btn" id="floatingCompareBtn" onclick="openComparisonPanel()" style="display: none;">
+      <i class="fas fa-balance-scale"></i>
+      <span class="floating-compare-text">Compare</span>
+      <span class="floating-compare-count" id="floatingCompareCount">0</span>
+    </button>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', buttonHTML);
+  console.log('✅ Floating compare button created');
+  
+  // Verify it exists
+  const btn = document.getElementById('floatingCompareBtn');
+  console.log('🔍 Button element:', btn);
+}
+
+// ====================== INITIALIZATION ======================
+function initComparisonPanel() {
+  console.log('🚀 Initializing comparison panel');
+  
+  // Create comparison panel HTML if it doesn't exist
+  if (!document.querySelector('.comparison-panel')) {
+    createComparisonPanelHTML();
+  } else {
+    console.log('ℹ️ Comparison panel already exists');
+  }
+  
+  // Create floating compare button
+  createFloatingCompareButton();
+  
+  // Attach event listeners
+  attachComparisonListeners();
+  
+  console.log('✅ Comparison panel initialization complete');
+}
+
+// ✅ AUTO-INITIALIZE IMMEDIATELY
+if (document.readyState === 'loading') {
+  console.log('⏳ Waiting for DOM to load...');
+  document.addEventListener('DOMContentLoaded', initComparisonPanel);
+} else {
+  console.log('✅ DOM already loaded, initializing now');
+  initComparisonPanel();
+}
+
 // ====================== ATTACH LISTENERS ======================
 function attachComparisonListeners() {
+  console.log('🎧 Attaching comparison listeners...');
+  
   // Close on escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && window.comparisonState.isOpen) {
       closeComparisonPanel();
     }
   });
+  
+  console.log('✅ Listeners attached');
 }
 
 // ====================== ADD TO COMPARISON ======================
 function addToComparison(place) {
+  console.log('➕ Adding to comparison:', place.name);
+  
   if (!place || !place.name) {
-    console.error('Invalid place data');
+    console.error('❌ Invalid place data:', place);
     return;
   }
   
@@ -97,7 +139,8 @@ function addToComparison(place) {
   window.comparisonState.selectedPlaces.add(place.name);
   window.comparisonState.placesData.set(place.name, place);
   
-  console.log(`✅ Added ${place.name} to comparison`);
+  console.log('✅ Added to comparison. Total places:', window.comparisonState.selectedPlaces.size);
+  console.log('📊 Selected places:', Array.from(window.comparisonState.selectedPlaces));
   
   // Update UI
   updateComparisonPanel();
@@ -112,10 +155,12 @@ window.addToComparison = addToComparison;
 
 // ====================== REMOVE FROM COMPARISON ======================
 function removeFromComparison(placeName) {
+  console.log('➖ Removing from comparison:', placeName);
+  
   window.comparisonState.selectedPlaces.delete(placeName);
   window.comparisonState.placesData.delete(placeName);
   
-  console.log(`❌ Removed ${placeName} from comparison`);
+  console.log('✅ Removed. Remaining places:', window.comparisonState.selectedPlaces.size);
   
   // Update UI
   updateComparisonPanel();
@@ -136,9 +181,62 @@ function removeFromComparison(placeName) {
 
 window.removeFromComparison = removeFromComparison;
 
+// ====================== UPDATE FLOATING BUTTON ======================
+function updateFloatingCompareButton(count) {
+  console.log('🔄 Updating floating button. Count:', count);
+  
+  let floatingBtn = document.getElementById('floatingCompareBtn');
+  
+  // Create button if it doesn't exist
+  if (!floatingBtn) {
+    console.warn('⚠️ Floating button not found, creating it...');
+    createFloatingCompareButton();
+    floatingBtn = document.getElementById('floatingCompareBtn');
+  }
+  
+  const floatingCount = document.getElementById('floatingCompareCount');
+  
+  if (floatingBtn && floatingCount) {
+    floatingCount.textContent = count;
+    
+    console.log(`📊 Count: ${count}, Should show: ${count >= 2}`);
+    
+    // Only show when 2 or more places are selected
+    if (count >= 2) {
+      console.log('✅ SHOWING floating button');
+      floatingBtn.style.display = 'flex';
+      
+      // Add animation
+      floatingBtn.classList.add('bounce-in');
+      setTimeout(() => floatingBtn.classList.remove('bounce-in'), 600);
+      
+      // Log computed styles for debugging
+      const computedStyle = window.getComputedStyle(floatingBtn);
+      console.log('🎨 Button styles:', {
+        display: computedStyle.display,
+        position: computedStyle.position,
+        bottom: computedStyle.bottom,
+        right: computedStyle.right,
+        zIndex: computedStyle.zIndex,
+        visibility: computedStyle.visibility
+      });
+    } else {
+      console.log('❌ HIDING floating button');
+      floatingBtn.style.display = 'none';
+    }
+  } else {
+    console.error('❌ Floating button or count element not found!');
+    console.log('Button:', floatingBtn);
+    console.log('Count element:', floatingCount);
+  }
+}
+
 // ====================== UPDATE COMPARISON PANEL ======================
 function updateComparisonPanel() {
   const count = window.comparisonState.selectedPlaces.size;
+  
+  console.log('🔄 updateComparisonPanel called. Count:', count);
+  
   const countBadge = document.getElementById('comparisonCount');
   const body = document.getElementById('comparisonBody');
   const compareBtn = document.getElementById('compareBtn');
@@ -148,9 +246,10 @@ function updateComparisonPanel() {
   if (countBadge) countBadge.textContent = count;
   if (compareBadge) compareBadge.textContent = count;
   
-  // Show/hide compare button - ONLY show when 2+ places selected
+  // Show/hide header compare button (if it exists)
   if (compareBtn) {
     compareBtn.style.display = count >= 2 ? 'inline-flex' : 'none';
+    console.log('📊 Header button display:', compareBtn.style.display);
   }
   
   // Update floating comparison button
@@ -175,51 +274,6 @@ function updateComparisonPanel() {
           grid.innerHTML += createComparisonCard(place);
         }
       });
-    }
-  }
-}
-
-// ====================== FLOATING COMPARE BUTTON ======================
-function createFloatingCompareButton() {
-  // Check if button already exists
-  if (document.getElementById('floatingCompareBtn')) {
-    return;
-  }
-  
-  const buttonHTML = `
-    <button class="floating-compare-btn" id="floatingCompareBtn" onclick="openComparisonPanel()" style="display: none;">
-      <i class="fas fa-balance-scale"></i>
-      <span class="floating-compare-text">Compare</span>
-      <span class="floating-compare-count" id="floatingCompareCount">0</span>
-    </button>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', buttonHTML);
-  console.log('✅ Floating compare button created');
-}
-
-function updateFloatingCompareButton(count) {
-  let floatingBtn = document.getElementById('floatingCompareBtn');
-  
-  // Create button if it doesn't exist
-  if (!floatingBtn) {
-    createFloatingCompareButton();
-    floatingBtn = document.getElementById('floatingCompareBtn');
-  }
-  
-  const floatingCount = document.getElementById('floatingCompareCount');
-  
-  if (floatingBtn && floatingCount) {
-    floatingCount.textContent = count;
-    
-    // Only show when 2 or more places are selected
-    if (count >= 2) {
-      floatingBtn.style.display = 'flex';
-      // Add animation
-      floatingBtn.classList.add('bounce-in');
-      setTimeout(() => floatingBtn.classList.remove('bounce-in'), 600);
-    } else {
-      floatingBtn.style.display = 'none';
     }
   }
 }
@@ -312,14 +366,12 @@ function getBestValue(type, value) {
   if (places.length < 2) return false;
   
   if (type === 'rating' || type === 'score') {
-    // Higher is better
     const maxValue = Math.max(...places.map(p => {
       if (type === 'rating') return p.rating || 0;
       return p.recommendationScore || 0;
     }));
     return value === maxValue;
   } else if (type === 'distance') {
-    // Lower is better
     const minValue = Math.min(...places.map(p => p.distanceFromCenter || Infinity));
     return value === minValue;
   }
@@ -329,6 +381,8 @@ function getBestValue(type, value) {
 
 // ====================== OPEN/CLOSE PANEL ======================
 function openComparisonPanel() {
+  console.log('📊 Opening comparison panel...');
+  
   const panel = document.getElementById('comparisonPanel');
   const overlay = document.getElementById('comparisonOverlay');
   
@@ -338,12 +392,11 @@ function openComparisonPanel() {
     window.comparisonState.isOpen = true;
     document.body.style.overflow = 'hidden';
     
-    console.log('📊 Comparison panel opened');
+    console.log('✅ Comparison panel opened');
   } else {
     console.error('❌ Comparison panel or overlay not found!');
     console.log('Attempting to create panel...');
     createComparisonPanelHTML();
-    // Try again
     setTimeout(openComparisonPanel, 100);
   }
 }
@@ -351,6 +404,8 @@ function openComparisonPanel() {
 window.openComparisonPanel = openComparisonPanel;
 
 function closeComparisonPanel() {
+  console.log('📊 Closing comparison panel...');
+  
   const panel = document.getElementById('comparisonPanel');
   const overlay = document.getElementById('comparisonOverlay');
   
@@ -360,7 +415,7 @@ function closeComparisonPanel() {
     window.comparisonState.isOpen = false;
     document.body.style.overflow = '';
     
-    console.log('📊 Comparison panel closed');
+    console.log('✅ Comparison panel closed');
   }
 }
 
@@ -368,6 +423,8 @@ window.closeComparisonPanel = closeComparisonPanel;
 
 // ====================== CLEAR ALL ======================
 function clearAllComparisons() {
+  console.log('🗑️ Clearing all comparisons...');
+  
   // Remove comparing class from all cards
   document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
     card.classList.remove('comparing');
@@ -386,7 +443,7 @@ function clearAllComparisons() {
     showToast('Comparison cleared', 'info');
   }
   
-  console.log('🗑️ All comparisons cleared');
+  console.log('✅ All comparisons cleared');
 }
 
 window.clearAllComparisons = clearAllComparisons;
@@ -424,7 +481,6 @@ async function addAllToTrip() {
       showToast(`✅ Added ${successCount} place(s) to your trip!`, 'success');
     }
     
-    // Clear comparison after adding
     clearAllComparisons();
     closeComparisonPanel();
   }
@@ -444,8 +500,6 @@ async function addSinglePlaceToTrip(placeName) {
   try {
     if (typeof addRecommendationToTrip === 'function') {
       await addRecommendationToTrip(place);
-      
-      // Remove from comparison
       removeFromComparison(placeName);
       
       if (typeof showToast === 'function') {
@@ -471,11 +525,9 @@ function showPlaceDetails(placeName) {
     return;
   }
   
-  // Use the existing recommendation details modal if available
   if (typeof showRecommendationDetails === 'function') {
     showRecommendationDetails(place);
   } else {
-    // Fallback: simple alert
     alert(`${place.name}\n\nCategory: ${place.category}\nRating: ${place.rating || 'N/A'}\n${place.description || ''}`);
   }
 }
@@ -503,25 +555,28 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ====================== INTEGRATION WITH RECOMMENDATION CARDS ======================
-// ✅ THIS IS THE KEY FUNCTION - Make it available immediately
+// ====================== CHECKBOX CLICK HANDLER ======================
 window.handleCompareCheckboxClick = function(rec, card) {
-  console.log('📊 handleCompareCheckboxClick called for:', rec.name);
+  console.log('🖱️ Checkbox clicked for:', rec.name);
+  console.log('📦 Place data:', rec);
   
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
   
   if (card.classList.contains('comparing')) {
     // Remove from comparison
+    console.log('➖ Removing from comparison');
     card.classList.remove('comparing');
     if (checkIcon) checkIcon.style.display = 'none';
     removeFromComparison(rec.name);
   } else {
     // Add to comparison
+    console.log('➕ Adding to comparison');
     card.classList.add('comparing');
     if (checkIcon) checkIcon.style.display = 'block';
     addToComparison(rec);
   }
 };
 
-console.log('✅ comparison.js loaded and initialized');
-console.log('✅ window.handleCompareCheckboxClick is available:', typeof window.handleCompareCheckboxClick);
+console.log('✅ comparison.js fully loaded');
+console.log('✅ window.handleCompareCheckboxClick available:', typeof window.handleCompareCheckboxClick);
+console.log('✅ window.comparisonState:', window.comparisonState);
