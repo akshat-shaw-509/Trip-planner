@@ -322,7 +322,7 @@ function createRecommendationCard(rec) {
         ${rec.priceLevel ? `
           <div class="rec-price">
             <i class="fas fa-dollar-sign"></i>
-            ${'$'.repeat(rec.priceLevel)}
+            ${'₹'.repeat(rec.priceLevel)}
           </div>
         ` : ''}
       </div>
