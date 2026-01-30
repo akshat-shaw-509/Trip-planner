@@ -21,7 +21,7 @@ body {
 
 /* Left Side - Branding */
 .auth-branding {
-    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+     background: linear-gradient(152deg,#0a5fc2 0%,#0052a3 58%,#00458c 100%);
     color: white;
     padding: 60px;
     display: flex;
@@ -34,12 +34,9 @@ body {
 .auth-branding::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
-    opacity: 0.4;
+    opacity: 0.04;
 }
 
 .branding-content {
@@ -63,7 +60,7 @@ body {
     font-weight: 700;
     margin-bottom: 16px;
     line-height: 1.2;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.035em;
 }
 
 .logo-section p {
@@ -89,9 +86,9 @@ body {
 .feature-icon {
     width: 56px;
     height: 56px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -102,7 +99,7 @@ body {
 
 .feature-item:hover .feature-icon {
     background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .feature-text h3 {
@@ -122,8 +119,8 @@ body {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     padding: 32px;
-    border-radius: 16px;
-    border-left: 4px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px;
+    border-left: 3px solid rgba(255, 255, 255, 0.35);
 }
 
 .testimonial i {
@@ -156,24 +153,19 @@ body {
 }
 
 /* Stats Showcase */
-.stats-showcase {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-}
 
 .stat-item {
     text-align: center;
     padding: 24px 16px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    border-radius: 12px;
+    border-radius: 14px;
     transition: all 0.3s ease;
 }
 
 .stat-item:hover {
     background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .stat-item strong {
@@ -204,8 +196,10 @@ body {
     max-width: 480px;
     background: white;
     padding: 48px;
-    border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    border-radius: 18px;
+    box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.08),
+    0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 /* Back Link */
@@ -281,10 +275,10 @@ body {
 .form-group input {
     padding: 14px 16px;
     border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 9px;
     font-size: 15px;
     background: white;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     font-family: inherit;
     color: #1a2332;
 }
@@ -389,7 +383,7 @@ body {
     color: white;
     border: none;
     padding: 16px 24px;
-    border-radius: 10px;
+    border-radius: 9px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -397,25 +391,19 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: all 0.2s ease;
+     transition: background 0.15s ease, box-shadow 0.25s ease;
     margin-top: 8px;
 }
 
 .btn-auth:hover {
     background: #0052a3;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 102, 204, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 102, 204, 0.22);
 }
 
 .btn-auth:active {
     transform: translateY(0);
 }
-
-.stats-showcase {
-    display: grid;
-    gap: 20px;
-}
-
 
 /* Divider */
 .auth-divider {
@@ -449,7 +437,7 @@ body {
     padding: 14px 20px;
     border: 1.5px solid #e2e8f0;
     background: white;
-    border-radius: 10px;
+    border-radius: 9px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -457,7 +445,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease, transform 0.2s ease;
     width: 100%;
     max-width: 300px;
     color: #475569;
@@ -466,7 +454,7 @@ body {
 .social-btn:hover {
     border-color: #cbd5e1;
     background: #f8fafc;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -507,7 +495,7 @@ body {
     margin-top: 12px;
     padding: 16px;
     background: #f8fafc;
-    border-radius: 10px;
+    border-radius: 9px;
     border: 1px solid #e2e8f0;
     font-size: 12px;
     color: #718096;
@@ -566,7 +554,7 @@ body {
     background: #1a2332;
     color: white;
     padding: 16px 24px;
-    border-radius: 10px;
+    border-radius: 9px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     transition: transform 0.3s ease, opacity 0.3s ease;
@@ -648,9 +636,6 @@ body {
         gap: 12px;
         align-items: flex-start;
     }
-    .stats-showcase {
-        grid-template-columns: 1fr;
-    }
 }
 /* ===================== Modal Styles ===================== */
 .modal-overlay {
@@ -674,7 +659,7 @@ body {
 
 .modal-content {
   background: white;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 40px;
   max-width: 500px;
   width: 90%;
