@@ -44,9 +44,10 @@ let authHandler = {
       this.storeAuthData(accessToken, refreshToken, user)
       showToast('Login successful', 'success')
 
+      // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
       setTimeout(() => {
         window.location.href = '/Trip-planner/index.html'
-      }, 1000)
+      }, 300)
 
       return { success: true, user }
     } catch (error) {
@@ -73,9 +74,10 @@ let authHandler = {
       this.storeAuthData(accessToken, refreshToken, user)
       showToast('Account created', 'success')
 
+      // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
       setTimeout(() => {
         window.location.href = './trips.html'
-      }, 1000)
+      }, 300)
 
       return { success: true, user }
     } catch (error) {
@@ -99,6 +101,8 @@ let authHandler = {
       console.error('Logout error:', error)
     } finally {
       this.clearAuthData()
+      // ✅ OPTIMIZED: Clear Google Client ID cache on logout
+      localStorage.removeItem('googleClientId')
       window.location.href = '/Trip-planner/index.html'
     }
   },
@@ -197,15 +201,36 @@ function togglePassword(inputId) {
 }
 
 // ===================== Google OAuth =====================
-// Load Google Client ID from backend
+
+// ✅ OPTIMIZED: Load Google Client ID with caching
 async function loadGoogleClientId() {
   try {
+    // Check localStorage cache first
+    const cachedClientId = localStorage.getItem('googleClientId')
+    const cacheTimestamp = localStorage.getItem('googleClientIdTimestamp')
+    
+    // Use cache if it's less than 24 hours old
+    if (cachedClientId && cacheTimestamp) {
+      const age = Date.now() - parseInt(cacheTimestamp)
+      const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+      
+      if (age < maxAge) {
+        window.GOOGLE_CLIENT_ID = cachedClientId
+        initializeGoogleSignIn()
+        return
+      }
+    }
+
+    // Fetch from server if cache is stale or missing
     const baseURL = apiService.baseURL
     const response = await fetch(`${baseURL}/auth/google-client-id`)
     const data = await response.json()
     
     if (data.success && data.clientId) {
       window.GOOGLE_CLIENT_ID = data.clientId
+      // ✅ Cache the client ID
+      localStorage.setItem('googleClientId', data.clientId)
+      localStorage.setItem('googleClientIdTimestamp', Date.now().toString())
       initializeGoogleSignIn()
     } else {
       console.error('Failed to load Google Client ID')
@@ -242,9 +267,11 @@ async function handleGoogleLogin(response) {
     authHandler.storeAuthData(accessToken, null, user)
 
     showToast('Login successful', 'success')
+    
+    // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
     setTimeout(() => {
       window.location.href = './trips.html'
-    }, 1000)
+    }, 300)
   } catch (error) {
     console.error('Google login error:', error)
     showToast('Google login failed', 'error')
@@ -275,7 +302,7 @@ function initializeGoogleSignIn() {
 }
 
 function onGoogleScriptLoad() {
-  loadGoogleClientId() // Changed: now loads client ID from backend first
+  loadGoogleClientId()
 }
 
 // ===================== Expose Globals =====================
