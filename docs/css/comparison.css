@@ -469,3 +469,196 @@
     padding: 20px;
   }
 }
+
+/* =====================================================================
+   FLOATING COMPARE BUTTON - Shows when 2+ places selected
+   ===================================================================== */
+
+.floating-compare-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 999;
+  
+  display: none; /* Hidden by default */
+  align-items: center;
+  gap: 12px;
+  
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 28px;
+  
+  font-size: 16px;
+  font-weight: 700;
+  
+  cursor: pointer;
+  
+  box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4),
+              0 4px 12px rgba(0, 102, 204, 0.3);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.floating-compare-btn:hover {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(0, 102, 204, 0.5),
+              0 6px 16px rgba(0, 102, 204, 0.4);
+}
+
+.floating-compare-btn:active {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.floating-compare-btn i {
+  font-size: 20px;
+}
+
+.floating-compare-text {
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+
+.floating-compare-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  
+  font-size: 14px;
+  font-weight: 700;
+  
+  backdrop-filter: blur(8px);
+}
+
+/* Bounce-in animation */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-8px);
+  }
+  70% {
+    transform: scale(0.95) translateY(-4px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.floating-compare-btn.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Pulse animation for attention */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4),
+                0 4px 12px rgba(0, 102, 204, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.6),
+                0 4px 12px rgba(0, 102, 204, 0.5),
+                0 0 0 8px rgba(0, 102, 204, 0.2);
+  }
+}
+
+.floating-compare-btn.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* ===================== FLOATING BUTTON RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .floating-compare-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+  
+  .floating-compare-btn i {
+    font-size: 18px;
+  }
+  
+  .floating-compare-text {
+    font-size: 15px;
+  }
+  
+  .floating-compare-count {
+    min-width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+}
+
+/* Small mobile - compact circular button */
+@media (max-width: 480px) {
+  .floating-compare-btn {
+    bottom: 16px;
+    right: 16px;
+    padding: 0;
+    gap: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%; /* Make it circular */
+    justify-content: center;
+  }
+  
+  .floating-compare-text {
+    display: none; /* Hide text on very small screens */
+  }
+  
+  .floating-compare-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+    background: #ef4444;
+    border-color: white;
+  }
+}
+
+/* =====================================================================
+   ACCESSIBILITY
+   ===================================================================== */
+
+.floating-compare-btn:focus {
+  outline: 3px solid rgba(0, 102, 204, 0.5);
+  outline-offset: 4px;
+}
+
+.floating-compare-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .floating-compare-btn {
+    transition: none;
+  }
+  
+  .floating-compare-btn.bounce-in {
+    animation: none;
+  }
+  
+  .floating-compare-btn.pulse {
+    animation: none;
+  }
+}
