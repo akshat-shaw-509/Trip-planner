@@ -19,6 +19,9 @@ function initComparisonPanel() {
     createComparisonPanelHTML();
   }
   
+  // Create floating compare button
+  createFloatingCompareButton();
+  
   // Attach event listeners
   attachComparisonListeners();
 }
@@ -145,10 +148,13 @@ function updateComparisonPanel() {
   if (countBadge) countBadge.textContent = count;
   if (compareBadge) compareBadge.textContent = count;
   
-  // Show/hide compare button
+  // Show/hide compare button - ONLY show when 2+ places selected
   if (compareBtn) {
-    compareBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+    compareBtn.style.display = count >= 2 ? 'inline-flex' : 'none';
   }
+  
+  // Update floating comparison button
+  updateFloatingCompareButton(count);
   
   // Update panel content
   if (body) {
@@ -169,6 +175,51 @@ function updateComparisonPanel() {
           grid.innerHTML += createComparisonCard(place);
         }
       });
+    }
+  }
+}
+
+// ====================== FLOATING COMPARE BUTTON ======================
+function createFloatingCompareButton() {
+  // Check if button already exists
+  if (document.getElementById('floatingCompareBtn')) {
+    return;
+  }
+  
+  const buttonHTML = `
+    <button class="floating-compare-btn" id="floatingCompareBtn" onclick="openComparisonPanel()" style="display: none;">
+      <i class="fas fa-balance-scale"></i>
+      <span class="floating-compare-text">Compare</span>
+      <span class="floating-compare-count" id="floatingCompareCount">0</span>
+    </button>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', buttonHTML);
+  console.log('✅ Floating compare button created');
+}
+
+function updateFloatingCompareButton(count) {
+  let floatingBtn = document.getElementById('floatingCompareBtn');
+  
+  // Create button if it doesn't exist
+  if (!floatingBtn) {
+    createFloatingCompareButton();
+    floatingBtn = document.getElementById('floatingCompareBtn');
+  }
+  
+  const floatingCount = document.getElementById('floatingCompareCount');
+  
+  if (floatingBtn && floatingCount) {
+    floatingCount.textContent = count;
+    
+    // Only show when 2 or more places are selected
+    if (count >= 2) {
+      floatingBtn.style.display = 'flex';
+      // Add animation
+      floatingBtn.classList.add('bounce-in');
+      setTimeout(() => floatingBtn.classList.remove('bounce-in'), 600);
+    } else {
+      floatingBtn.style.display = 'none';
     }
   }
 }
