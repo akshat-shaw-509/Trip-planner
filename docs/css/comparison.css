@@ -1,5 +1,5 @@
 /* =====================================================================
-   COMPARISON PANEL - LARGER & MORE ACCESSIBLE VERSION
+   COMPARISON PANEL - SIDE-BY-SIDE VERSION (FIXED)
    ===================================================================== */
 
 /* ✅ LARGER COMPARISON PANEL - 900px WIDTH FOR SIDE-BY-SIDE COMPARISON */
@@ -127,12 +127,13 @@
   background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
 }
 
-/* ===================== COMPARISON GRID - SIDE-BY-SIDE LAYOUT ===================== */
+/* ===================== COMPARISON GRID - FIXED 2-COLUMN SIDE-BY-SIDE LAYOUT ===================== */
 .comparison-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr); /* ✅ FIXED: Always 2 columns side by side */
   gap: 24px;
   align-items: start;
+  width: 100%;
 }
 
 /* If only 1 item, center it */
@@ -140,6 +141,14 @@
   grid-template-columns: 1fr;
   max-width: 500px;
   margin: 0 auto;
+}
+
+/* For 3+ items, maintain 2 columns (items will wrap to new rows) */
+@supports not selector(:has(*)) {
+  /* Fallback for browsers without :has() support */
+  .comparison-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ===================== COMPARISON ITEM CARD - OPTIMIZED FOR SIDE-BY-SIDE ===================== */
@@ -459,7 +468,8 @@
   }
   
   .comparison-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr); /* ✅ Keep 2 columns */
+    gap: 20px;
   }
 }
 
@@ -480,7 +490,7 @@
   }
   
   .comparison-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Stack on mobile */
   }
 
   .comparison-item {
