@@ -2,13 +2,13 @@
    COMPARISON PANEL - LARGER & MORE ACCESSIBLE VERSION
    ===================================================================== */
 
-/* ✅ LARGER COMPARISON PANEL - 700px WIDTH FOR BETTER ACCESSIBILITY */
+/* ✅ LARGER COMPARISON PANEL - 900px WIDTH FOR SIDE-BY-SIDE COMPARISON */
 .comparison-panel {
   display: none !important;
   position: fixed;
   top: 0;
-  right: -700px;
-  width: 700px;
+  right: -900px;
+  width: 900px;
   max-width: 95vw;
   height: 100vh;
   background: white;
@@ -127,24 +127,33 @@
   background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
 }
 
-/* ===================== COMPARISON GRID - LARGER CARDS ===================== */
+/* ===================== COMPARISON GRID - SIDE-BY-SIDE LAYOUT ===================== */
 .comparison-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
+  align-items: start;
 }
 
-/* ===================== COMPARISON ITEM CARD - LARGER & MORE SPACIOUS ===================== */
+/* If only 1 item, center it */
+.comparison-grid:has(.comparison-item:only-child) {
+  grid-template-columns: 1fr;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ===================== COMPARISON ITEM CARD - OPTIMIZED FOR SIDE-BY-SIDE ===================== */
 .comparison-item {
   background: white;
   border-radius: 18px;
-  padding: 28px;
+  padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
               0 1px 2px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  height: fit-content;
 }
 
 .comparison-item::before {
@@ -173,18 +182,18 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
   border-bottom: 2px solid #f8fafc;
 }
 
 .comparison-item-name {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
   color: #1a2332;
-  margin-bottom: 10px;
-  line-height: 1.4;
+  margin-bottom: 8px;
+  line-height: 1.3;
   letter-spacing: -0.2px;
 }
 
@@ -234,21 +243,21 @@
   font-size: 18px;
 }
 
-/* ===================== COMPARISON STATS - LARGER LAYOUT ===================== */
+/* ===================== COMPARISON STATS - COMPACT FOR SIDE-BY-SIDE ===================== */
 .comparison-stats {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .comparison-stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
+  padding: 12px 14px;
   background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
-  border-radius: 12px;
+  border-radius: 10px;
   border-left: 4px solid #e5e7eb;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -260,22 +269,22 @@
 }
 
 .comparison-stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-weight: 600;
 }
 
 .comparison-stat-label i {
   color: #94a3b8;
-  font-size: 16px;
-  width: 20px;
+  font-size: 14px;
+  width: 18px;
 }
 
 .comparison-stat-value {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1a2332;
 }
@@ -298,29 +307,30 @@
   color: #047857;
 }
 
-/* ===================== COMPARISON ACTIONS - LARGER BUTTONS ===================== */
+/* ===================== COMPARISON ACTIONS - STACKED FOR SIDE-BY-SIDE ===================== */
 .comparison-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 24px;
-  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 2px solid #f8fafc;
 }
 
 .comparison-btn-add,
 .comparison-btn-details {
-  padding: 14px 24px;
-  border-radius: 14px;
+  padding: 12px 20px;
+  border-radius: 12px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  width: 100%;
 }
 
 .comparison-btn-add {
@@ -442,11 +452,23 @@
 }
 
 /* ===================== RESPONSIVE DESIGN ===================== */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
+  .comparison-panel {
+    width: 800px;
+    right: -800px;
+  }
+  
+  .comparison-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
   .comparison-panel {
     width: 100vw;
     right: -100vw;
     border-radius: 0;
+    max-width: 100vw;
   }
 
   .comparison-body {
@@ -456,17 +478,26 @@
   .comparison-header {
     padding: 24px 20px;
   }
+  
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
 
   .comparison-item {
-    padding: 24px;
+    padding: 20px;
   }
 
   .comparison-actions {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .comparison-footer {
     padding: 20px;
+    flex-direction: column;
+  }
+  
+  .comparison-footer button {
+    width: 100%;
   }
 }
 
