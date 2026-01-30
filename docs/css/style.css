@@ -72,10 +72,10 @@ nav.scrolled {
     width: 100%;
     padding: 12px 16px 12px 44px;
     border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 9px;
     font-size: 14px;
     background: #f8fafc;
-    transition: all 0.2s;
+    transition: transform 0.15s ease, box-shadow 0.25s ease;
     outline: none;
 }
 
@@ -105,7 +105,7 @@ nav.scrolled {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.15s ease, box-shadow 0.25s ease;
     white-space: nowrap;
 }
 
@@ -143,7 +143,7 @@ nav.scrolled {
     justify-content: center;
     position: relative;
     overflow: hidden;
-    padding: 80px 60px;
+    padding: 96px 60px 72px;
 }
 
 .hero-content {
@@ -163,14 +163,15 @@ nav.scrolled {
     color: #ffffff;
     margin-bottom: 24px;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
 .hero-text p {
     font-size: 20px;
-    color: #475569;
-    margin-bottom: 40px;
-    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.88);
+    margin-bottom: 36px;
+    line-height: 1.65;
+    max-width: 520px;
 }
 
 .hero-buttons {
@@ -182,14 +183,14 @@ nav.scrolled {
 .btn-primary,
 .btn-secondary {
     padding: 16px 32px;
-    border-radius: 10px;
+    border-radius: 9px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    transition: all 0.2s;
+    transition: transform 0.15s ease, box-shadow 0.25s ease;
     border: none;
     white-space: nowrap;
 }
@@ -219,18 +220,21 @@ nav.scrolled {
 .hero-visual {
     position: relative;
 }
-
+/*
 .hero-stats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
+*/
 
 .stat-card {
     background: white;
     padding: 28px;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    box-shadow:
+      0 6px 20px rgba(15, 23, 42, 0.06),
+      0 1px 3px rgba(15, 23, 42, 0.04);
     transition: all 0.3s ease;
 }
 
@@ -276,7 +280,7 @@ nav.scrolled {
     font-weight: 700;
     color: #1a2332;
     margin-bottom: 16px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
 }
 
 .section-header p {
@@ -297,6 +301,10 @@ nav.scrolled {
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
+}
+
+.step:nth-child(3) {
+    grid-template-columns: 1.2fr 0.8fr;
 }
 
 .step:nth-child(even) .step-content {
@@ -357,7 +365,7 @@ nav.scrolled {
 
 .step-visual {
     background: #f8fafc;
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 40px;
     min-height: 300px;
     display: flex;
@@ -390,7 +398,7 @@ nav.scrolled {
 .destination-card {
     position: relative;
     height: 440px;
-    border-radius: 20px;
+    border-radius: 22px;
     overflow: hidden;
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -410,7 +418,7 @@ nav.scrolled {
 }
 
 .destination-card:hover img {
-    transform: scale(1.08);
+     transform: scale(1.045);
 }
 
 .destination-overlay {
@@ -463,14 +471,14 @@ nav.scrolled {
 /* CTA Section */
 .cta-section {
     padding: 100px 60px;
-    background: #0066cc;
+    background: linear-gradient(160deg, #0066cc 0%, #0052a3 100%);
     color: white;
-    text-align: center;
 }
 
 .cta-content {
     max-width: 700px;
     margin: 0 auto;
+    text-align: left;
 }
 
 .cta-content h2 {
@@ -493,7 +501,7 @@ nav.scrolled {
     background: white;
     color: #0066cc;
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -567,7 +575,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: transform 0.15s ease, box-shadow 0.25s ease;
     margin-bottom: 0;
 }
 
@@ -674,11 +682,11 @@ footer {
         width: 100%;
         justify-content: center;
     }
-
+    /*
     .hero-stats {
         grid-template-columns: 1fr 1fr;
     }
-
+    */
     .section-header h2 {
         font-size: 36px;
     }
@@ -707,11 +715,11 @@ footer {
     .hero-text h1 {
         font-size: 32px;
     }
-
+/*
     .hero-stats {
         grid-template-columns: 1fr;
     }
-
+*/
     .stat-card {
         padding: 24px;
     }
@@ -735,4 +743,5 @@ footer {
     .cta-content p {
         font-size: 17px;
     }
+
 }
