@@ -18,18 +18,18 @@ function getCurrentUser() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         console.log('✅ Token decoded successfully:', payload);
         
-        // Try to find userId in different possible field names
-        // Your backend might use: userId, id, _id, user.id, etc.
-        const userId = payload.userId || payload.id || payload._id || payload.user?.id || payload.user?._id;
+        // ✅ YOUR BACKEND USES 'id' NOT 'userId'
+        // Try multiple field names for compatibility
+        const userId = payload.id || payload._id || payload.userId;
         
         if (userId) {
-            console.log('✅ Found userId:', userId);
+            console.log('✅ Found user ID:', userId);
             return {
                 ...payload,
-                userId: userId  // Normalize to userId
+                userId: userId  // Normalize to userId for consistency
             };
         } else {
-            console.error('❌ No userId found in token. Available fields:', Object.keys(payload));
+            console.error('❌ No user ID found in token. Available fields:', Object.keys(payload));
             return null;
         }
     } catch (error) {
@@ -43,8 +43,6 @@ function checkAuthentication() {
     
     if (!user || !user.userId) {
         console.warn('⚠️ User not authenticated.');
-        console.log('Token in localStorage:', localStorage.getItem('token'));
-        
         showToast('Please log in to create a trip', 'warning');
         setTimeout(() => {
             window.location.href = './login.html?redirect=planning.html';
@@ -131,7 +129,7 @@ async function handleTripCreation(e) {
     // ✅ CHECK AUTHENTICATION FIRST
     const user = getCurrentUser();
     if (!user || !user.userId) {
-        console.error('❌ Authentication failed');
+        console.error('❌ Authentication failed - no user or userId');
         showToast('Please log in to create a trip', 'error');
         setTimeout(() => {
             window.location.href = './login.html?redirect=planning.html';
@@ -139,7 +137,7 @@ async function handleTripCreation(e) {
         return;
     }
     
-    console.log('✅ Authentication successful, user:', user);
+    console.log('✅ Authentication successful, userId:', user.userId);
     
     const submitBtn = document.getElementById('createTripBtn');
     const originalHTML = submitBtn.innerHTML;
@@ -307,14 +305,21 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Token exists in localStorage?', !!token);
     if (token) {
         console.log('Token preview:', token.substring(0, 50) + '...');
+        // Decode and show token contents
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('Token payload:', payload);
+            console.log('User ID from token:', payload.id || payload._id || payload.userId);
+        } catch (e) {
+            console.error('Could not decode token:', e);
+        }
     }
     
     // ✅ CHECK AUTHENTICATION ON PAGE LOAD (but don't block UI immediately)
     const user = getCurrentUser();
     if (!user || !user.userId) {
         console.warn('⚠️ User not authenticated - will redirect on form submission');
-        // Don't redirect immediately - let them see the page
-        // They'll be redirected when they try to submit the form
+        // Don't redirect immediately - let them see the page and then redirect on submit
     } else {
         console.log('✅ User authenticated on page load:', user);
     }
