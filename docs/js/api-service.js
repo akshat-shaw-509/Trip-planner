@@ -114,6 +114,11 @@ const apiService = {
         console.error('Method:', config.method || 'GET');
         console.error('Status:', response.status, response.statusText);
         console.error('Error Response:', errorData);
+        
+        // ✅ LOG FULL ERROR DATA OBJECT TO SEE ALL PROPERTIES
+        console.error('Full Error Data Keys:', Object.keys(errorData));
+        console.error('Full Error Data:', JSON.stringify(errorData, null, 2));
+        
         console.error('═══════════════════════════════════════════');
 
         // Handle 401 Unauthorized - Token expired
@@ -162,31 +167,54 @@ const apiService = {
           }
         }
 
-        // ✅ HANDLE 400 BAD REQUEST WITH DETAILED VALIDATION ERRORS
+        // ✅ IMPROVED 400 BAD REQUEST HANDLING
         if (response.status === 400) {
-          let errorMessage = 'Bad Request';
+          let errorMessage = 'Validation Error';
+          let backendErrors = null;
           
-          // Handle express-validator errors (array format)
+          // Check for errors array (express-validator format)
           if (errorData.errors && Array.isArray(errorData.errors)) {
-            console.error('🔍 VALIDATION ERRORS:');
+            console.error('🔍 VALIDATION ERRORS (Array Format):');
             errorData.errors.forEach(err => {
               const field = err.field || err.path || err.param || 'Unknown field';
               const message = err.message || err.msg || 'Invalid value';
               console.error(`  ❌ ${field}: ${message}`);
             });
             
+            backendErrors = errorData.errors;
             errorMessage = errorData.errors.map(err => {
               const field = err.field || err.path || err.param || 'Field';
               const message = err.message || err.msg || 'Invalid';
               return `${field}: ${message}`;
-            }).join('; ');
+            }).join('\n');
           } 
-          // Handle simple error message
+          // Check for error object (alternative format)
+          else if (errorData.error && typeof errorData.error === 'object') {
+            console.error('🔍 VALIDATION ERRORS (Object Format):');
+            const errorObj = errorData.error;
+            backendErrors = Object.keys(errorObj).map(key => ({
+              field: key,
+              message: errorObj[key]
+            }));
+            
+            backendErrors.forEach(err => {
+              console.error(`  ❌ ${err.field}: ${err.message}`);
+            });
+            
+            errorMessage = backendErrors.map(err => 
+              `${err.field}: ${err.message}`
+            ).join('\n');
+          }
+          // Simple error message
           else if (errorData.message) {
+            console.error('🔍 ERROR MESSAGE:', errorData.message);
             errorMessage = errorData.message;
           }
           
-          throw new Error(errorMessage);
+          const error = new Error(errorMessage);
+          error.backendErrors = backendErrors;
+          error.errorData = errorData;
+          throw error;
         }
 
         // Other HTTP errors
@@ -453,4 +481,4 @@ const apiService = {
 // Make it globally available
 window.apiService = apiService;
 
-console.log('✅ Enhanced API Service loaded with DETAILED ERROR MESSAGES');
+console.log('Enhanced API Service loaded with IMPROVED ERROR LOGGING');
