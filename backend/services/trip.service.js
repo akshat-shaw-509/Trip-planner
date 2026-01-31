@@ -1,4 +1,3 @@
-
 let Trip = require('../models/Trip.model')
 
 let {
@@ -17,6 +16,8 @@ let path = require('path')
  * Creates a new trip for a user with basic validation
  */
 let createTrip = async (tripData, userId) => {
+  console.log('Creating trip with data:', JSON.stringify(tripData, null, 2));
+  
   let {
     title,
     destination,
@@ -48,18 +49,27 @@ let createTrip = async (tripData, userId) => {
     throw ValidationError('End date must be after or equal to start date')
   }
 
-  return Trip.create({
-    title,
-    destination,
-    description: description || '',
-    startDate: start,
-    endDate: end,
-    budget: budget || 0,
-    travelers: travelers || 1,
-    tags: tags || [],
-    coverImage,
-    userId
-  })
+  try {
+    const trip = await Trip.create({
+      title,
+      destination,
+      description: description || '',
+      startDate: start,
+      endDate: end,
+      budget: budget || 0,
+      travelers: travelers || 1,
+      tags: tags || [],
+      coverImage,
+      userId
+    })
+    return trip
+  } catch (error) {
+    console.error('Trip creation error:', error.name, error.message);
+    if (error.errors) {
+      console.error('Validation errors:', error.errors);
+    }
+    throw error
+  }
 }
 
 /**
@@ -361,24 +371,6 @@ let removeBanner = async (tripId, userId) => {
   await trip.save()
 
   return trip
-}
-
-let createTrip = async (tripData, userId) => {
-  console.log('Creating trip with data:', JSON.stringify(tripData, null, 2));
-  
-  try {
-    const trip = await Trip.create({
-      ...tripData,
-      userId
-    });
-    return trip;
-  } catch (error) {
-    console.error('Trip creation error:', error.name, error.message);
-    if (error.errors) {
-      console.error('Validation errors:', error.errors);
-    }
-    throw error;
-  }
 }
 
 module.exports = {
