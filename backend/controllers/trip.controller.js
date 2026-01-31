@@ -19,7 +19,7 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
  * POST /api/trips
  */
 const createTrip = asyncHandler(async (req, res) => {
-  const trip = await tripService.createTrip(req.body, req.user.id)
+  const trip = await tripService.createTrip(req.body, req.user._id)
   sendSuccess(res, 201, trip, 'Trip created successfully')
 })
 
@@ -212,3 +212,4 @@ module.exports = {
   uploadBanner,
   removeBanner
 }
+
