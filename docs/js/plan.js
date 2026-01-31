@@ -190,7 +190,7 @@ async function handleTripCreation(e) {
             setTimeout(() => {
                 const tripId = response.data?.trip?.id || response.data?.id || response.data?._id;
                 if (tripId) {
-                    window.location.href = `trip-details.html?id=${tripId}`;
+                    window.location.href = `trip.html?id=${tripId}`;
                 } else {
                     window.location.href = 'trips.html';
                 }
