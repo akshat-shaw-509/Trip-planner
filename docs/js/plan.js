@@ -161,7 +161,8 @@ async function handleTripCreation(e) {
             travelers: parseInt(document.getElementById('travelers').value) || 1,
             tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t),
             isPublic: document.getElementById('isPublic').checked,
-            status: 'planning'
+            status: 'planning',
+            userId: user.userId,
         };
         
         console.log('📤 Creating trip with data:', formData);
