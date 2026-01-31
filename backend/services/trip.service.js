@@ -363,6 +363,24 @@ let removeBanner = async (tripId, userId) => {
   return trip
 }
 
+let createTrip = async (tripData, userId) => {
+  console.log('Creating trip with data:', JSON.stringify(tripData, null, 2));
+  
+  try {
+    const trip = await Trip.create({
+      ...tripData,
+      userId
+    });
+    return trip;
+  } catch (error) {
+    console.error('Trip creation error:', error.name, error.message);
+    if (error.errors) {
+      console.error('Validation errors:', error.errors);
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   createTrip,
   getTripsByUser,
