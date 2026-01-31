@@ -7,15 +7,18 @@ let currentMarker = null;
 
 // ===================== Authentication Functions =====================
 function getCurrentUser() {
-    // ✅ CHECK BOTH sessionStorage AND localStorage
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    // ✅ CHECK FOR 'accessToken' (your actual key name)
+    const token = sessionStorage.getItem('accessToken') || 
+                  sessionStorage.getItem('token') ||
+                  localStorage.getItem('accessToken') || 
+                  localStorage.getItem('token');
     
     if (!token) {
-        console.log('❌ No token found in sessionStorage or localStorage');
+        console.log('❌ No token found in storage');
         return null;
     }
     
-    console.log('✅ Token found in storage');
+    console.log('✅ Token found!');
     
     try {
         // Decode JWT token to get user info
@@ -23,7 +26,6 @@ function getCurrentUser() {
         console.log('✅ Token decoded successfully:', payload);
         
         // ✅ YOUR BACKEND USES 'id' NOT 'userId'
-        // Try multiple field names for compatibility
         const userId = payload.id || payload._id || payload.userId;
         
         if (userId) {
@@ -304,15 +306,19 @@ function formatBudget(value) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔄 Page loaded - initializing...');
     
-    // ✅ DEBUG: Log token status in BOTH storages
-    const sessionToken = sessionStorage.getItem('token');
-    const localToken = localStorage.getItem('token');
-    console.log('Token in sessionStorage?', !!sessionToken);
-    console.log('Token in localStorage?', !!localToken);
+    // ✅ DEBUG: Check all possible token locations
+    console.log('sessionStorage.accessToken?', !!sessionStorage.getItem('accessToken'));
+    console.log('sessionStorage.token?', !!sessionStorage.getItem('token'));
+    console.log('localStorage.accessToken?', !!localStorage.getItem('accessToken'));
+    console.log('localStorage.token?', !!localStorage.getItem('token'));
     
-    const token = sessionToken || localToken;
+    const token = sessionStorage.getItem('accessToken') || 
+                  sessionStorage.getItem('token') ||
+                  localStorage.getItem('accessToken') || 
+                  localStorage.getItem('token');
+    
     if (token) {
-        console.log('Token preview:', token.substring(0, 50) + '...');
+        console.log('✅ Token found! Length:', token.length);
         // Decode and show token contents
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -321,6 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Could not decode token:', e);
         }
+    } else {
+        console.log('❌ No token found anywhere');
     }
     
     // ✅ CHECK AUTHENTICATION ON PAGE LOAD (but don't block UI immediately)
