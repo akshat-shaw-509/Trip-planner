@@ -5,6 +5,39 @@
 let currentMap = null;
 let currentMarker = null;
 
+// ===================== Authentication Functions =====================
+function getCurrentUser() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        return null;
+    }
+    
+    try {
+        // Decode JWT token to get user info
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload;
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return null;
+    }
+}
+
+function checkAuthentication() {
+    const user = getCurrentUser();
+    
+    if (!user || !user.userId) {
+        console.warn('⚠️ User not authenticated. Redirecting to login...');
+        showToast('Please log in to create a trip', 'warning');
+        setTimeout(() => {
+            window.location.href = './login.html?redirect=planning.html';
+        }, 1500);
+        return false;
+    }
+    
+    console.log('✅ User authenticated:', user);
+    return true;
+}
+
 // ===================== Form Validation =====================
 function validateTripData(formData) {
     const errors = [];
@@ -75,12 +108,23 @@ function validateTripData(formData) {
 async function handleTripCreation(e) {
     e.preventDefault();
     
+    // ✅ CHECK AUTHENTICATION FIRST
+    const user = getCurrentUser();
+    if (!user || !user.userId) {
+        showToast('Please log in to create a trip', 'error');
+        setTimeout(() => {
+            window.location.href = './login.html?redirect=planning.html';
+        }, 1500);
+        return;
+    }
+    
     const submitBtn = document.getElementById('createTripBtn');
     const originalHTML = submitBtn.innerHTML;
     
     try {
         // Collect form data
         const formData = {
+            userId: user.userId,  // ✅ CRITICAL: Include userId from authenticated user
             title: document.getElementById('title').value.trim(),
             destination: document.getElementById('destination').value.trim(),
             startDate: document.getElementById('startDate').value,
@@ -231,6 +275,11 @@ function formatBudget(value) {
 
 // ===================== Initialize on Page Load =====================
 document.addEventListener('DOMContentLoaded', () => {
+    // ✅ CHECK AUTHENTICATION ON PAGE LOAD
+    if (!checkAuthentication()) {
+        return; // Will redirect to login
+    }
+    
     // Attach form submission handler
     const form = document.getElementById('createTripForm');
     if (form) {
