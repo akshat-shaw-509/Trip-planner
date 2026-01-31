@@ -186,14 +186,9 @@ async function handleTripCreation(e) {
         if (response.success) {
             showToast('Trip created successfully!', 'success');
             
-            // Redirect to trip details page
+            // ✅ FIXED: Redirect to trips.html instead of non-existent trip-details.html
             setTimeout(() => {
-                const tripId = response.data?.trip?.id || response.data?.id || response.data?._id;
-                if (tripId) {
-                    window.location.href = `trip.html?id=${tripId}`;
-                } else {
-                    window.location.href = 'trips.html';
-                }
+                window.location.href = 'trips.html';
             }, 1000);
         } else {
             throw new Error(response.message || 'Failed to create trip');
