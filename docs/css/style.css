@@ -18,20 +18,19 @@ nav {
     top: 0;
     width: 100%;
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
     padding: 20px 60px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
     border-bottom: 1px solid transparent;
 }
 
 nav.scrolled {
     background: rgba(255, 255, 255, 0.98);
     border-bottom: 1px solid rgba(26, 35, 50, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.06);
 }
 
 .logo img {
@@ -82,7 +81,7 @@ nav.scrolled {
 .search-bar input:focus {
     border-color: #0066cc;
     background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.08);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
 .search-icon {
@@ -129,7 +128,6 @@ nav.scrolled {
 .auth-buttons .secondary:hover {
     background: #0052a3;
     border-color: #0052a3;
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
@@ -158,12 +156,12 @@ nav.scrolled {
 }
 
 .hero-text h1 {
-    font-size: 64px;
+    font-size: 58px;
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 24px;
     line-height: 1.1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
 }
 
 .hero-text p {
@@ -202,8 +200,8 @@ nav.scrolled {
 
 .btn-primary:hover {
     background: #0052a3;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 102, 204, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.28);
 }
 
 .btn-secondary {
@@ -235,11 +233,11 @@ nav.scrolled {
     box-shadow:
       0 6px 20px rgba(15, 23, 42, 0.06),
       0 1px 3px rgba(15, 23, 42, 0.04);
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
@@ -402,11 +400,11 @@ nav.scrolled {
     overflow: hidden;
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .destination-card:hover {
-    transform: translateY(-8px);
+    transform: translateY(-4px);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
 }
 
@@ -418,7 +416,7 @@ nav.scrolled {
 }
 
 .destination-card:hover img {
-     transform: scale(1.045);
+     transform: scale(1.02);
 }
 
 .destination-overlay {
@@ -428,7 +426,6 @@ nav.scrolled {
     right: 0;
     padding: 32px;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -460,18 +457,18 @@ nav.scrolled {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
     font-size: 16px;
 }
 
 .destination-card:hover .btn-explore {
-    transform: scale(1.12) rotate(45deg);
+    transform: scale(1.08);
 }
 
 /* CTA Section */
 .cta-section {
     padding: 100px 60px;
-    background: linear-gradient(160deg, #0066cc 0%, #0052a3 100%);
+    background: #0066cc;
     color: white;
 }
 
@@ -506,12 +503,12 @@ nav.scrolled {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn-large:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
 
 /* Footer */
@@ -581,7 +578,7 @@ footer {
 
 .social-links a:hover {
     background: #0066cc;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .footer-bottom {
@@ -745,3 +742,4 @@ footer {
     }
 
 }
+
