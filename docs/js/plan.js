@@ -7,11 +7,15 @@ let currentMarker = null;
 
 // ===================== Authentication Functions =====================
 function getCurrentUser() {
-    const token = localStorage.getItem('token');
+    // ✅ CHECK BOTH sessionStorage AND localStorage
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    
     if (!token) {
-        console.log('❌ No token found in localStorage');
+        console.log('❌ No token found in sessionStorage or localStorage');
         return null;
     }
+    
+    console.log('✅ Token found in storage');
     
     try {
         // Decode JWT token to get user info
@@ -300,9 +304,13 @@ function formatBudget(value) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔄 Page loaded - initializing...');
     
-    // ✅ DEBUG: Log token status
-    const token = localStorage.getItem('token');
-    console.log('Token exists in localStorage?', !!token);
+    // ✅ DEBUG: Log token status in BOTH storages
+    const sessionToken = sessionStorage.getItem('token');
+    const localToken = localStorage.getItem('token');
+    console.log('Token in sessionStorage?', !!sessionToken);
+    console.log('Token in localStorage?', !!localToken);
+    
+    const token = sessionToken || localToken;
     if (token) {
         console.log('Token preview:', token.substring(0, 50) + '...');
         // Decode and show token contents
