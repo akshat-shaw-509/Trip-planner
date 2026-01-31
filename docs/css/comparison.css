@@ -1,8 +1,3 @@
-/* =====================================================================
-   COMPARISON PANEL - SIDE-BY-SIDE VERSION (FIXED)
-   ===================================================================== */
-
-/* ✅ LARGER COMPARISON PANEL - 900px WIDTH FOR SIDE-BY-SIDE COMPARISON */
 .comparison-panel {
   display: none !important;
   position: fixed;
@@ -22,20 +17,17 @@
   border-bottom-left-radius: 24px;
 }
 
-/* Only show when explicitly opened with active class AND has content */
 .comparison-panel.active {
   right: 0;
   display: flex !important;
 }
 
-/* ✅ REMOVE ANY STICKY/FLOATING COMPARISON BOX */
 .comparison-sticky-box,
 .compare-places-box,
 .comparison-float {
   display: none !important;
 }
 
-/* ===================== COMPARISON HEADER ===================== */
 .comparison-header {
   display: flex;
   justify-content: space-between;
@@ -53,7 +45,6 @@
   align-items: center;
   gap: 14px;
   margin: 0;
-  letter-spacing: -0.3px;
 }
 
 .comparison-header h3 i {
@@ -98,10 +89,9 @@
   background: #f1f5f9;
   border-color: #cbd5e1;
   color: #1a2332;
-  transform: rotate(90deg);
+  transform: rotate(45deg);
 }
 
-/* ===================== COMPARISON BODY ===================== */
 .comparison-body {
   flex: 1;
   overflow-y: auto;
@@ -119,7 +109,7 @@
 }
 
 .comparison-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  background: #cbd5e1;
   border-radius: 5px;
 }
 
@@ -127,31 +117,26 @@
   background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
 }
 
-/* ===================== COMPARISON GRID - FIXED 2-COLUMN SIDE-BY-SIDE LAYOUT ===================== */
 .comparison-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* ✅ FIXED: Always 2 columns side by side */
+  grid-template-columns: repeat(2, 1fr); 
   gap: 24px;
   align-items: start;
   width: 100%;
 }
 
-/* If only 1 item, center it */
 .comparison-grid:has(.comparison-item:only-child) {
   grid-template-columns: 1fr;
   max-width: 500px;
   margin: 0 auto;
 }
 
-/* For 3+ items, maintain 2 columns (items will wrap to new rows) */
 @supports not selector(:has(*)) {
-  /* Fallback for browsers without :has() support */
   .comparison-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* ===================== COMPARISON ITEM CARD - OPTIMIZED FOR SIDE-BY-SIDE ===================== */
 .comparison-item {
   background: white;
   border-radius: 18px;
@@ -159,7 +144,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
               0 1px 2px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
   height: fit-content;
@@ -171,7 +156,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(90deg, #0066cc, #0052a3);
   opacity: 0;
   transition: opacity 0.3s;
@@ -180,7 +165,7 @@
 .comparison-item:hover {
   border-color: #e5e7eb;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .comparison-item:hover::before {
@@ -210,7 +195,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 18px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   font-size: 13px;
@@ -232,7 +217,7 @@
   cursor: pointer;
   padding: 10px;
   border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   width: 40px;
   height: 40px;
   display: flex;
@@ -252,7 +237,6 @@
   font-size: 18px;
 }
 
-/* ===================== COMPARISON STATS - COMPACT FOR SIDE-BY-SIDE ===================== */
 .comparison-stats {
   display: flex;
   flex-direction: column;
@@ -268,13 +252,13 @@
   background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
   border-radius: 10px;
   border-left: 4px solid #e5e7eb;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .comparison-stat:hover {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-left-color: #cbd5e1;
-  transform: translateX(4px);
+  transform: translateX(2px);
 }
 
 .comparison-stat-label {
@@ -301,7 +285,7 @@
 .comparison-stat-value.highlight {
   color: #059669;
   background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 14px;
   border: 2px solid #86efac;
   position: relative;
@@ -316,7 +300,6 @@
   color: #047857;
 }
 
-/* ===================== COMPARISON ACTIONS - STACKED FOR SIDE-BY-SIDE ===================== */
 .comparison-actions {
   display: flex;
   flex-direction: column;
@@ -333,7 +316,7 @@
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: none;
   display: flex;
   align-items: center;
@@ -350,7 +333,7 @@
 
 .comparison-btn-add:hover {
   background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
 }
 
@@ -364,10 +347,9 @@
   background: #f1f5f9;
   border-color: #cbd5e1;
   color: #1a2332;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-/* ===================== EMPTY STATE ===================== */
 .comparison-empty {
   display: flex;
   flex-direction: column;
@@ -392,7 +374,6 @@
   font-weight: 500;
 }
 
-/* ===================== OVERLAY ===================== */
 .comparison-overlay {
   position: fixed;
   top: 0;
@@ -400,11 +381,10 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .comparison-overlay.active {
@@ -412,7 +392,6 @@
   visibility: visible;
 }
 
-/* ===================== FOOTER ACTIONS - LARGER ===================== */
 .comparison-footer {
   padding: 28px 40px;
   border-top: 2px solid #f3f4f6;
@@ -428,7 +407,7 @@
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: none;
   display: flex;
   align-items: center;
@@ -456,11 +435,10 @@
 
 .comparison-add-all:hover {
   background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
 }
 
-/* ===================== RESPONSIVE DESIGN ===================== */
 @media (max-width: 1200px) {
   .comparison-panel {
     width: 800px;
@@ -468,7 +446,7 @@
   }
   
   .comparison-grid {
-    grid-template-columns: repeat(2, 1fr); /* ✅ Keep 2 columns */
+    grid-template-columns: repeat(2, 1fr); 
     gap: 20px;
   }
 }
@@ -490,7 +468,7 @@
   }
   
   .comparison-grid {
-    grid-template-columns: 1fr; /* Stack on mobile */
+    grid-template-columns: 1fr;
   }
 
   .comparison-item {
@@ -511,17 +489,12 @@
   }
 }
 
-/* =====================================================================
-   FLOATING COMPARE BUTTON - LARGER & MORE PROMINENT
-   ===================================================================== */
-
 .floating-compare-btn {
   position: fixed;
   bottom: 32px;
   right: 32px;
   z-index: 999;
-  
-  display: none; /* Hidden by default */
+  display: none; 
   align-items: center;
   gap: 14px;
   
@@ -539,16 +512,14 @@
   box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4),
               0 4px 12px rgba(0, 102, 204, 0.3);
   
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Prevent text selection */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .floating-compare-btn:hover {
   background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
-  transform: translateY(-4px) scale(1.05);
+  transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(0, 102, 204, 0.5),
               0 6px 16px rgba(0, 102, 204, 0.4);
 }
@@ -583,8 +554,6 @@
   
   backdrop-filter: blur(8px);
 }
-
-/* Bounce-in animation */
 @keyframes bounceIn {
   0% {
     opacity: 0;
@@ -603,27 +572,9 @@
 }
 
 .floating-compare-btn.bounce-in {
-  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: bounceIn 0.4s ease-out;
 }
 
-/* Pulse animation for attention */
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4),
-                0 4px 12px rgba(0, 102, 204, 0.3);
-  }
-  50% {
-    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.6),
-                0 4px 12px rgba(0, 102, 204, 0.5),
-                0 0 0 8px rgba(0, 102, 204, 0.2);
-  }
-}
-
-.floating-compare-btn.pulse {
-  animation: pulse 2s infinite;
-}
-
-/* ===================== FLOATING BUTTON RESPONSIVE ===================== */
 @media (max-width: 768px) {
   .floating-compare-btn {
     bottom: 20px;
@@ -647,7 +598,6 @@
   }
 }
 
-/* Small mobile - compact circular button */
 @media (max-width: 480px) {
   .floating-compare-btn {
     bottom: 16px;
@@ -656,12 +606,12 @@
     gap: 0;
     width: 60px;
     height: 60px;
-    border-radius: 50%; /* Make it circular */
+    border-radius: 50%; 
     justify-content: center;
   }
   
   .floating-compare-text {
-    display: none; /* Hide text on very small screens */
+    display: none;
   }
   
   .floating-compare-count {
@@ -676,10 +626,6 @@
   }
 }
 
-/* =====================================================================
-   ACCESSIBILITY
-   ===================================================================== */
-
 .floating-compare-btn:focus {
   outline: 3px solid rgba(0, 102, 204, 0.5);
   outline-offset: 4px;
@@ -689,7 +635,6 @@
   outline: none;
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .floating-compare-btn {
     transition: none;
