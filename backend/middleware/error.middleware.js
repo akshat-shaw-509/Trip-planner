@@ -5,7 +5,6 @@
 const notFoundHandler = (req, res, next) => {
   res.status(404).json({
     success: false,
-    // Show which route was not found
     message: `Route ${req.originalUrl} not found`,
     statusCode: 404
   })
@@ -14,49 +13,78 @@ const notFoundHandler = (req, res, next) => {
 /**
  * -------------------- Global Error Handler --------------------
  * Centralized error handler for the entire application
- * Catches:
- * - Validation errors
- * - Database errors
- * - Auth errors
- * - Custom application errors
  */
 const errorHandler = (err, req, res, next) => {
-  // Log error for debugging and monitoring
-  console.error('Global Error Handler:', err)
+  // ✅ ENHANCED: Log detailed error information
+  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.error('❌ GLOBAL ERROR HANDLER');
+  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.error('Error Name:', err.name);
+  console.error('Error Message:', err.message);
+  console.error('Error Code:', err.code);
+  console.error('Error Status:', err.statusCode);
+  
+  // Log Mongoose validation errors in detail
+  if (err.name === 'ValidationError' && err.errors) {
+    console.error('Validation Errors:');
+    Object.keys(err.errors).forEach(key => {
+      console.error(`  ❌ ${key}:`, err.errors[key].message);
+    });
+  }
+  
+  console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  // Default values (fallback)
+  // Default values
   let statusCode = err.statusCode || 500
   let message = err.message || 'Internal Server Error'
 
   /**
-   * -------- Specific Error Handling --------
+   * -------- Mongoose Validation Errors --------
+   * ✅ ENHANCED: Return detailed field errors
    */
-
-  // Mongoose validation errors
   if (err.name === 'ValidationError') {
     statusCode = 400
     message = 'Validation Error'
+    
+    // Extract detailed validation errors
+    const errors = Object.keys(err.errors).map(key => ({
+      field: key,
+      message: err.errors[key].message
+    }));
+    
+    return res.status(statusCode).json({
+      success: false,
+      message,
+      statusCode,
+      errors // ← CRITICAL: Return detailed errors
+    });
   }
 
-  // Invalid MongoDB ObjectId
+  /**
+   * -------- Invalid MongoDB ObjectId --------
+   */
   if (err.name === 'CastError') {
     statusCode = 400
-    message = 'Invalid ID format'
+    message = `Invalid ${err.path}: ${err.value}`
   }
 
-  // Duplicate key error (unique field violation)
+  /**
+   * -------- Duplicate Key Error --------
+   */
   if (err.code === 11000) {
     statusCode = 409
-    message = 'Duplicate field value entered'
+    const field = Object.keys(err.keyPattern)[0];
+    message = `${field} already exists`
   }
 
-  // JWT errors (invalid token)
+  /**
+   * -------- JWT Errors --------
+   */
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401
     message = 'Invalid token'
   }
 
-  // JWT expired token
   if (err.name === 'TokenExpiredError') {
     statusCode = 401
     message = 'Token expired'
@@ -71,12 +99,12 @@ const errorHandler = (err, req, res, next) => {
     statusCode
   }
 
-  // Attach validation error details if present
+  // ✅ ENHANCED: Attach any validation errors
   if (err.errors && Array.isArray(err.errors)) {
     response.errors = err.errors
   }
 
-  // Include stack trace only in development mode
+  // Include stack trace only in development
   if (process.env.NODE_ENV === 'development') {
     response.stack = err.stack
   }
@@ -87,9 +115,6 @@ const errorHandler = (err, req, res, next) => {
 /**
  * -------------------- Async Handler Utility --------------------
  * Wraps async route handlers to automatically catch errors
- *
- * Usage:
- * router.get('/route', asyncHandler(async (req, res) => { ... }))
  */
 const asyncHandler = (fn) => {
   return (req, res, next) => {
@@ -97,9 +122,6 @@ const asyncHandler = (fn) => {
   }
 }
 
-/**
- * Export error-handling utilities
- */
 module.exports = {
   notFoundHandler,
   errorHandler,
