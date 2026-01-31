@@ -349,7 +349,7 @@ const attachTripListeners = () => {
     }
   })
 
-  // ✅ FIXED: Remove reference to non-existent trip-overview.html
+  // ✅ Navigate to trip overview page
   document.querySelectorAll('.trip-card').forEach(card => {
     card.onclick = e => {
       if (e.target.closest('.delete-trip-btn')) return
@@ -357,11 +357,8 @@ const attachTripListeners = () => {
       const tripId = card.dataset.tripId
       console.log('🔍 Clicked trip:', tripId)
       
-      // ✅ For now, just show a toast since we don't have a details page
-      showToast?.('Trip details page coming soon!', 'info')
-      
-      // ✅ TODO: Once you have a trip details page, uncomment this:
-      // window.location.href = `./trip-details.html?id=${tripId}`
+      // Navigate to trip overview page
+      window.location.href = `./trip-overview.html?id=${tripId}`
     }
   })
 }
