@@ -17,20 +17,19 @@ nav {
     right: 0;
     width: 100%;
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    padding: 20px 60px;
+    padding: 18px 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
     border-bottom: 1px solid transparent;
 }
 
 nav.scrolled {
     background: rgba(255, 255, 255, 0.98);
     border-bottom: 1px solid rgba(26, 35, 50, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.05);
     padding: 16px 60px;
 }
 
@@ -41,7 +40,6 @@ nav.scrolled {
 .logo img {
     height: 48px;
     display: block;
-    transition: height 0.3s ease;
 }
 
 .nav-center {
@@ -135,7 +133,6 @@ nav.scrolled {
 .auth-buttons .secondary:hover {
     background: #0052a3;
     border-color: #0052a3;
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
@@ -148,7 +145,7 @@ nav.scrolled {
     background: #f8f9fa;
     border-radius: 50px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
     position: relative;
 }
 
@@ -196,7 +193,7 @@ nav.scrolled {
 }
 
 .user-profile:hover .user-dropdown-icon {
-    transform: rotate(180deg);
+    transform: rotate(90deg);
 }
 
 /* User Dropdown Menu */
@@ -207,11 +204,11 @@ nav.scrolled {
     margin-top: 8px;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
-    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+    transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 100;
     min-width: 220px;
     overflow: hidden;
@@ -225,7 +222,7 @@ nav.scrolled {
 
 .user-dropdown-header {
     padding: 16px;
-    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    background: #0066cc;
     color: white;
 }
 
@@ -264,7 +261,7 @@ nav.scrolled {
 
 .user-dropdown-menu a:hover,
 .user-dropdown-menu button:hover {
-    background: #f5f5f5;
+    background: #f8fafc;
 }
 
 .user-dropdown-menu i {
@@ -330,7 +327,7 @@ nav.scrolled {
     }
 
     nav {
-        padding: 14px 20px;
+        padding: 12px 18px;
     }
     
     nav.scrolled {
