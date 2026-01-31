@@ -1,8 +1,8 @@
 .flatpickr-calendar{
     background: white;   
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.15);
     border: none;
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 20px;
     margin-top: 10px
 }
@@ -13,8 +13,8 @@
     height: auto;
 }
 .flatpickr-current-month{
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 18px;
+    font-weight: 600;
     color: #000;
     padding: 10px 0;
     position: static;
@@ -36,12 +36,9 @@
     color: white;
     border-color: white;
 }
-.flatpickr-current-month .flatpickr-monthDropdown-months {
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-}
 .flatpickr-current-month input.cur-year{
     font-size:18px;
-    font-weight: bold;
+    font-weight: 600;
     color: #000;
     background: transparent;
 }
@@ -49,7 +46,7 @@
 .flatpickr-next-month{
     width: 36px;
     height: 36px;
-    border: 2px solid #333;
+    border: 1.5px solid #333;
     border-radius: 8px;
     display: flex;
     align-items: center;
