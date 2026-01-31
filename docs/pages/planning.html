@@ -134,7 +134,7 @@
                                 Budget
                             </label>
                             <input type="number" id="budget" name="budget" placeholder="₹ Enter your budget" min="0"
-                                step="100">
+                                step="1000">
                             <small class="field-hint">Estimated budget for the entire trip</small>
                         </div>
 
@@ -301,7 +301,6 @@
 <!-- 7. Inline scripts for UI - MUST BE DEFINED BEFORE ONCLICK HANDLERS RUN -->
 <script>
     let currentStep = 1;
-    let tripMap = null; // Renamed to avoid conflicts
 
     function nextStep(step) {
         document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
@@ -338,20 +337,21 @@
     }
 
     function initializeMap() {
-        if (typeof L !== 'undefined' && !tripMap) {
+        if (typeof L !== 'undefined' && !window.tripMap) {
             try {
-                tripMap = L.map('map').setView([20.5937, 78.9629], 5)
+                // ✅ CREATE MAP AND EXPOSE IT GLOBALLY
+                window.tripMap = L.map('map').setView([20.5937, 78.9629], 5);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
-                }).addTo(tripMap)
+                }).addTo(window.tripMap);
 
-                // Call the planning map initializer from plan.js if available
+                console.log('✅ Map initialized successfully!');
+                
+                // ✅ NOTIFY plan.js THAT MAP IS READY
                 if (typeof window.initializePlanningMap === 'function') {
                     window.initializePlanningMap();
                 }
-
-                console.log('✅ Map initialized successfully!');
             } catch (error) {
                 console.error('❌ Map initialization error:', error);
             }
