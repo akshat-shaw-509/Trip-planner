@@ -139,9 +139,26 @@ let authHandler = {
 if (document.getElementById('loginForm')) {
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault()
+    
     const email = document.getElementById('email').value
     const password = document.getElementById('password').value
-    await authHandler.handleLogin(email, password)
+    
+    // Get submit button and save original content
+    const submitBtn = e.target.querySelector('button[type="submit"]')
+    const originalHTML = submitBtn.innerHTML
+    
+    // Disable button and show loading state
+    submitBtn.disabled = true
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'
+    
+    // Attempt login
+    const result = await authHandler.handleLogin(email, password)
+    
+    // Reset button if login failed
+    if (!result.success) {
+      submitBtn.disabled = false
+      submitBtn.innerHTML = originalHTML
+    }
   })
 }
 
