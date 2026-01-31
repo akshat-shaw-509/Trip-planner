@@ -1,5 +1,5 @@
 // ============================================
-// TRIP PLANNING PAGE - ENHANCED VERSION
+// TRIP PLANNING PAGE - FINAL FIXED VERSION
 // ============================================
 
 let currentMap = null;
@@ -149,9 +149,9 @@ async function handleTripCreation(e) {
     const originalHTML = submitBtn.innerHTML;
     
     try {
-        // Collect form data
+        // ✅ CRITICAL FIX: DON'T SEND userId - Backend uses req.user.id from token!
         const formData = {
-            userId: user.userId,  // ✅ CRITICAL: Include userId from authenticated user
+            // ❌ NO userId HERE - Controller gets it from req.user.id
             title: document.getElementById('title').value.trim(),
             destination: document.getElementById('destination').value.trim(),
             startDate: document.getElementById('startDate').value,
@@ -187,7 +187,7 @@ async function handleTripCreation(e) {
             
             // Redirect to trip details page
             setTimeout(() => {
-                const tripId = response.data?.trip?.id || response.data?.id;
+                const tripId = response.data?.trip?.id || response.data?.id || response.data?._id;
                 if (tripId) {
                     window.location.href = `trip-details.html?id=${tripId}`;
                 } else {
