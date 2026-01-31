@@ -154,10 +154,14 @@ async function handleTripCreation(e) {
 
 // ===================== Map Functions =====================
 function initializePlanningMap() {
-    if (!currentMap) {
-        console.error('Map not initialized yet');
+    // Wait for map to be available
+    if (!window.tripMap) {
+        console.log('⏳ Waiting for map to initialize...');
         return;
     }
+    
+    currentMap = window.tripMap;
+    console.log('✅ Planning map initialized successfully');
     
     // Update map when destination changes
     const destinationInput = document.getElementById('destination');
@@ -172,6 +176,11 @@ function initializePlanningMap() {
 }
 
 async function updateMapLocation(destination) {
+    if (!currentMap) {
+        console.log('Map not available for location update');
+        return;
+    }
+    
     try {
         // Use Nominatim API for geocoding
         const response = await fetch(
@@ -196,7 +205,7 @@ async function updateMapLocation(destination) {
             currentMarker = L.marker([lat, lon]).addTo(currentMap);
             currentMarker.bindPopup(`<b>${destination}</b>`).openPopup();
             
-            console.log(`Map updated to: ${destination}`);
+            console.log(`📍 Map updated to: ${destination}`);
         }
     } catch (error) {
         console.error('Error updating map location:', error);
@@ -261,13 +270,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Initialize map reference
-    setTimeout(() => {
+    // Initialize map reference with retry logic
+    let mapInitAttempts = 0;
+    const maxAttempts = 5;
+    
+    const tryInitMap = () => {
         if (window.tripMap) {
             currentMap = window.tripMap;
             initializePlanningMap();
+            console.log('✅ Map integration complete');
+        } else if (mapInitAttempts < maxAttempts) {
+            mapInitAttempts++;
+            setTimeout(tryInitMap, 300);
+        } else {
+            console.warn('⚠️ Map not available - continuing without map integration');
         }
-    }, 500);
+    };
+    
+    // Start trying to initialize map
+    setTimeout(tryInitMap, 300);
 });
 
 // Make functions globally available for inline handlers
