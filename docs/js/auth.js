@@ -52,7 +52,15 @@ let authHandler = {
       return { success: true, user }
     } catch (error) {
       console.error('Login error:', error)
-      showToast(error.message || 'Login failed', 'error')
+      
+      // ✅ Handle validation errors with better formatting
+      if (error.backendErrors && Array.isArray(error.backendErrors)) {
+        const messages = error.backendErrors.map(e => `• ${e.message || e.msg}`).join('\n')
+        showToast(`Login failed:\n${messages}`, 'error')
+      } else {
+        showToast(error.message || 'Login failed', 'error')
+      }
+      
       return { success: false, error: error.message }
     }
   },
