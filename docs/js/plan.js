@@ -182,16 +182,22 @@ async function updateMapLocation(destination) {
     }
     
     try {
-        // Use Nominatim API for geocoding
+        // Use Geoapify API (supports CORS and has API key in config)
+        const apiKey = window.CONFIG?.GEOAPIFY_API_KEY || '133144445c81412f85c94c986b2c1831';
         const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`
+            `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=1&apiKey=${apiKey}`
         );
+        
+        if (!response.ok) {
+            throw new Error(`Geocoding failed: ${response.status}`);
+        }
+        
         const data = await response.json();
         
-        if (data && data.length > 0) {
-            const location = data[0];
-            const lat = parseFloat(location.lat);
-            const lon = parseFloat(location.lon);
+        if (data.features && data.features.length > 0) {
+            const location = data.features[0];
+            const lat = location.properties.lat;
+            const lon = location.properties.lon;
             
             // Update map view
             currentMap.setView([lat, lon], 10);
@@ -203,12 +209,16 @@ async function updateMapLocation(destination) {
             
             // Add new marker
             currentMarker = L.marker([lat, lon]).addTo(currentMap);
-            currentMarker.bindPopup(`<b>${destination}</b>`).openPopup();
+            const placeName = location.properties.formatted || destination;
+            currentMarker.bindPopup(`<b>${placeName}</b>`).openPopup();
             
-            console.log(`📍 Map updated to: ${destination}`);
+            console.log(`📍 Map updated to: ${placeName}`);
+        } else {
+            console.log('No location found for:', destination);
         }
     } catch (error) {
         console.error('Error updating map location:', error);
+        // Silently fail - don't show error to user
     }
 }
 
@@ -272,23 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize map reference with retry logic
     let mapInitAttempts = 0;
-    const maxAttempts = 5;
+    const maxAttempts = 10;
     
     const tryInitMap = () => {
-        if (window.tripMap) {
-            currentMap = window.tripMap;
+        // Check both window.tripMap and the global tripMap variable
+        const map = window.tripMap || (typeof tripMap !== 'undefined' ? tripMap : null);
+        
+        if (map) {
+            currentMap = map;
+            window.tripMap = map; // Ensure it's on window object
             initializePlanningMap();
             console.log('✅ Map integration complete');
         } else if (mapInitAttempts < maxAttempts) {
             mapInitAttempts++;
-            setTimeout(tryInitMap, 300);
+            console.log(`🔄 Map init attempt ${mapInitAttempts}/${maxAttempts}...`);
+            setTimeout(tryInitMap, 200);
         } else {
-            console.warn('⚠️ Map not available - continuing without map integration');
+            console.warn('⚠️ Map not available after all attempts - continuing without map integration');
         }
     };
     
-    // Start trying to initialize map
-    setTimeout(tryInitMap, 300);
+    // Start trying to initialize map after a short delay
+    setTimeout(tryInitMap, 100);
 });
 
 // Make functions globally available for inline handlers
