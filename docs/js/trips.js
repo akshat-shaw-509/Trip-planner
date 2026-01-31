@@ -49,24 +49,54 @@ const showLoading = (show) => {
 // -------------------------------------------------------
 const loadTrips = async () => {
   try {
+    console.log('🔄 Loading trips from API...')
     const response = await apiService.trips.getAll()
+    
+    // ✅ ENHANCED DEBUGGING - Log the exact response structure
+    console.log('📦 Raw API Response:', response)
+    console.log('📦 Response type:', typeof response)
+    console.log('📦 Response keys:', Object.keys(response || {}))
+    console.log('📦 Is Array?:', Array.isArray(response))
 
-    // Support multiple backend response formats
-    if (response?.success && Array.isArray(response.data)) {
-      allTrips = response.data
-    } else if (Array.isArray(response)) {
-      allTrips = response
+    // ✅ IMPROVED: Handle all possible response formats
+    let trips = []
+    
+    if (Array.isArray(response)) {
+      // Response is directly an array
+      console.log('✅ Response is array format')
+      trips = response
+    } else if (response?.success && response.data) {
+      // Response has success flag and data property
+      if (Array.isArray(response.data)) {
+        console.log('✅ Response is {success: true, data: []} format')
+        trips = response.data
+      } else if (response.data.trips && Array.isArray(response.data.trips)) {
+        console.log('✅ Response is {success: true, data: {trips: []}} format')
+        trips = response.data.trips
+      }
+    } else if (response?.data && Array.isArray(response.data)) {
+      // Response has data property (no success flag)
+      console.log('✅ Response is {data: []} format')
+      trips = response.data
     } else if (response?.trips && Array.isArray(response.trips)) {
-      allTrips = response.trips
-    } else {
-      allTrips = []
+      // Response has trips property
+      console.log('✅ Response is {trips: []} format')
+      trips = response.trips
+    } else if (response?.data?.trips && Array.isArray(response.data.trips)) {
+      // Nested trips
+      console.log('✅ Response is {data: {trips: []}} format')
+      trips = response.data.trips
     }
 
+    console.log('📊 Parsed trips count:', trips.length)
+    console.log('📊 Trips data:', trips)
+
+    allTrips = trips
     updateStats(allTrips)
     displayTrips(allTrips)
 
   } catch (error) {
-    console.error('Error loading trips:', error)
+    console.error('❌ Error loading trips:', error)
 
     if (typeof showToast === 'function') {
       if (error.message.includes('Failed to fetch')) {
@@ -108,6 +138,8 @@ const getAutoStatus = (trip) => {
 // Update dashboard statistics
 // -------------------------------------------------------
 const updateStats = (trips) => {
+  console.log('📊 Updating stats for', trips.length, 'trips')
+  
   const stats = {
     planning: 0,
     upcoming: 0,
@@ -119,6 +151,8 @@ const updateStats = (trips) => {
 
   trips.forEach(trip => {
     const status = getAutoStatus(trip)
+    console.log(`Trip "${trip.title}" status:`, status)
+    
     if (stats.hasOwnProperty(status)) stats[status]++
 
     // Count visited countries
@@ -127,6 +161,8 @@ const updateStats = (trips) => {
       if (country) stats.countries.add(country.toLowerCase())
     }
   })
+
+  console.log('📊 Final stats:', stats)
 
   updateStatElement('upcomingCount', stats.planning + stats.upcoming)
   updateStatElement('ongoingCount', stats.ongoing)
@@ -150,18 +186,30 @@ const extractCountry = (trip) => {
 
 const updateStatElement = (id, value) => {
   const element = document.getElementById(id)
-  if (element) element.textContent = value
+  if (element) {
+    element.textContent = value
+    console.log(`✅ Updated ${id} to ${value}`)
+  } else {
+    console.warn(`⚠️ Element ${id} not found`)
+  }
 }
 
 // -------------------------------------------------------
 // Render trips
 // -------------------------------------------------------
 const displayTrips = (trips) => {
+  console.log('🎨 Displaying', trips.length, 'trips')
+  
   const grid = document.getElementById('tripsGrid')
   const empty = document.querySelector('.empty-state')
-  if (!grid) return
+  
+  if (!grid) {
+    console.error('❌ tripsGrid element not found!')
+    return
+  }
 
   if (!trips || trips.length === 0) {
+    console.log('📭 No trips to display - showing empty state')
     showEmptyState(grid, empty)
     return
   }
@@ -170,6 +218,8 @@ const displayTrips = (trips) => {
   if (empty) empty.style.display = 'none'
 
   grid.innerHTML = trips.map(createTripCard).join('')
+  console.log('✅ Trip cards rendered')
+  
   attachTripListeners()
 }
 
@@ -177,6 +227,8 @@ const showEmptyState = (grid, empty) => {
   grid = grid || document.getElementById('tripsGrid')
   empty = empty || document.querySelector('.empty-state')
 
+  console.log('📭 Showing empty state')
+  
   if (grid) grid.style.display = 'none'
   if (empty) empty.style.display = 'block'
 }
@@ -188,6 +240,9 @@ const createTripCard = (trip) => {
   const status = getAutoStatus(trip)
   const statusClass = status === 'ongoing' ? 'status-active' : ''
 
+  // ✅ Handle both _id and id
+  const tripId = trip._id || trip.id
+
   const coverImage = trip.coverImage
     ? (trip.coverImage.startsWith('http')
         ? trip.coverImage
@@ -195,7 +250,7 @@ const createTripCard = (trip) => {
     : `https://source.unsplash.com/800x600/?${encodeURIComponent(trip.destination || 'travel')}`
 
   return `
-    <div class="trip-card" data-trip-id="${trip._id}">
+    <div class="trip-card" data-trip-id="${tripId}">
       <div class="trip-image">
         <img src="${coverImage}"
              alt="${escapeHtml(trip.destination || 'Trip')}"
@@ -203,7 +258,7 @@ const createTripCard = (trip) => {
         <span class="trip-status ${statusClass}">
           ${capitalize(status)}
         </span>
-        <button class="delete-trip-btn" data-trip-id="${trip._id}" title="Delete Trip">
+        <button class="delete-trip-btn" data-trip-id="${tripId}" title="Delete Trip">
           <i class="fas fa-trash-alt"></i>
         </button>
       </div>
@@ -267,10 +322,11 @@ const deleteTrip = async (tripId) => {
   if (!confirm('Are you sure you want to delete this trip?')) return
 
   try {
+    console.log('🗑️ Deleting trip:', tripId)
     await apiService.trips.delete(tripId)
     showToast?.('Trip deleted successfully', 'success')
 
-    allTrips = allTrips.filter(t => t._id !== tripId)
+    allTrips = allTrips.filter(t => (t._id || t.id) !== tripId)
     updateStats(allTrips)
     filterAndDisplayTrips()
 
@@ -284,6 +340,8 @@ const deleteTrip = async (tripId) => {
 // Event listeners
 // -------------------------------------------------------
 const attachTripListeners = () => {
+  console.log('🔗 Attaching trip listeners')
+  
   document.querySelectorAll('.delete-trip-btn').forEach(btn => {
     btn.onclick = e => {
       e.stopPropagation()
@@ -291,10 +349,19 @@ const attachTripListeners = () => {
     }
   })
 
+  // ✅ FIXED: Remove reference to non-existent trip-overview.html
   document.querySelectorAll('.trip-card').forEach(card => {
     card.onclick = e => {
       if (e.target.closest('.delete-trip-btn')) return
-      window.location.href = `./trip-overview.html?id=${card.dataset.tripId}`
+      
+      const tripId = card.dataset.tripId
+      console.log('🔍 Clicked trip:', tripId)
+      
+      // ✅ For now, just show a toast since we don't have a details page
+      showToast?.('Trip details page coming soon!', 'info')
+      
+      // ✅ TODO: Once you have a trip details page, uncomment this:
+      // window.location.href = `./trip-details.html?id=${tripId}`
     }
   })
 }
@@ -318,6 +385,7 @@ const initSearch = () => {
 const initFilters = () => {
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.onclick = () => {
+      console.log('🔍 Filter clicked:', tab.dataset.filter)
       document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'))
       tab.classList.add('active')
       currentFilter = tab.dataset.filter
@@ -330,6 +398,7 @@ const initSort = () => {
   const sortSelect = document.getElementById('sortSelect')
   if (sortSelect) {
     sortSelect.addEventListener('change', e => {
+      console.log('🔀 Sort changed:', e.target.value)
       currentSort = e.target.value
       filterAndDisplayTrips()
     })
@@ -338,8 +407,11 @@ const initSort = () => {
 
 const filterAndDisplayTrips = (query = '') => {
   let filtered = [...allTrips]
+  
+  console.log('🔍 Filtering trips. Total:', allTrips.length)
 
   if (query) {
+    console.log('🔍 Search query:', query)
     filtered = filtered.filter(t =>
       (t.title || '').toLowerCase().includes(query) ||
       (t.destination || '').toLowerCase().includes(query) ||
@@ -348,9 +420,11 @@ const filterAndDisplayTrips = (query = '') => {
   }
 
   if (currentFilter !== 'all') {
+    console.log('🔍 Status filter:', currentFilter)
     filtered = filtered.filter(t => getAutoStatus(t) === currentFilter)
   }
 
+  console.log('✅ Filtered to', filtered.length, 'trips')
   displayTrips(sortTrips(filtered, currentSort))
 }
 
@@ -381,4 +455,9 @@ const initLogout = () => {
 // -------------------------------------------------------
 // ✅ CRITICAL: Initialize on page load
 // -------------------------------------------------------
-document.addEventListener('DOMContentLoaded', initTripsPage)
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Trips page initializing...')
+  initTripsPage()
+})
+
+console.log('✅ trips.js loaded with enhanced debugging')
