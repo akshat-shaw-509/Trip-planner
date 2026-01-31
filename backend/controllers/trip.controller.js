@@ -36,7 +36,7 @@ const getUserTrips = asyncHandler(async (req, res) => {
     limit: req.query.limit,
   }
 
-  const result = await tripService.getTripsByUser(req.user.id, filters)
+  const result = await tripService.getTripsByUser(req.user._id, filters)
 
   sendSuccess(res, 200, result.trips, null, {
     pagination: result.pagination
@@ -48,7 +48,7 @@ const getUserTrips = asyncHandler(async (req, res) => {
  * GET /api/trips/:tripId
  */
 const getTripById = asyncHandler(async (req, res) => {
-  const trip = await tripService.getTripById(req.params.tripId, req.user.id)
+  const trip = await tripService.getTripById(req.params.tripId, req.user._id)
   sendSuccess(res, 200, trip)
 })
 
@@ -60,7 +60,7 @@ const updateTrip = asyncHandler(async (req, res) => {
   const trip = await tripService.updateTrip(
     req.params.tripId,
     req.body,
-    req.user.id
+    req.user._id
   )
   sendSuccess(res, 200, trip, 'Trip updated successfully')
 })
@@ -70,7 +70,7 @@ const updateTrip = asyncHandler(async (req, res) => {
  * DELETE /api/trips/:tripId
  */
 const deleteTrip = asyncHandler(async (req, res) => {
-  const result = await tripService.deleteTrip(req.params.tripId, req.user.id)
+  const result = await tripService.deleteTrip(req.params.tripId, req.user._id)
   sendSuccess(res, 200, null, result.message)
 })
 
@@ -79,7 +79,7 @@ const deleteTrip = asyncHandler(async (req, res) => {
  * GET /api/trips/upcoming
  */
 const getUpcomingTrips = asyncHandler(async (req, res) => {
-  const trips = await tripService.getUpcomingTrips(req.user.id)
+  const trips = await tripService.getUpcomingTrips(req.user._id)
   sendSuccess(res, 200, trips, null, { count: trips.length })
 })
 
@@ -88,7 +88,7 @@ const getUpcomingTrips = asyncHandler(async (req, res) => {
  * GET /api/trips/ongoing
  */
 const getOngoingTrips = asyncHandler(async (req, res) => {
-  const trips = await tripService.getOngoingTrips(req.user.id)
+  const trips = await tripService.getOngoingTrips(req.user._id)
   sendSuccess(res, 200, trips, null, { count: trips.length })
 })
 
@@ -98,7 +98,7 @@ const getOngoingTrips = asyncHandler(async (req, res) => {
  */
 const getPastTrips = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 10
-  const trips = await tripService.getPastTrips(req.user.id, limit)
+  const trips = await tripService.getPastTrips(req.user._id, limit)
 
   sendSuccess(res, 200, trips, null, { count: trips.length })
 })
@@ -111,7 +111,7 @@ const addCollaborator = asyncHandler(async (req, res) => {
   const trip = await tripService.addCollaborator(
     req.params.tripId,
     req.body,
-    req.user.id
+    req.user._id
   )
 
   sendSuccess(res, 200, trip, 'Collaborator added successfully')
@@ -125,7 +125,7 @@ const removeCollaborator = asyncHandler(async (req, res) => {
   const trip = await tripService.removeCollaborator(
     req.params.tripId,
     req.params.collaboratorId,
-    req.user.id
+    req.user._id
   )
 
   sendSuccess(res, 200, trip, 'Collaborator removed successfully')
@@ -146,7 +146,7 @@ const updateTripStatus = asyncHandler(async (req, res) => {
   const trip = await tripService.updateTripStatus(
     req.params.tripId,
     req.body.status,
-    req.user.id
+    req.user._id
   )
 
   sendSuccess(res, 200, trip, 'Trip status updated successfully')
@@ -163,7 +163,7 @@ const uploadBanner = asyncHandler(async (req, res) => {
 
   const updatedTrip = await tripService.uploadBanner(
     req.params.tripId,
-    req.user.id,
+    req.user._id,
     req.file
   )
 
@@ -184,7 +184,7 @@ const uploadBanner = asyncHandler(async (req, res) => {
 const removeBanner = asyncHandler(async (req, res) => {
   const updatedTrip = await tripService.removeBanner(
     req.params.tripId,
-    req.user.id
+    req.user._id
   )
 
   res.status(200).json({
@@ -212,4 +212,5 @@ module.exports = {
   uploadBanner,
   removeBanner
 }
+
 
