@@ -60,7 +60,7 @@ let createTrip = async (tripData, userId) => {
       travelers: travelers || 1,
       tags: tags || [],
       coverImage,
-      userId
+      userId: userId.toString() // ✅ Convert to string for consistency
     })
     return trip
   } catch (error) {
@@ -90,7 +90,8 @@ let getTripsByUser = async (userId, filters = {}) => {
   } = filters
 
   let skip = (page - 1) * limit
-  let query = { userId }
+  // ✅ Convert userId to string for consistent comparison
+  let query = { userId: userId.toString() }
 
   if (status) {
     query.status = status
@@ -140,7 +141,18 @@ let getTripById = async (tripId, userId) => {
     throw NotFoundError('Trip not found')
   }
 
-  if (trip.userId.toString() !== userId && !trip.isPublic) {
+  // ✅ FIX: Convert both to strings for comparison
+  const tripUserId = trip.userId.toString()
+  const requestUserId = userId.toString()
+  
+  console.log('🔍 Debug getTripById:')
+  console.log('  - Trip ID:', tripId)
+  console.log('  - Trip userId:', tripUserId)
+  console.log('  - Request userId:', requestUserId)
+  console.log('  - Match?:', tripUserId === requestUserId)
+  console.log('  - Is Public?:', trip.isPublic)
+
+  if (tripUserId !== requestUserId && !trip.isPublic) {
     throw ForbiddenError('You do not have access to this trip')
   }
 
@@ -184,8 +196,9 @@ let updateTrip = async (tripId, updateData, userId) => {
     updateData.endDate = endDate
   }
 
+  // ✅ Convert userId to string for query
   let trip = await Trip.findOneAndUpdate(
-    { _id: tripId, userId },
+    { _id: tripId, userId: userId.toString() },
     updateData,
     { new: true, runValidators: true }
   )
@@ -208,7 +221,11 @@ let deleteTrip = async (tripId, userId) => {
     throw ValidationError('Trip ID is required')
   }
 
-  let trip = await Trip.findOneAndDelete({ _id: tripId, userId })
+  // ✅ Convert userId to string for query
+  let trip = await Trip.findOneAndDelete({ 
+    _id: tripId, 
+    userId: userId.toString() 
+  })
 
   if (!trip) {
     throw NotFoundError(
@@ -224,8 +241,9 @@ let deleteTrip = async (tripId, userId) => {
  */
 let getUpcomingTrips = async (userId) => {
   let now = new Date()
+  // ✅ Convert userId to string for query
   return Trip.find({
-    userId,
+    userId: userId.toString(),
     startDate: { $gt: now },
     status: { $ne: 'cancelled' }
   }).sort('startDate')
@@ -233,8 +251,9 @@ let getUpcomingTrips = async (userId) => {
 
 let getOngoingTrips = async (userId) => {
   let now = new Date()
+  // ✅ Convert userId to string for query
   return Trip.find({
-    userId,
+    userId: userId.toString(),
     startDate: { $lte: now },
     endDate: { $gte: now },
     status: { $nin: ['cancelled', 'completed'] }
@@ -243,8 +262,9 @@ let getOngoingTrips = async (userId) => {
 
 let getPastTrips = async (userId, limit = 10) => {
   let now = new Date()
+  // ✅ Convert userId to string for query
   return Trip.find({
-    userId,
+    userId: userId.toString(),
     $or: [
       { endDate: { $lt: now } },
       { status: 'completed' }
@@ -272,8 +292,9 @@ let updateTripStatus = async (tripId, status, userId) => {
     )
   }
 
+  // ✅ Convert userId to string for query
   let trip = await Trip.findOneAndUpdate(
-    { _id: tripId, userId },
+    { _id: tripId, userId: userId.toString() },
     { status },
     { new: true, runValidators: true }
   )
@@ -294,7 +315,8 @@ let addCollaborator = async (tripId, collaboratorData, userId) => {
   let trip = await Trip.findById(tripId)
   if (!trip) throw NotFoundError('Trip not found')
 
-  if (trip.userId.toString() !== userId) {
+  // ✅ Convert both to strings for comparison
+  if (trip.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Only trip owner can add collaborators')
   }
 
@@ -307,7 +329,8 @@ let removeCollaborator = async (tripId, collaboratorId, userId) => {
   let trip = await Trip.findById(tripId)
   if (!trip) throw NotFoundError('Trip not found')
 
-  if (trip.userId.toString() !== userId) {
+  // ✅ Convert both to strings for comparison
+  if (trip.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Only trip owner can remove collaborators')
   }
 
@@ -328,7 +351,8 @@ let uploadBanner = async (tripId, userId, file) => {
       throw NotFoundError('Trip not found')
     }
 
-    if (trip.userId.toString() !== userId) {
+    // ✅ Convert both to strings for comparison
+    if (trip.userId.toString() !== userId.toString()) {
       await fs.unlink(file.path).catch(() => {})
       throw ForbiddenError('Not authorized to update this trip')
     }
@@ -358,7 +382,8 @@ let removeBanner = async (tripId, userId) => {
   let trip = await Trip.findById(tripId)
   if (!trip) throw NotFoundError('Trip not found')
 
-  if (trip.userId.toString() !== userId) {
+  // ✅ Convert both to strings for comparison
+  if (trip.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Not authorized to update this trip')
   }
 
