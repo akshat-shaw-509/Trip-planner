@@ -59,8 +59,6 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwt.secret)
 
     // ✅ OPTIMIZED DATABASE QUERY
-    // - Select only needed fields (reduces data transfer)
-    // - Use .lean() to get plain JS object (faster than Mongoose document)
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
       .lean()
@@ -74,11 +72,18 @@ const authenticate = async (req, res, next) => {
       throw UnauthorizedError('User account is inactive')
     }
 
+    // ✅ FIX: Ensure both _id and id are available on req.user
+    const userWithId = {
+      ...user,
+      _id: user._id,           // MongoDB's _id
+      id: user._id.toString()  // String version for compatibility
+    }
+
     // ✅ CACHE THE USER (subsequent requests will be faster)
-    tokenCache.set(token, user)
+    tokenCache.set(token, userWithId)
 
     // Attach authenticated user to request object
-    req.user = user
+    req.user = userWithId
     next()
   } catch (error) {
     // Token expired
@@ -125,6 +130,7 @@ const authorize = (...roles) => {
  * - Attaches req.user only if token is valid
  * - Useful for public routes with enhanced features for logged-in users
  */
+
 const optionalAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req)
@@ -145,8 +151,14 @@ const optionalAuth = async (req, res, next) => {
       .lean()
 
     if (user && user.isActive) {
-      tokenCache.set(token, user)
-      req.user = user
+      // ✅ FIX: Ensure both _id and id are available
+      const userWithId = {
+        ...user,
+        _id: user._id,
+        id: user._id.toString()
+      }
+      tokenCache.set(token, userWithId)
+      req.user = userWithId
     }
   } catch (error) {
     // Silently ignore token errors in optional auth
@@ -176,3 +188,4 @@ module.exports = {
   optionalAuth,
   invalidateUserCache // Export for use when user data changes
 }
+
