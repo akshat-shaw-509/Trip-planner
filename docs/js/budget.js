@@ -1,44 +1,35 @@
-// ===================== Global State =====================
 let currentTripId = null
 let expenseList = []
 let currentExpenseId = null
 let tripBudget = 0
 let categoryChart = null
 let trendChart = null
-
-// Refresh charts and analytics
 function updateAnalytics() {
   renderCategoryChart()
   renderTrendChart()
   renderCategoryBreakdown()
 }
 
-// ===================== Page Init =====================
 document.addEventListener('DOMContentLoaded', async () => {
   if (!authHandler.requireAuth()) return
-
   currentTripId =
-    new URLSearchParams(window.location.search).get('id') ||
-    sessionStorage.getItem('currentTripId')
-
+    new URLSearchParams(window.location.search).get('id') || sessionStorage.getItem('currentTripId')
   if (!currentTripId) {
     showToast('Select a trip first', 'error')
     setTimeout(() => (window.location.href = 'trips.html'), 2000)
     return
   }
-
   await loadTripInfo()
   await loadExpenses()
   initExpenseHandlers()
 })
 
-// ===================== Data Loading =====================
+// Data Loading
 async function loadTripInfo() {
   try {
     const res = await apiService.trips.getById(currentTripId)
     const trip = res.data
     if (!trip) return
-
     document.getElementById('tripName').textContent = trip.title
     document.getElementById('totalBudget').textContent = `₹${(trip.budget || 0).toLocaleString()}`
     tripBudget = trip.budget || 0
@@ -51,7 +42,6 @@ async function loadExpenses() {
   try {
     const res = await apiService.expenses.getByTrip(currentTripId)
     expenseList = Array.isArray(res.data) ? res.data : []
-
     displayExpenses()
     updateSummary()
     updateAnalytics()
@@ -61,13 +51,11 @@ async function loadExpenses() {
   }
 }
 
-// ===================== Expense List =====================
+// Expense List
 function displayExpenses() {
   const listEl = document.getElementById('expensesList')
   if (!listEl) return
-
   let filtered = [...expenseList]
-
   const category = document.getElementById('categoryFilter').value
   if (category && category !== 'all') {
     filtered = filtered.filter(e => e.category === category)
@@ -95,9 +83,7 @@ function displayExpenses() {
     return
   }
   if (emptyState) emptyState.style.display = 'none'
-
   listEl.innerHTML = filtered.map(e => createExpenseItem(e)).join('')
-
   filtered.forEach(e => {
     const el = listEl.querySelector(`[data-expense-id="${e._id}"]`)
     if (el) el.onclick = () => editExpense(e)
@@ -106,7 +92,6 @@ function displayExpenses() {
 
 function createExpenseItem(exp) {
   const date = new Date(exp.date).toLocaleDateString('en-IN')
-
   const iconMap = {
     accommodation: 'bed',
     food: 'utensils',
@@ -136,13 +121,12 @@ function createExpenseItem(exp) {
   `
 }
 
-// ===================== Handlers =====================
+// Handlers
 function initExpenseHandlers() {
   document.getElementById('addExpenseBtn').onclick = openAddExpenseModal
   document.getElementById('closeModal').onclick = closeExpenseModal
   document.getElementById('cancelBtn').onclick = closeExpenseModal
   document.getElementById('expenseForm').onsubmit = handleExpenseSubmit
-
   document.getElementById('categoryFilter').onchange = displayExpenses
   document.getElementById('sortFilter').onchange = displayExpenses
 }
@@ -179,7 +163,6 @@ async function handleExpenseSubmit(e) {
       await apiService.expenses.create(currentTripId, data)
       showToast('Expense added', 'success')
     }
-
     closeExpenseModal()
     await loadExpenses()
   } catch (err) {
@@ -191,7 +174,6 @@ async function handleExpenseSubmit(e) {
 function editExpense(exp) {
   currentExpenseId = exp._id
   document.getElementById('modalTitle').textContent = 'Edit Expense'
-
   document.getElementById('expenseDescription').value = exp.description
   document.getElementById('expenseAmount').value = exp.amount
   document.getElementById('expenseCategory').value = exp.category
@@ -199,43 +181,38 @@ function editExpense(exp) {
   document.getElementById('expensePaymentMethod').value = exp.paymentMethod || 'cash'
   document.getElementById('expensePaidBy').value = exp.paidBy || ''
   document.getElementById('expenseNotes').value = exp.notes || ''
-
   document.getElementById('expenseModal').style.display = 'block'
 }
 
-// ===================== Summary =====================
+// Summary
 function updateSummary() {
   const totalSpent = expenseList.reduce((sum, e) => sum + e.amount, 0)
   const remaining = tripBudget - totalSpent
   const avg = expenseList.length ? totalSpent / expenseList.length : 0
   const percent = tripBudget ? Math.min((totalSpent / tripBudget) * 100, 100) : 0
-
   document.getElementById('totalSpent').textContent = `₹${totalSpent.toLocaleString()}`
   document.getElementById('remaining').textContent = `₹${Math.max(remaining, 0).toLocaleString()}`
   document.getElementById('dailyAverage').textContent = `₹${avg.toFixed(2)}`
-
   const progress = document.getElementById('spentProgress')
   const percentText = document.getElementById('spentPercentage')
   if (progress) progress.style.width = `${percent}%`
   if (percentText) percentText.textContent = `${percent.toFixed(1)}% of budget`
 }
 
-// ===================== Utils =====================
+// Utils
 function escapeHtml(text) {
   const div = document.createElement('div')
   div.textContent = text
   return div.innerHTML
 }
-
 function capitalizeFirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-// ===================== Charts =====================
+// Charts
 function renderCategoryChart() {
   const ctx = document.getElementById('categoryChart')
   if (!ctx) return
-
   const totals = {}
   expenseList.forEach(e => {
     totals[e.category] = (totals[e.category] || 0) + e.amount
@@ -254,16 +231,13 @@ function renderCategoryChart() {
 function renderTrendChart() {
   const ctx = document.getElementById('trendChart')
   if (!ctx) return
-
   const daily = {}
   expenseList.forEach(e => {
     const date = new Date(e.date).toLocaleDateString()
     daily[date] = (daily[date] || 0) + e.amount
   })
-
   const labels = Object.keys(daily).sort((a, b) => new Date(a) - new Date(b))
   const data = labels.map(d => daily[d])
-
   if (trendChart) trendChart.destroy()
   trendChart = new Chart(ctx, {
     type: 'line',
@@ -287,7 +261,6 @@ function renderCategoryBreakdown() {
   expenseList.forEach(e => {
     totals[e.category] = (totals[e.category] || 0) + e.amount
   })
-
   container.innerHTML = Object.entries(totals)
     .map(([cat, amt]) => `
       <div class="breakdown-item">
