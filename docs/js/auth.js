@@ -1,4 +1,3 @@
-// ===================== Auth State & Helpers =====================
 let authHandler = {
   isAuthenticated() {
     return !!sessionStorage.getItem('accessToken')
@@ -23,7 +22,7 @@ let authHandler = {
     sessionStorage.removeItem('user')
   },
 
-  // ===================== Login =====================
+  // Login Form
   async handleLogin(email, password) {
     try {
       const response = await apiService.auth.login({ email, password })
@@ -43,8 +42,6 @@ let authHandler = {
 
       this.storeAuthData(accessToken, refreshToken, user)
       showToast('Login successful', 'success')
-
-      // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
       setTimeout(() => {
         window.location.href = '/Trip-planner/index.html'
       }, 300)
@@ -52,8 +49,6 @@ let authHandler = {
       return { success: true, user }
     } catch (error) {
       console.error('Login error:', error)
-      
-      // ✅ Handle validation errors with better formatting
       if (error.backendErrors && Array.isArray(error.backendErrors)) {
         const messages = error.backendErrors.map(e => `• ${e.message || e.msg}`).join('\n')
         showToast(`Login failed:\n${messages}`, 'error')
@@ -65,7 +60,7 @@ let authHandler = {
     }
   },
 
-  // ===================== Register =====================
+  // Register Form
   async handleRegister(name, email, password) {
     try {
       const response = await apiService.auth.register({ name, email, password })
@@ -81,8 +76,6 @@ let authHandler = {
 
       this.storeAuthData(accessToken, refreshToken, user)
       showToast('Account created', 'success')
-
-      // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
       setTimeout(() => {
         window.location.href = './trips.html'
       }, 300)
@@ -101,7 +94,6 @@ let authHandler = {
     }
   },
 
-  // ===================== Logout =====================
   async handleLogout() {
     try {
       await apiService.auth.logout()
@@ -109,31 +101,10 @@ let authHandler = {
       console.error('Logout error:', error)
     } finally {
       this.clearAuthData()
-      // ✅ OPTIMIZED: Clear Google Client ID cache on logout
       localStorage.removeItem('googleClientId')
       window.location.href = '/Trip-planner/index.html'
     }
   },
-
-  // ===================== Token Refresh =====================
-  async refreshToken() {
-    try {
-      const refreshToken = sessionStorage.getItem('refreshToken')
-      if (!refreshToken) return false
-
-      const response = await apiService.auth.refreshToken(refreshToken)
-      if (response.success) {
-        sessionStorage.setItem('accessToken', response.data.accessToken)
-        return true
-      }
-      return false
-    } catch (error) {
-      console.warn('Token refresh failed')
-      return false
-    }
-  },
-
-  // ===================== Route Guard =====================
   requireAuth() {
     if (!this.isAuthenticated()) {
       window.location.href = '/Trip-planner/index.html'
@@ -143,7 +114,6 @@ let authHandler = {
   }
 }
 
-// ===================== Login Form =====================
 if (document.getElementById('loginForm')) {
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -170,7 +140,6 @@ if (document.getElementById('loginForm')) {
   })
 }
 
-// ===================== Signup Form =====================
 if (document.getElementById('signupForm')) {
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -210,7 +179,7 @@ if (document.getElementById('signupForm')) {
   })
 }
 
-// ===================== UI Helpers =====================
+// UI helpers
 function togglePassword(inputId) {
   const input = document.getElementById(inputId)
   if (!input) return
@@ -225,9 +194,7 @@ function togglePassword(inputId) {
   }
 }
 
-// ===================== Google OAuth =====================
-
-// ✅ OPTIMIZED: Load Google Client ID with caching
+// Google OAuth
 async function loadGoogleClientId() {
   try {
     // Check localStorage cache first
@@ -253,7 +220,6 @@ async function loadGoogleClientId() {
     
     if (data.success && data.clientId) {
       window.GOOGLE_CLIENT_ID = data.clientId
-      // ✅ Cache the client ID
       localStorage.setItem('googleClientId', data.clientId)
       localStorage.setItem('googleClientIdTimestamp', Date.now().toString())
       initializeGoogleSignIn()
@@ -292,8 +258,6 @@ async function handleGoogleLogin(response) {
     authHandler.storeAuthData(accessToken, null, user)
 
     showToast('Login successful', 'success')
-    
-    // ✅ OPTIMIZED: Reduced delay from 1000ms to 300ms
     setTimeout(() => {
       window.location.href = './trips.html'
     }, 300)
@@ -303,7 +267,7 @@ async function handleGoogleLogin(response) {
   }
 }
 
-// ===================== Google SDK Init =====================
+//  Google SDK init
 let googleInitialized = false
 
 function initializeGoogleSignIn() {
@@ -330,7 +294,6 @@ function onGoogleScriptLoad() {
   loadGoogleClientId()
 }
 
-// ===================== Expose Globals =====================
 window.authHandler = authHandler
 window.togglePassword = togglePassword
 window.handleGoogleLogin = handleGoogleLogin
