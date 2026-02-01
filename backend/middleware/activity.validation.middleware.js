@@ -1,7 +1,3 @@
-/**
- * Validate activity creation
- * Ensures required fields are present and valid
- */
 const validateActivity = (req, res, next) => {
   const { title, startTime, endTime, date } = req.body;
   // Title is required
@@ -138,4 +134,5 @@ module.exports = {
   validateActivity,
   validateActivityUpdate
 }
+
 
