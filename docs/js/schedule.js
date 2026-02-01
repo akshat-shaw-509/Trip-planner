@@ -1,14 +1,6 @@
-// SCHEDULE.JS - FIXED VERSION WITH API SERVICE CHECK
 (function() {
     'use strict'
-
-    if (window.schedulePageLoaded) {
-        console.warn('Schedule already loaded, skipping...')
-        return
-    }
-
-    window.schedulePageLoaded = true
-
+    
     let tripId = null
     let tripData = null
     let selectedDate = new Date()
@@ -17,32 +9,13 @@
     let calendar = null
 
     document.addEventListener('DOMContentLoaded', async () => {
-        console.log('Schedule page initializing...')
-
-        // ✅ CRITICAL FIX: Check if apiService is loaded
-if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined') {
-    console.error('apiService not loaded! Waiting...')
-    
-    // Wait up to 3 seconds for apiService to load
-    let retries = 0
-    while ((typeof window.apiService === 'undefined' && typeof apiService === 'undefined') && retries < 30) {
-        await new Promise(resolve => setTimeout(resolve, 100))
-        retries++
-    }
-    
-    if (typeof window.apiService === 'undefined' && typeof apiService === 'undefined') {
-        showAlert('Failed to load API service. Please refresh the page.', 'error')
-        return
-    }
-    
-    console.log('apiService loaded after waiting')
-}
-
-        // Make sure apiService is available globally
+       if (!window.apiService) {
+          showAlert('App failed to initialize. Please refresh.', 'error');
+           return;
+       }
         if (typeof window.apiService === 'undefined' && typeof apiService !== 'undefined') {
             window.apiService = apiService
         }
-
         // Check authentication
         let token = sessionStorage.getItem('accessToken')
         if (!token) {
@@ -50,19 +23,14 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
             setTimeout(() => window.location.href = '/Trip-planner/index.html', 1500)
             return
         }
-
         // Get trip ID from URL
         let urlParams = new URLSearchParams(window.location.search)
         tripId = urlParams.get('id')
-
         if (!tripId) {
             showAlert('Trip not found. Please select a trip first.', 'error')
             setTimeout(() => window.location.href = 'trips.html', 1500)
             return
         }
-
-        console.log('Loading trip:', tripId)
-
         try {
             await loadTripData()
             await loadActivities()
@@ -77,8 +45,6 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
             if (userName) {
                 userName.textContent = user.name || 'User'
             }
-
-            console.log('Schedule page loaded successfully')
         } catch (error) {
             console.error('Initialization error:', error)
             showAlert('Failed to initialize page: ' + error.message, 'error')
@@ -92,20 +58,15 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         let addActivityEmptyBtn = document.getElementById('addActivityEmptyBtn')
         if (addActivityBtn) addActivityBtn.onclick = openAddActivityModal
         if (addActivityEmptyBtn) addActivityEmptyBtn.onclick = openAddActivityModal
-
         // Modal buttons
         let closeModalBtn = document.getElementById('closeModalBtn')
         let cancelBtn = document.getElementById('cancelBtn')
         let saveActivityBtn = document.getElementById('saveActivityBtn')
-
         if (closeModalBtn) closeModalBtn.onclick = closeActivityModal
         if (cancelBtn) cancelBtn.onclick = closeActivityModal
         if (saveActivityBtn) saveActivityBtn.onclick = saveActivity
-
-        // Other buttons
         let todayBtn = document.getElementById('todayBtn')
         let logoutBtn = document.getElementById('logoutBtn')
-
         if (todayBtn) todayBtn.onclick = goToToday
         if (logoutBtn) {
             logoutBtn.onclick = () => {
@@ -129,35 +90,24 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     // Load trip data
     async function loadTripData() {
         try {
-            console.log('Fetching trip data...')
-            
             // Use whichever apiService is available
             const api = window.apiService || apiService
             const response = await api.trips.getById(tripId)
-
             if (!response || !response.data) {
                 throw new Error('Invalid response from server')
             }
-
             tripData = response.data
-            console.log('Trip data loaded:', tripData.title)
-
-            // Update UI
             let tripTitle = document.getElementById('tripTitle')
             let tripBreadcrumb = document.getElementById('tripBreadcrumb')
             let tripDates = document.getElementById('tripDates')
-
             if (tripTitle) tripTitle.textContent = tripData.title + ' Schedule'
             if (tripBreadcrumb) tripBreadcrumb.textContent = tripData.title
-
             let startDate = new Date(tripData.startDate).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
             })
-
             let endDate = new Date(tripData.endDate).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
             })
-
             if (tripDates) tripDates.textContent = `${startDate} - ${endDate}`
         } catch (error) {
             console.error('Error loading trip:', error)
@@ -168,47 +118,33 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     // Load activities
     async function loadActivities() {
         try {
-            console.log('Fetching activities...')
-            
             // Use whichever apiService is available
             const api = window.apiService || apiService
             const response = await api.activities.getByTrip(tripId)
-
-            console.log('Activities response:', response)
-
             // Handle both response.data and direct array
             activities = response.data || response || []
-
-            console.log(`Activities loaded: ${activities.length}`)
             renderActivities()
         } catch (error) {
             console.error('Error loading activities:', error)
-
-            // Don't throw - just show empty state
             activities = []
             renderActivities()
-
             if (error.statusCode !== 404) {
                 showAlert('Could not load activities', 'warning')
             }
         }
     }
 
-    // Initialize Flatpickr Calendar
+    // Flatpickr Calendar
     function initializeCalendar() {
         if (!tripData) {
             console.error('Cannot initialize calendar: trip data not loaded')
             return
         }
-
-        console.log('Initializing calendar...')
         let calendarEl = document.getElementById('calendar')
-
         if (!calendarEl) {
             console.error('Calendar element not found')
             return
         }
-
         try {
             calendar = flatpickr("#calendar", {
                 inline: true,
@@ -225,18 +161,14 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
                 onDayCreate: function(daysElem, dObj, fp, dayElem) {
                     // Flatpickr passes dayElem.dateObj which is already a Date object
                     let date = dayElem.dateObj
-                    
                     // Validate the date
                     if (!date || isNaN(date.getTime())) {
                         return
                     }
-                    
                     let dateStr = formatDate(date)
-
                     let dayActivities = activities
                         .map(a => splitActivityByDay(a)).flat()
                         .filter(a => formatDate(a.startTime) === dateStr)
-
                     if (dayActivities.length > 0) {
                         let indicator = document.createElement('span')
                         indicator.className = 'event-indicator'
@@ -245,30 +177,23 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
                     }
                 }
             })
-
             updateSelectedDate()
-            console.log('Calendar initialized')
         } catch (error) {
             console.error('Calendar initialization error:', error)
             showAlert('Calendar failed to load', 'warning')
         }
     }
 
-    // Generate time grid (7 AM to 11 PM)
     function generateTimeGrid() {
         let timeGrid = document.querySelector('.time-grid')
         if (!timeGrid) return
-
         timeGrid.innerHTML = ''
-
         for (let hour = 0; hour < 24; hour++) {
             let timeSlot = document.createElement('div')
             timeSlot.className = 'time-slot'
-
             let timeLabel = document.createElement('div')
             timeLabel.className = 'time-label'
             timeLabel.textContent = formatHour(hour)
-
             timeSlot.appendChild(timeLabel)
             timeGrid.appendChild(timeSlot)
         }
@@ -279,16 +204,12 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         let timeline = document.getElementById('activitiesTimeline')
         let emptyState = document.getElementById('emptyTimeline')
         if (!timeline || !emptyState) return
-
         let dateStr = formatDate(selectedDate)
-
         let dayActivities = activities
             .map(a => splitActivityByDay(a)).flat()
             .filter(a => formatDate(a.startTime) === dateStr)
             .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-
-        console.log('Render:', dateStr, dayActivities)
-
+    
         if (dayActivities.length === 0) {
             timeline.innerHTML = ''
             emptyState.style.display = 'flex'
@@ -304,28 +225,19 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     function createActivityBlock(activity) {
         let block = document.createElement('div')
         block.className = 'activity-block'
-
         let startTime = new Date(activity.startTime)
-
         let endTime = activity.endTime
             ? new Date(activity.endTime)
             : new Date(startTime.getTime() + 60 * 60 * 1000)
-
         let midnight = new Date(startTime)
         midnight.setHours(24, 0, 0, 0)
-
         let effectiveEnd = endTime > midnight ? midnight : endTime
-
         let startMinutes = startTime.getHours() * 60 + startTime.getMinutes()
         let endMinutes = effectiveEnd.getHours() * 60 + effectiveEnd.getMinutes()
-
         let duration = Math.max(endMinutes - startMinutes, 15)
-
-        let PX_PER_MIN = 80 / 60     // same scale as grid
-        let MAX_HEIGHT = 320         // visually safe max
-
+        let PX_PER_MIN = 80 / 60     
+        let MAX_HEIGHT = 320         
         let height = Math.min(duration * PX_PER_MIN, MAX_HEIGHT)
-
         block.style.top = `${startMinutes * PX_PER_MIN}px`
         block.style.height = `${height}px`
 
@@ -406,11 +318,9 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         let total = activities.length
         let completed = activities.filter(a => a.status === 'completed').length
         let pending = activities.filter(a => a.status === 'planned').length
-
         let totalEl = document.getElementById('totalActivities')
         let completedEl = document.getElementById('completedActivities')
         let pendingEl = document.getElementById('pendingActivities')
-
         if (totalEl) totalEl.textContent = total
         if (completedEl) completedEl.textContent = completed
         if (pendingEl) pendingEl.textContent = pending
@@ -419,22 +329,18 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     // Open add activity modal
     function openAddActivityModal() {
         currentActivityId = null
-
         let modalTitle = document.getElementById('modalTitle')
         let form = document.getElementById('activityForm')
-
         if (modalTitle) modalTitle.textContent = 'Add Activity'
         if (form) form.reset()
 
         // Set default date and time
         let dateTime = new Date(selectedDate)
         dateTime.setHours(9, 0, 0, 0)
-
         let startTimeInput = document.getElementById('activityStartTime')
         if (startTimeInput) {
             startTimeInput.value = formatDateTime(dateTime)
         }
-
         let modal = document.getElementById('activityModal')
         if (modal) modal.classList.add('active')
     }
@@ -449,10 +355,8 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     // Edit activity
     function editActivity(activity) {
         currentActivityId = activity._id
-
         let modalTitle = document.getElementById('modalTitle')
         if (modalTitle) modalTitle.textContent = 'Edit Activity'
-
         document.getElementById('activityTitle').value = activity.title
         document.getElementById('activityDescription').value = activity.description || ''
         document.getElementById('activityStartTime').value = formatDateTime(new Date(activity.startTime))
@@ -461,7 +365,6 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         document.getElementById('activityCost').value = activity.cost || ''
         document.getElementById('activityLocation').value = activity.location || ''
         document.getElementById('activityNotes').value = activity.notes || ''
-
         let modal = document.getElementById('activityModal')
         if (modal) modal.classList.add('active')
     }
@@ -500,13 +403,8 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
             visitStatus: 'planned',
             notes: notes || ''
         }
-
-        console.log('Sending activity payload:', activityData)
-
         try {
-            // Use whichever apiService is available
             const api = window.apiService || apiService
-            
             if (currentActivityId) {
                 await api.activities.update(currentActivityId, activityData)
                 showAlert('Activity updated successfully', 'success')
@@ -531,11 +429,9 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
     // Go to today
     function goToToday() {
         if (!tripData) return
-
         let today = new Date()
         let tripStart = new Date(tripData.startDate)
         let tripEnd = new Date(tripData.endDate)
-
         if (today >= tripStart && today <= tripEnd) {
             selectedDate = today
             if (calendar) {
@@ -570,13 +466,10 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         let year = d.getFullYear()
         let month = String(d.getMonth() + 1).padStart(2, '0')
         let day = String(d.getDate()).padStart(2, '0')
-        
         return `${year}-${month}-${day}`
     }
 
     function showAlert(message, type = 'info') {
-        console.log(`[${type.toUpperCase()}] ${message}`)
-
         let toast = document.createElement('div')
         toast.className = `toast toast-${type}`
         toast.textContent = message
@@ -593,9 +486,7 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
             animation: slideIn 0.3s ease;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         `
-
         document.body.appendChild(toast)
-
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease'
             setTimeout(() => toast.remove(), 300)
@@ -604,7 +495,6 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
 
     function splitActivityByDay(activity) {
         let segments = []
-
         let start = new Date(activity.startTime)
         let end = activity.endTime
             ? new Date(activity.endTime)
@@ -662,6 +552,4 @@ if (typeof window.apiService === 'undefined' || typeof apiService === 'undefined
         }
     `
     document.head.appendChild(style)
-
-    console.log('Schedule module loaded successfully')
 })()
