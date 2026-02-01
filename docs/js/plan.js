@@ -1,69 +1,53 @@
-// ============================================
-// TRIP PLANNING PAGE - FINAL FIXED VERSION
-// ============================================
-
 let currentMap = null;
 let currentMarker = null;
 
-// ===================== Authentication Functions =====================
 function getCurrentUser() {
-    // ✅ CHECK FOR 'accessToken' (your actual key name)
     const token = sessionStorage.getItem('accessToken') || 
                   sessionStorage.getItem('token') ||
                   localStorage.getItem('accessToken') || 
                   localStorage.getItem('token');
     
     if (!token) {
-        console.log('❌ No token found in storage');
+        console.log('No token found in storage');
         return null;
     }
-    
-    console.log('✅ Token found!');
-    
     try {
         // Decode JWT token to get user info
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('✅ Token decoded successfully:', payload);
-        
-        // ✅ YOUR BACKEND USES 'id' NOT 'userId'
+        console.log('Token decoded successfully:', payload);
         const userId = payload.id || payload._id || payload.userId;
-        
         if (userId) {
-            console.log('✅ Found user ID:', userId);
+            console.log('Found user ID:', userId);
             return {
                 ...payload,
-                userId: userId  // Normalize to userId for consistency
+                userId: userId 
             };
         } else {
-            console.error('❌ No user ID found in token. Available fields:', Object.keys(payload));
+            console.error('No user ID found in token. Available fields:', Object.keys(payload));
             return null;
         }
     } catch (error) {
-        console.error('❌ Error decoding token:', error);
+        console.error('Error decoding token:', error);
         return null;
     }
 }
 
 function checkAuthentication() {
     const user = getCurrentUser();
-    
     if (!user || !user.userId) {
-        console.warn('⚠️ User not authenticated.');
+        console.warn('User not authenticated.');
         showToast('Please log in to create a trip', 'warning');
         setTimeout(() => {
             window.location.href = './login.html?redirect=planning.html';
         }, 1500);
         return false;
     }
-    
-    console.log('✅ User authenticated:', user);
     return true;
 }
 
-// ===================== Form Validation =====================
+// Form Validation
 function validateTripData(formData) {
     const errors = [];
-    
     // Title validation
     if (!formData.title || formData.title.trim().length < 3) {
         errors.push('Title must be at least 3 characters long');
@@ -71,12 +55,10 @@ function validateTripData(formData) {
     if (formData.title && formData.title.length > 100) {
         errors.push('Title must be less than 100 characters');
     }
-    
     // Destination validation
     if (!formData.destination || formData.destination.trim().length < 2) {
         errors.push('Destination must be at least 2 characters long');
     }
-    
     // Date validation
     if (!formData.startDate) {
         errors.push('Start date is required');
@@ -84,15 +66,12 @@ function validateTripData(formData) {
     if (!formData.endDate) {
         errors.push('End date is required');
     }
-    
     if (formData.startDate && formData.endDate) {
         const start = new Date(formData.startDate);
-        const end = new Date(formData.endDate);
-        
+        const end = new Date(formData.endDate);   
         if (end < start) {
             errors.push('End date must be after start date');
         }
-        
         // Check if dates are too far in the past
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -126,32 +105,22 @@ function validateTripData(formData) {
     return errors;
 }
 
-// ===================== Form Submission =====================
+//Form Submission
 async function handleTripCreation(e) {
     e.preventDefault();
-    
-    console.log('🔄 Form submitted - checking authentication...');
-    
-    // ✅ CHECK AUTHENTICATION FIRST
     const user = getCurrentUser();
     if (!user || !user.userId) {
-        console.error('❌ Authentication failed - no user or userId');
+        console.error('Authentication failed - no user or userId');
         showToast('Please log in to create a trip', 'error');
         setTimeout(() => {
             window.location.href = './login.html?redirect=planning.html';
         }, 1500);
         return;
     }
-    
-    console.log('✅ Authentication successful, userId:', user.userId);
-    
     const submitBtn = document.getElementById('createTripBtn');
     const originalHTML = submitBtn.innerHTML;
-    
     try {
-        // ✅ CRITICAL FIX: DON'T SEND userId - Backend uses req.user.id from token!
         const formData = {
-            // ❌ NO userId HERE - Controller gets it from req.user.id
             title: document.getElementById('title').value.trim(),
             destination: document.getElementById('destination').value.trim(),
             startDate: document.getElementById('startDate').value,
@@ -165,9 +134,6 @@ async function handleTripCreation(e) {
             userId: user.userId,
         };
         
-        console.log('📤 Creating trip with data:', formData);
-        
-        // Client-side validation
         const validationErrors = validateTripData(formData);
         if (validationErrors.length > 0) {
             showToast(validationErrors.join('\n'), 'error');
@@ -180,13 +146,8 @@ async function handleTripCreation(e) {
         
         // Create trip
         const response = await apiService.trips.create(formData);
-        
-        console.log('✅ API Response:', response);
-        
         if (response.success) {
             showToast('Trip created successfully!', 'success');
-            
-            // ✅ FIXED: Redirect to trips.html instead of non-existent trip-details.html
             setTimeout(() => {
                 window.location.href = 'trips.html';
             }, 1000);
@@ -195,42 +156,32 @@ async function handleTripCreation(e) {
         }
         
     } catch (error) {
-        console.error('❌ Trip creation error:', error);
-        
+        console.error('Trip creation error:', error);
         // Reset button
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalHTML;
-        
         // Show error message
         let errorMessage = 'Failed to create trip';
-        
         if (error.backendErrors && Array.isArray(error.backendErrors)) {
             errorMessage = error.backendErrors
                 .map(e => `• ${e.field || 'Field'}: ${e.message || e.msg}`)
                 .join('\n');
         } else if (error.message) {
             errorMessage = error.message;
-            
-            // Add helpful hints for common errors
             if (errorMessage.includes('Validation Error') || errorMessage.includes('validation')) {
                 errorMessage += '\n\nPlease check:\n• All required fields are filled\n• Dates are valid\n• Budget is reasonable';
             }
         }
-        
         showToast(errorMessage, 'error');
     }
 }
 
-// ===================== Map Functions =====================
+// Map Functions
 function initializePlanningMap() {
-    // Wait for map to be available
     if (!window.tripMap) {
-        console.log('⏳ Waiting for map to initialize...');
         return;
     }
-    
     currentMap = window.tripMap;
-    console.log('✅ Planning map initialized successfully');
     
     // Update map when destination changes
     const destinationInput = document.getElementById('destination');
@@ -249,28 +200,22 @@ async function updateMapLocation(destination) {
         console.log('Map not available for location update');
         return;
     }
-    
     try {
-        // Use Geoapify API (supports CORS and has API key in config)
         const apiKey = window.CONFIG?.GEOAPIFY_API_KEY || '133144445c81412f85c94c986b2c1831';
         const response = await fetch(
             `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=1&apiKey=${apiKey}`
         );
-        
         if (!response.ok) {
             throw new Error(`Geocoding failed: ${response.status}`);
         }
-        
         const data = await response.json();
         
         if (data.features && data.features.length > 0) {
             const location = data.features[0];
             const lat = location.properties.lat;
-            const lon = location.properties.lon;
-            
+            const lon = location.properties.lon;   
             // Update map view
             currentMap.setView([lat, lon], 10);
-            
             // Remove old marker if exists
             if (currentMarker) {
                 currentMap.removeLayer(currentMarker);
@@ -280,42 +225,26 @@ async function updateMapLocation(destination) {
             currentMarker = L.marker([lat, lon]).addTo(currentMap);
             const placeName = location.properties.formatted || destination;
             currentMarker.bindPopup(`<b>${placeName}</b>`).openPopup();
-            
-            console.log(`📍 Map updated to: ${placeName}`);
         } else {
             console.log('No location found for:', destination);
         }
-    } catch (error) {
-        console.error('Error updating map location:', error);
-        // Silently fail - don't show error to user
     }
 }
 
-// ===================== Budget Formatting =====================
+// Budget Formatting
 function formatBudget(value) {
     if (!value) return '-';
     const num = parseInt(value);
     return `₹${num.toLocaleString('en-IN')}`;
 }
 
-// ===================== Initialize on Page Load =====================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔄 Page loaded - initializing...');
-    
-    // ✅ DEBUG: Check all possible token locations
-    console.log('sessionStorage.accessToken?', !!sessionStorage.getItem('accessToken'));
-    console.log('sessionStorage.token?', !!sessionStorage.getItem('token'));
-    console.log('localStorage.accessToken?', !!localStorage.getItem('accessToken'));
-    console.log('localStorage.token?', !!localStorage.getItem('token'));
-    
     const token = sessionStorage.getItem('accessToken') || 
                   sessionStorage.getItem('token') ||
                   localStorage.getItem('accessToken') || 
                   localStorage.getItem('token');
     
     if (token) {
-        console.log('✅ Token found! Length:', token.length);
-        // Decode and show token contents
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             console.log('Token payload:', payload);
@@ -323,39 +252,30 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Could not decode token:', e);
         }
-    } else {
-        console.log('❌ No token found anywhere');
     }
-    
-    // ✅ CHECK AUTHENTICATION ON PAGE LOAD (but don't block UI immediately)
     const user = getCurrentUser();
     if (!user || !user.userId) {
-        console.warn('⚠️ User not authenticated - will redirect on form submission');
-        // Don't redirect immediately - let them see the page and then redirect on submit
+        console.warn('User not authenticated - will redirect on form submission');
     } else {
-        console.log('✅ User authenticated on page load:', user);
+        console.log('User authenticated on page load:', user);
     }
     
     // Attach form submission handler
     const form = document.getElementById('createTripForm');
     if (form) {
         form.addEventListener('submit', handleTripCreation);
-        console.log('✅ Form submission handler attached');
     }
     
     // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
-    
     if (startDateInput) {
         startDateInput.setAttribute('min', today);
-        
         // Update end date minimum when start date changes
         startDateInput.addEventListener('change', function() {
             if (endDateInput) {
                 endDateInput.setAttribute('min', this.value);
-                
                 // If end date is before new start date, clear it
                 if (endDateInput.value && endDateInput.value < this.value) {
                     endDateInput.value = '';
@@ -374,13 +294,11 @@ document.addEventListener('DOMContentLoaded', () => {
         budgetInput.addEventListener('input', function() {
             // Remove non-numeric characters except decimal point
             let value = this.value.replace(/[^0-9.]/g, '');
-            
             // Ensure only one decimal point
             const parts = value.split('.');
             if (parts.length > 2) {
                 value = parts[0] + '.' + parts.slice(1).join('');
             }
-            
             this.value = value;
         });
     }
@@ -388,30 +306,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize map reference with retry logic
     let mapInitAttempts = 0;
     const maxAttempts = 10;
-    
     const tryInitMap = () => {
-        // Check both window.tripMap and the global tripMap variable
         const map = window.tripMap || (typeof tripMap !== 'undefined' ? tripMap : null);
-        
         if (map) {
             currentMap = map;
-            window.tripMap = map; // Ensure it's on window object
+            window.tripMap = map;
             initializePlanningMap();
-            console.log('✅ Map integration complete');
         } else if (mapInitAttempts < maxAttempts) {
             mapInitAttempts++;
-            console.log(`🔄 Map init attempt ${mapInitAttempts}/${maxAttempts}...`);
+            console.log(`Map init attempt ${mapInitAttempts}/${maxAttempts}...`);
             setTimeout(tryInitMap, 200);
         } else {
-            console.warn('⚠️ Map not available after all attempts - continuing without map integration');
+            console.warn('Map not available after all attempts - continuing without map integration');
         }
     };
-    
-    // Start trying to initialize map after a short delay
     setTimeout(tryInitMap, 100);
 });
 
-// Make functions globally available for inline handlers
 window.initializePlanningMap = initializePlanningMap;
 
-console.log('✅ plan.js loaded (enhanced with validation)');
+
+
