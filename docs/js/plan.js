@@ -194,34 +194,39 @@ async function updateMapLocation(destination) {
         console.log('Map not available for location update');
         return;
     }
+
     try {
         const apiKey = window.CONFIG?.GEOAPIFY_API_KEY || '133144445c81412f85c94c986b2c1831';
         const response = await fetch(
             `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=1&apiKey=${apiKey}`
         );
+
         if (!response.ok) {
             throw new Error(`Geocoding failed: ${response.status}`);
         }
+
         const data = await response.json();
-        
+
         if (data.features && data.features.length > 0) {
             const location = data.features[0];
             const lat = location.properties.lat;
-            const lon = location.properties.lon;   
-            // Update map view
+            const lon = location.properties.lon;
+
             currentMap.setView([lat, lon], 10);
-            // Remove old marker if exists
+
             if (currentMarker) {
                 currentMap.removeLayer(currentMarker);
             }
-            
-            // Add new marker
+
             currentMarker = L.marker([lat, lon]).addTo(currentMap);
             const placeName = location.properties.formatted || destination;
             currentMarker.bindPopup(`<b>${placeName}</b>`).openPopup();
         } else {
             console.log('No location found for:', destination);
         }
+
+    } catch (error) {
+        console.error('Failed to update map location:', error);
     }
 }
 
