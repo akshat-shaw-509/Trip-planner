@@ -1,9 +1,3 @@
-//============================================================
-// UNIFIED ADVANCED RECOMMENDATIONS MODULE - WITH COMPARISON INTEGRATION
-// ✅ Integrated with comparison panel
-//============================================================
-
-// ====================== STATE ======================
 const advancedRecState = {
   options: {
     radius: 10, 
@@ -48,7 +42,7 @@ if (!window.recommendationsState) {
 
 const recommendationsState = window.recommendationsState;
 
-// ====================== STORAGE FUNCTIONS ======================
+// ---------- STORAGE ----------
 function saveSavedPreferences() {
   try {
     sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
@@ -68,13 +62,10 @@ function loadSavedPreferences() {
   }
 }
 
-// ====================== INITIALIZATION ======================
+// ---------- INIT ----------
 async function initRecommendations(tripId, tripData) {
-  console.log('🚀 Initializing unified recommendations module');
-  
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;
-  
   renderAdvancedControls();
   attachAdvancedListeners();
   loadSavedPreferences();
@@ -84,7 +75,7 @@ async function initRecommendations(tripId, tripData) {
 
 window.initRecommendations = initRecommendations;
 
-// ====================== LOAD RECOMMENDATIONS ======================
+// ---------- LOAD ----------
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
@@ -94,9 +85,6 @@ async function loadRecommendations(options = {}) {
     if (activeBtn) {
       activeBtn.classList.add('loading');
     }
-
-    console.log('🔍 Loading recommendations for trip:', recommendationsState.currentTripId);
-
     const params = {
       radius: (advancedRecState.options.radius * 1000) || 10000,
       limit: advancedRecState.options.maxResults || 50
@@ -155,9 +143,6 @@ async function loadRecommendations(options = {}) {
     filterState.allRecommendations = [...validPlaces];
     filterState.filteredResults = [...validPlaces];
     recommendationsState.recommendations = [...validPlaces];
-
-    console.log('✅ Loaded', validPlaces.length, 'valid recommendations');
-
     displayRecommendations();
     
     setTimeout(() => {
@@ -181,7 +166,7 @@ async function loadRecommendations(options = {}) {
 
 window.loadRecommendations = loadRecommendations;
 
-// ====================== DISPLAY RECOMMENDATIONS ======================
+// ---------- DISPLAY ----------
 function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
@@ -233,17 +218,14 @@ function displayRecommendations() {
   addQualityBadges();
 }
 
-// ✅ FIXED: This now integrates with comparison panel
+// Uses comparison panel if available, otherwise fallback
 function handleCompareCheckbox(rec, card) {
   // ✅ Use the comparison panel if available
   if (typeof window.handleCompareCheckboxClick === 'function') {
-    console.log('📊 Using comparison panel for:', rec.name);
     window.handleCompareCheckboxClick(rec, card);
     return;
   }
-  
-  // Fallback: old bulk selection behavior
-  console.log('⚠️ Comparison panel not available, using fallback');
+
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
   
   if (card.classList.contains('comparing')) {
@@ -263,7 +245,6 @@ function handleCompareCheckbox(rec, card) {
 
 window.displayRecommendations = displayRecommendations;
 
-// ====================== CREATE RECOMMENDATION CARD ======================
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
   const lat = parseFloat(rec.lat) || 0;
@@ -359,7 +340,7 @@ function createRecommendationCard(rec) {
   `;
 }
 
-// ====================== ADVANCED CONTROLS UI ======================
+// ---------- CONTROLS ----------
 function renderAdvancedControls() {
   const container = document.querySelector('.recommendations-section');
   if (!container) return;
@@ -449,7 +430,7 @@ function renderAdvancedControls() {
       </div>
     </div>
 
-    <!-- ✅ BULK ACTIONS BAR - SIMPLIFIED WITHOUT COMPARE -->
+    <!-- Bulk actions -->
     <div class="bulk-actions-bar" id="bulkActionsBar">
       <span class="bulk-count" id="bulkCount">0 selected</span>
       <div class="bulk-actions">
@@ -535,7 +516,7 @@ function attachAdvancedListeners() {
   });
 }
 
-// ====================== DEBOUNCED FUNCTIONS ======================
+// ---------- DEBOUNCE ----------
 let reloadTimeout;
 function debouncedReload() {
   clearTimeout(reloadTimeout);
@@ -552,7 +533,7 @@ function debouncedFilter() {
   }, 300);
 }
 
-// ====================== SORTING & FILTERING ======================
+// ---------- SORT / FILTER ----------
 function applySorting() {
   let results = [...filterState.filteredResults];
   
@@ -592,7 +573,7 @@ function applyQuickFilters() {
   applySorting();
 }
 
-// ====================== QUALITY BADGES ======================
+// ---------- BADGES ----------
 function addQualityBadges() {
   const cards = document.querySelectorAll('.recommendation-card');
 
@@ -637,7 +618,7 @@ function updateBulkActionsBar() {
   }
 }
 
-// ====================== ADD TO TRIP ======================
+// ---------- ADD TO TRIP ----------
 async function addRecommendationToTrip(rec) {
   try {
     if (!rec.lat || !rec.lon) {
@@ -837,4 +818,3 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-console.log('✅ Advanced recommendations module loaded WITH COMPARISON INTEGRATION');
