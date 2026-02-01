@@ -1,4 +1,3 @@
-
 let express = require('express')
 let rateLimit = require('express-rate-limit')
 
@@ -7,12 +6,10 @@ let authController = require('../controllers/auth.controller')
 let { authenticate } = require('../middleware/auth.middleware')
 let { 
   validateRegister, 
-  validateLogin,
-  validatePasswordReset,
-  validateChangePassword 
+  validateLogin, 
 } = require('../middleware/validation.middleware')
 
-//Auth rate limiter (LOCAL auth only)
+//Auth rate limiter
 let authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -20,31 +17,20 @@ let authLimiter = rateLimit({
   skipSuccessfulRequests: true
 })
 
-// Local auth (rate-limited)
+// Local auth 
 router.post('/login', validateLogin, authLimiter, authController.login)
 router.post('/register', validateRegister, authLimiter, authController.register)
 
-// Google OAuth (NO rate limiter)
+// Google OAuth
 router.post('/google', authController.googleLogin)
 
 // Tokens & recovery
 router.post('/refresh', authController.refreshToken)
-//router.post('/forgot-password', authController.forgotPassword)
-router.post('/reset-password/:token', validatePasswordReset, authController.resetPassword)
-router.get('/verify-email/:token', authController.verifyEmail)
-
 // Protected routes
 router.get('/me', authenticate, authController.getCurrentUser)
 router.post('/logout', authenticate, authController.logout)
-router.post(
-  '/change-password',
-  authenticate,
-  validateChangePassword,
-  authController.changePassword
-)
 
-// ===================== Config Endpoints (Public) =====================
-// Unified config endpoint - returns all frontend configuration
+// Config Endpoints
 router.get('/config', (req, res) => {
   res.json({ 
     success: true,
@@ -56,7 +42,7 @@ router.get('/config', (req, res) => {
   });
 });
 
-// Individual config endpoints (for backwards compatibility or specific use)
+// Individual config endpoints
 router.get('/google-client-id', (req, res) => {
   res.json({ 
     success: true, 
