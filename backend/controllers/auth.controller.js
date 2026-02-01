@@ -95,7 +95,7 @@ const refreshToken = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
-    const { refreshToken:, ...responseBody } = result
+    const { refreshToken, ...responseBody } = result
     sendSuccess(res, 200, responseBody, 'Token refreshed successfully')
   } catch (error) {
     console.error('Refresh token error:', error)
@@ -181,3 +181,4 @@ module.exports = {
   getCurrentUser,
   googleLogin
 }
+
