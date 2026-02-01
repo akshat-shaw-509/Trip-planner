@@ -2,28 +2,22 @@ let currentMap = null;
 let currentMarker = null;
 
 function getCurrentUser() {
-    const token = sessionStorage.getItem('accessToken') || 
-                  sessionStorage.getItem('token') ||
-                  localStorage.getItem('accessToken') || 
-                  localStorage.getItem('token');
+    const token = sessionStorage.getItem('accessToken');
     
     if (!token) {
-        console.log('No token found in storage');
         return null;
     }
     try {
         // Decode JWT token to get user info
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Token decoded successfully:', payload);
         const userId = payload.id || payload._id || payload.userId;
         if (userId) {
-            console.log('Found user ID:', userId);
             return {
                 ...payload,
                 userId: userId 
             };
         } else {
-            console.error('No user ID found in token. Available fields:', Object.keys(payload));
+            console.error('Invalid auth token');
             return null;
         }
     } catch (error) {
@@ -239,20 +233,6 @@ function formatBudget(value) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const token = sessionStorage.getItem('accessToken') || 
-                  sessionStorage.getItem('token') ||
-                  localStorage.getItem('accessToken') || 
-                  localStorage.getItem('token');
-    
-    if (token) {
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            console.log('Token payload:', payload);
-            console.log('User ID from token:', payload.id || payload._id || payload.userId);
-        } catch (e) {
-            console.error('Could not decode token:', e);
-        }
-    }
     const user = getCurrentUser();
     if (!user || !user.userId) {
         console.warn('User not authenticated - will redirect on form submission');
@@ -302,27 +282,15 @@ document.addEventListener('DOMContentLoaded', () => {
             this.value = value;
         });
     }
-    
-    // Initialize map reference with retry logic
-    let mapInitAttempts = 0;
-    const maxAttempts = 10;
-    const tryInitMap = () => {
-        const map = window.tripMap || (typeof tripMap !== 'undefined' ? tripMap : null);
-        if (map) {
-            currentMap = map;
-            window.tripMap = map;
-            initializePlanningMap();
-        } else if (mapInitAttempts < maxAttempts) {
-            mapInitAttempts++;
-            console.log(`Map init attempt ${mapInitAttempts}/${maxAttempts}...`);
-            setTimeout(tryInitMap, 200);
-        } else {
-            console.warn('Map not available after all attempts - continuing without map integration');
-        }
-    };
-    setTimeout(tryInitMap, 100);
+
+    document.addEventListener('DOMContentLoaded', () => {
+    if (window.tripMap) {
+        currentMap = window.tripMap;
+        initializePlanningMap();
+    }
 });
 
+    
 window.initializePlanningMap = initializePlanningMap;
 
 
