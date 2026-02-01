@@ -1,6 +1,4 @@
-
 module.exports = {
-    // Trip status
     TRIP_STATUS: {
         PLANNING: 'planning',
         BOOKED: 'booked',
@@ -8,8 +6,6 @@ module.exports = {
         COMPLETED: 'completed',
         CANCELLED: 'cancelled',
     },
-
-    // Activity/Place categories
     PLACE_CATEGORIES: {
         ACCOMMODATION: 'accommodation',
         RESTAURANT: 'restaurant',
@@ -17,15 +13,11 @@ module.exports = {
         TRANSPORT: 'transport',
         OTHER: 'other',
     },
-
-    // Visit status
     PLACE_VISIT_STATUS: {
         PLANNED: 'planned',
         VISITED: 'visited',
         SKIPPED: 'skipped',
     },
-
-    // Expense categories
     EXPENSE_CATEGORIES: {
         ACCOMMODATION: 'accommodation',
         FOOD: 'food',
@@ -35,15 +27,12 @@ module.exports = {
         ENTERTAINMENT: 'entertainment',
         MISC: 'miscellaneous',
     },
-
-    // ADD THESE FOR COMPATIBILITY
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     ALLOWED_DOCUMENT_TYPES: ['application/pdf', 'image/jpeg', 'image/png'],
     RATE_LIMIT_WINDOW_MS: 15 * 60 * 1000,
     RATE_LIMIT_MAX_REQUESTS: 100,
     
-    // Also keep old structure for backward compatibility
     APP_CONFIG: {
         MAX_FILE_SIZE: 5 * 1024 * 1024,
         DEFAULT_PAGE_SIZE: 20,
@@ -72,3 +61,4 @@ module.exports = {
     TRIP_INVITATION: 'trip_invitation',
   },
 }
+
