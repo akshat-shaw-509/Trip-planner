@@ -1,7 +1,3 @@
-// =====================================================================
-// TRIP CENTER SELECTOR - FIXED VERSION WITH CONFIG SUPPORT
-// =====================================================================
-
 let tripCenterState = {
   currentCenter: null,
   searchResults: [],
@@ -10,31 +6,20 @@ let tripCenterState = {
   geoapifyApiKey: null
 }
 
-// -------------------------------------------------------
-// UTILITY FUNCTIONS
-// -------------------------------------------------------
 function escapeHtml(text) {
   const div = document.createElement('div')
   div.textContent = text
   return div.innerHTML
 }
 
-// -------------------------------------------------------
-// API KEY LOADING - FIXED TO USE CONFIG
-// -------------------------------------------------------
 async function loadGeoapifyApiKey() {
-  // ✅ PRIORITY 1: Try window.CONFIG (from config.js)
   if (window.CONFIG && window.CONFIG.GEOAPIFY_API_KEY) {
     tripCenterState.geoapifyApiKey = window.CONFIG.GEOAPIFY_API_KEY
-    console.log('✅ Geoapify API key loaded from CONFIG')
     return true
   }
-
-  // Option 2: Try to load from backend endpoint
   try {
     const baseURL = window.CONFIG?.API_BASE_URL || apiService?.baseURL || 'http://localhost:5000/api'
     const token = sessionStorage.getItem('accessToken')
-    
     const response = await fetch(`${baseURL}/config/geoapify-api-key`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -44,44 +29,28 @@ async function loadGeoapifyApiKey() {
     
     if (response.ok) {
       const data = await response.json()
-      
       if (data.success && data.apiKey) {
         tripCenterState.geoapifyApiKey = data.apiKey
-        console.log('✅ Geoapify API key loaded from backend')
         return true
       }
     }
-  } catch (error) {
-    console.warn('Backend API key endpoint not available:', error.message)
   }
-
-  // Option 3: Fallback to window variable
   if (window.GEOAPIFY_API_KEY) {
     tripCenterState.geoapifyApiKey = window.GEOAPIFY_API_KEY
-    console.log('✅ Geoapify API key loaded from window variable')
     return true
   }
-
-  console.error('❌ Failed to load Geoapify API key from any source')
-  console.info('ℹ️  Make sure config.js is loaded before this script')
   return false
 }
 
-// -------------------------------------------------------
-// GEOCODING
-// -------------------------------------------------------
 async function geocodeDestination(destination) {
   if (!tripCenterState.geoapifyApiKey) {
     console.error('Geoapify API key not loaded')
     return null
   }
-
   const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&apiKey=${tripCenterState.geoapifyApiKey}&limit=1&format=json`
-
   try {
     const res = await fetch(url)
     const data = await res.json()
-
     if (data.results && data.results.length > 0) {
       const result = data.results[0]
       return {
@@ -92,36 +61,29 @@ async function geocodeDestination(destination) {
         country: result.country
       }
     }
-  } catch (err) {
-    console.error('Geocoding API error:', err)
   }
-
   return null
 }
 
-// -------------------------------------------------------
 // SAVE COORDINATES
-// -------------------------------------------------------
+
 async function saveTripCoordinates(tripId, coords) {
   try {
     if (typeof apiService === 'undefined') {
       console.warn('apiService not available, skipping coordinate save')
       return
     }
-
     await apiService.trips.update(tripId, {
       destinationCoords: coords
     })
-    
-    console.log('✅ Saved coordinates to trip:', coords)
+    console.log('Saved coordinates to trip:', coords)
   } catch (err) {
     console.error('Failed to save coordinates:', err.message)
   }
 }
 
-// -------------------------------------------------------
 // CALCULATE CENTER FROM PLACES
-// -------------------------------------------------------
+
 async function calculateCenterFromPlaces(tripId) {
   try {
     if (typeof apiService === 'undefined') return null
@@ -156,20 +118,13 @@ async function calculateCenterFromPlaces(tripId) {
   }
 }
 
-// -------------------------------------------------------
-// CALCULATE TRIP CENTER (MAIN LOGIC)
-// -------------------------------------------------------
+// CALCULATE TRIP CENTER
 async function calculateTripCenter(tripData) {
   if (!tripData) {
     console.warn('No trip data provided')
     return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
   }
-
-  console.log('📍 Calculating trip center for:', tripData.destination)
-
-  // Priority 1: Use saved coordinates if they exist
   if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
-    console.log('✅ Using saved trip coordinates')
     return {
       lat: tripData.destinationCoords[1],
       lon: tripData.destinationCoords[0],
@@ -177,45 +132,30 @@ async function calculateTripCenter(tripData) {
     }
   }
 
-  // Priority 2: Geocode the destination automatically (only if API key is loaded)
   if (tripData.destination && tripCenterState.geoapifyApiKey) {
-    console.log('🔍 Auto-geocoding destination:', tripData.destination)
-    
-    try {
-      // Build a precise query
       const searchQuery = tripData.country 
         ? `${tripData.destination}, ${tripData.country}`
         : tripData.destination
       
-      console.log('🔍 Search query:', searchQuery)
-      
       const geocoded = await geocodeDestination(searchQuery)
       
       if (geocoded) {
-        console.log('✅ Geocoded successfully:', geocoded.formatted)
-        
         // Save coordinates to trip for future use
         await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
-        
         return {
           lat: geocoded.lat,
           lon: geocoded.lon,
           formatted: geocoded.formatted || tripData.destination
         }
-      }
-    } catch (err) {
-      console.error('Geocoding failed:', err.message)
-    }
+      } 
   } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
-    console.warn('⚠️ Skipping geocoding - API key not available')
+    console.warn('Skipping geocoding - API key not available')
   }
 
-  // Priority 3: Calculate from added places
   if (tripData._id) {
     try {
       const center = await calculateCenterFromPlaces(tripData._id)
       if (center) {
-        console.log('✅ Calculated center from places:', center)
         return center
       }
     } catch (err) {
@@ -224,7 +164,7 @@ async function calculateTripCenter(tripData) {
   }
 
   // Fallback: Default location
-  console.warn('⚠️ Using default location - no coordinates available')
+  console.warn('Using default location - no coordinates available')
   return { 
     lat: 20.5937, 
     lon: 78.9629, 
@@ -232,13 +172,9 @@ async function calculateTripCenter(tripData) {
   }
 }
 
-// -------------------------------------------------------
-// UI RENDERING
-// -------------------------------------------------------
 function renderTripCenterUI() {
   const section = document.querySelector('.recommendations-section')
   if (!section) {
-    console.warn('⚠️ Cannot render trip center UI - recommendations section not found')
     return
   }
 
@@ -265,18 +201,13 @@ function renderTripCenterUI() {
       </button>
     </div>
   `
-
-  // Insert at the very beginning of recommendations section
   section.insertAdjacentHTML('afterbegin', html)
-  
-  console.log('✅ Trip center UI rendered')
 }
 
 function attachTripCenterListeners() {
   const btn = document.getElementById('btnChangeCenter')
   if (btn) {
     btn.onclick = openTripCenterModal
-    console.log('✅ Trip center button listener attached')
   } else {
     console.warn('⚠️ Change center button not found')
   }
@@ -285,50 +216,31 @@ function attachTripCenterListeners() {
 function updateTripCenterBanner() {
   const banner = document.querySelector('.trip-center-banner')
   if (!banner) return
-
   banner.querySelector('.trip-center-name').textContent =
     tripCenterState.currentCenter.formatted
-
   banner.querySelector('.trip-center-coords').textContent =
     `${tripCenterState.currentCenter.lat.toFixed(4)}, ${tripCenterState.currentCenter.lon.toFixed(4)}`
 }
 
-// -------------------------------------------------------
-// MAIN INITIALIZATION FUNCTION
-// -------------------------------------------------------
 async function initTripCenterSelector(tripData) {
-  console.log('🚀 Initializing trip center selector')
-  console.log('   Trip data:', tripData?.destination, tripData?.country)
-  
-  // Load API key first
   await loadGeoapifyApiKey()
   
   if (!tripCenterState.geoapifyApiKey) {
-    console.warn('⚠️ Geoapify API key not available - search will be limited')
+    console.warn('Geoapify API key not available - search will be limited')
   }
   
   // Calculate center automatically from trip destination
   tripCenterState.currentCenter = await calculateTripCenter(tripData)
-  
-  console.log('📍 Trip center calculated:', tripCenterState.currentCenter)
-
   // Render UI and attach events
   renderTripCenterUI()
   attachTripCenterListeners()
-  
-  console.log('✅ Trip center selector initialized')
 }
-
-// -------------------------------------------------------
 // MODAL FUNCTIONS
-// -------------------------------------------------------
 function openTripCenterModal() {
   const canSearch = tripCenterState.geoapifyApiKey !== null
-  
   const modal = document.createElement('div')
   modal.className = 'modal active'
   modal.id = 'tripCenterModal'
-
   modal.innerHTML = `
     <div class="modal-content modal-large">
       <div class="modal-header">
@@ -406,9 +318,7 @@ function openTripCenterModal() {
       </div>
     </div>
   `
-
   document.body.appendChild(modal)
-  
   if (canSearch) {
     setupSearchHandlers()
   }
@@ -417,20 +327,15 @@ function openTripCenterModal() {
 function closeTripCenterModal() {
   document.getElementById('tripCenterModal')?.remove()
 }
-
 function setupSearchHandlers() {
   const input = document.getElementById('tripCenterSearch')
   const clearBtn = document.getElementById('btnSearchClear')
   const saveBtn = document.getElementById('btnSaveCenter')
-
   if (!input) return
-
   let timeout
-
   input.oninput = e => {
     const query = e.target.value.trim()
     clearBtn.style.display = query ? 'block' : 'none'
-
     clearTimeout(timeout)
     if (query.length >= 3) {
       timeout = setTimeout(() => searchLocations(query), 500)
@@ -444,7 +349,6 @@ function setupSearchHandlers() {
     clearBtn.style.display = 'none'
     document.getElementById('searchResults').innerHTML = ''
   }
-
   saveBtn.onclick = saveTripCenter
 }
 
@@ -454,7 +358,6 @@ async function searchLocations(query) {
     showToast('Search unavailable - API key not loaded', 'error')
     return
   }
-
   const resultsContainer = document.getElementById('searchResults')
   resultsContainer.innerHTML = `<div class="search-loading">
     <i class="fas fa-spinner fa-spin"></i> Searching...
@@ -463,11 +366,9 @@ async function searchLocations(query) {
   try {
     const destination = recommendationsState.tripData?.destination || ''
     const searchQuery = destination ? `${query}, ${destination}` : query
-
     const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(searchQuery)}&apiKey=${tripCenterState.geoapifyApiKey}&limit=8`
     const res = await fetch(url)
     const data = await res.json()
-
     if (!data.features?.length) {
       resultsContainer.innerHTML = `<div class="search-empty">No results found</div>`
       return
@@ -480,7 +381,6 @@ async function searchLocations(query) {
       lon: f.properties.lon,
       type: f.properties.result_type
     }))
-
     displaySearchResults()
   } catch (err) {
     console.error(err)
@@ -490,7 +390,6 @@ async function searchLocations(query) {
 
 function displaySearchResults() {
   const container = document.getElementById('searchResults')
-
   container.innerHTML = tripCenterState.searchResults
     .map((r, i) => `
       <div class="search-result-item" onclick="selectLocation(${i})">
@@ -506,13 +405,11 @@ function displaySearchResults() {
 function selectLocation(index) {
   const loc = tripCenterState.searchResults[index]
   tripCenterState.selectedLocation = loc
-
   document.getElementById('previewContent').innerHTML = `
     <strong>${escapeHtml(loc.name)}</strong><br>
     ${escapeHtml(loc.address)}<br>
     ${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}
   `
-
   document.getElementById('selectedLocationPreview').style.display = 'block'
   document.getElementById('btnSaveCenter').disabled = false
 }
@@ -528,23 +425,18 @@ async function useDestinationCenter() {
     showToast('Geocoding unavailable - API key not configured', 'error')
     return
   }
-
   const previewEl = document.getElementById('selectedLocationPreview')
   const previewContent = document.getElementById('previewContent')
   const saveBtn = document.getElementById('btnSaveCenter')
-  
   if (previewEl && previewContent) {
     previewEl.style.display = 'block'
     previewContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Geocoding destination...'
     saveBtn.disabled = true
   }
-
   const searchQuery = tripData.country 
     ? `${tripData.destination}, ${tripData.country}`
     : tripData.destination
-  
   const geocoded = await geocodeDestination(searchQuery)
-  
   if (geocoded) {
     tripCenterState.selectedLocation = {
       name: tripData.destination,
@@ -563,7 +455,6 @@ async function useDestinationCenter() {
     if (saveBtn) {
       saveBtn.disabled = false
     }
-    
     showToast('Destination center found!', 'success')
   } else {
     if (previewContent) {
@@ -577,7 +468,6 @@ async function useFirstPlace() {
   try {
     const res = await apiService.places.getByTrip(recommendationsState.currentTripId)
     const places = res.data || []
-    
     if (places.length === 0) {
       showToast('No places added yet', 'warning')
       return
@@ -609,7 +499,6 @@ async function usePlacesAverage() {
   try {
     const res = await apiService.places.getByTrip(recommendationsState.currentTripId)
     const places = res.data || []
-    
     if (places.length === 0) {
       showToast('No places added yet', 'warning')
       return
@@ -683,9 +572,6 @@ async function saveTripCenter() {
   }
 }
 
-// -------------------------------------------------------
-// EXPORTS
-// -------------------------------------------------------
 window.initTripCenterSelector = initTripCenterSelector
 window.tripCenterState = tripCenterState
 window.useDestinationCenter = useDestinationCenter
@@ -694,4 +580,3 @@ window.usePlacesAverage = usePlacesAverage
 window.clearSelection = clearSelection
 window.closeTripCenterModal = closeTripCenterModal
 
-console.log('✅ Trip center selector loaded with CONFIG support')
