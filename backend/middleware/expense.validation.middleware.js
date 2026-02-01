@@ -1,11 +1,5 @@
 let { body, validationResult } = require('express-validator')
-
-/**
- * -------------------- Constants --------------------
- */
-
 // Allowed expense categories
-// Restricts users to predefined, valid categories
 let validCategories = [
   'accommodation',
   'food',
@@ -15,9 +9,7 @@ let validCategories = [
   'entertainment',
   'miscellaneous'
 ]
-
 // Allowed payment methods
-// Keeps payment-related data consistent
 let validPaymentMethods = [
   'cash',
   'credit_card',
@@ -26,11 +18,6 @@ let validPaymentMethods = [
   'other'
 ]
 
-/**
- * -------------------- Optional Fields --------------------
- * These fields are NOT required
- * Validation is applied only if the field is present
- */
 let optionalFields = [
   // Additional notes about the expense
   body('notes')
@@ -39,7 +26,7 @@ let optionalFields = [
     .isLength({ max: 1000 })
     .withMessage('Notes max 1000'),
 
-  // Receipt URL (uploaded or external)
+  // Receipt URL
   body('receipt')
     .optional()
     .trim()
@@ -53,7 +40,7 @@ let optionalFields = [
     .isLength({ max: 200 })
     .withMessage('Max 200 chars'),
 
-  // Vendor or merchant name
+  // Vendor name
   body('vendor')
     .optional()
     .trim()
@@ -67,26 +54,21 @@ let optionalFields = [
     .isLength({ max: 200 })
     .withMessage('Max 200 chars'),
 
-  // Link expense to an activity (if applicable)
+  // Link expense to an activity
   body('activityId')
     .optional()
     .isMongoId()
     .withMessage('Invalid ID')
 ]
 
-/**
- * -------------------- Required Fields (Create) --------------------
- * These fields MUST be present when creating a new expense
- */
+//Required Fields
 let requiredFields = [
-  // Short description of the expense
   body('description')
     .trim()
     .notEmpty()
     .withMessage('Description required')
     .isLength({ min: 3, max: 500 })
     .withMessage('Description 3-500 chars'),
-
   // Expense amount
   body('amount')
     .notEmpty()
@@ -116,14 +98,10 @@ let requiredFields = [
     .withMessage('Valid payment method required')
 ]
 
-/**
- * -------------------- Create Expense Validation --------------------
- */
+//Create Expense Validation 
 let validateExpense = [
   ...requiredFields,
   ...optionalFields,
-
-  // Final middleware to handle validation errors
   (req, res, next) => {
     let errors = validationResult(req)
 
@@ -142,10 +120,7 @@ let validateExpense = [
   }
 ]
 
-/**
- * -------------------- Update Expense Validation --------------------
- * All fields are optional because this is a partial update
- */
+//Update Expense Validation
 let validateExpenseUpdate = [
   // Description update validation
   body('description')
@@ -179,11 +154,8 @@ let validateExpenseUpdate = [
     .withMessage('Valid payment method required'),
 
   ...optionalFields,
-
-  // Final middleware to handle update validation errors
   (req, res, next) => {
     let errors = validationResult(req)
-
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
@@ -194,12 +166,8 @@ let validateExpenseUpdate = [
         }))
       })
     }
-
     next()
   }
 ]
-
-/**
- * Export validators for use in expense routes
- */
 module.exports = { validateExpense, validateExpenseUpdate }
+
