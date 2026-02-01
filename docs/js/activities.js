@@ -1,22 +1,15 @@
 (function() {
     'use strict';
     
-    // Prevent script from running multiple times
-    if (window.activitiesPageLoaded) {
-        console.warn('Activities page already loaded, skipping...');
-        return;
-    }
+    if (window.activitiesPageLoaded) return;
     window.activitiesPageLoaded = true;
-
     let tripId = null;
     let activities = [];
     let currentActivityId = null;
     let currentFilter = 'all';
 
-    // Main initialization - runs when DOM is ready
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('Activities page initializing...');
-        
         const token = sessionStorage.getItem('accessToken');
         if (!token) {
             showToast('Please log in to continue', 'error');
@@ -39,7 +32,6 @@ if (tripOverviewLink && tripId) {
         try {
             await loadActivities();
             setupEventListeners();
-            console.log('Activities page loaded successfully');
         } catch (error) {
             console.error('Initialization error:', error);
             showToast('Failed to initialize page: ' + error.message, 'error');
@@ -50,7 +42,7 @@ if (tripOverviewLink && tripId) {
         // Add activity buttons
         const addActivityBtns = document.querySelectorAll('.btn-add-activity');
         addActivityBtns.forEach(btn => {
-            btn.onclick = openAddActivityModal;
+           btn.addEventListener('click', openAddModal);
         });
 
         // Modal controls
@@ -63,7 +55,6 @@ if (tripOverviewLink && tripId) {
         if (cancelBtn) cancelBtn.onclick = closeActivityModal;
         if (activityForm) activityForm.onsubmit = handleSubmitActivity;
 
-        // Close modal on backdrop click
         if (activityModal) {
             activityModal.onclick = (e) => {
                 if (e.target.id === 'activityModal') {
@@ -85,14 +76,10 @@ if (tripOverviewLink && tripId) {
         }
     }
 
-    // Fetch activities from API for current trip
     async function loadActivities() {
         try {
-            console.log('Fetching activities...');
             const response = await window.apiService.activities.getByTrip(tripId);
-            
             activities = response.data || response || [];
-            console.log(`Loaded ${activities.length} activities`);
             renderActivities();
             
         } catch (error) {
@@ -105,8 +92,7 @@ if (tripOverviewLink && tripId) {
             }
         }
     }
-
-    // Render filtered activities to grid
+    
     function renderActivities() {
         const grid = document.getElementById('activitiesGrid');
         const emptyState = document.querySelector('.empty-state');
@@ -158,7 +144,6 @@ if (tripOverviewLink && tripId) {
         });
     }
 
-    // Generate HTML for single activity card
     function createActivityCard(activity) {
         const startDate = new Date(activity.startTime);
         const endDate = activity.endTime ? new Date(activity.endTime) : null;
@@ -245,8 +230,7 @@ if (tripOverviewLink && tripId) {
             </div>
         `;
     }
-
-    // Open add activity modal with form reset
+    
     function openAddActivityModal() {
         currentActivityId = null;
         const modalTitle = document.getElementById('modalTitle');
@@ -398,15 +382,12 @@ if (tripOverviewLink && tripId) {
         renderActivities();
     }
 
-    // Live search filtering
     function handleSearch(e) {
         const searchTerm = e.target.value.toLowerCase().trim();
-
         if (!searchTerm) {
             renderActivities();
             return;
         }
-
         const filteredActivities = activities.filter(activity => {
             return (
                 activity.title.toLowerCase().includes(searchTerm) ||
