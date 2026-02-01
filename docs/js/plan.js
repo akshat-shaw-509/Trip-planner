@@ -236,45 +236,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = getCurrentUser();
     if (!user || !user.userId) {
         console.warn('User not authenticated - will redirect on form submission');
-    } else {
-        console.log('User authenticated on page load:', user);
     }
-    
-    // Attach form submission handler
+
     const form = document.getElementById('createTripForm');
     if (form) {
         form.addEventListener('submit', handleTripCreation);
     }
-    
-    // Set minimum date to today
+
     const today = new Date().toISOString().split('T')[0];
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
+
     if (startDateInput) {
         startDateInput.setAttribute('min', today);
-        // Update end date minimum when start date changes
-        startDateInput.addEventListener('change', function() {
+        startDateInput.addEventListener('change', function () {
             if (endDateInput) {
                 endDateInput.setAttribute('min', this.value);
-                // If end date is before new start date, clear it
                 if (endDateInput.value && endDateInput.value < this.value) {
                     endDateInput.value = '';
                 }
             }
         });
     }
-    
+
     if (endDateInput) {
         endDateInput.setAttribute('min', today);
     }
-    
-    // Add budget input validation (only non-negative)
+
     const budgetInput = document.getElementById('budget');
     if (budgetInput) {
-        budgetInput.addEventListener('input', function() {
-            // Remove non-numeric characters except decimal point
+        budgetInput.addEventListener('input', function () {
             let value = this.value.replace(/[^0-9.]/g, '');
-            // Ensure only one decimal point
             const parts = value.split('.');
             if (parts.length > 2) {
                 value = parts[0] + '.' + parts.slice(1).join('');
@@ -283,12 +275,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
     if (window.tripMap) {
         currentMap = window.tripMap;
         initializePlanningMap();
     }
 });
+
 
     
 window.initializePlanningMap = initializePlanningMap;
