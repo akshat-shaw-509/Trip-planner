@@ -1,10 +1,6 @@
 let allTrips = []
 let currentFilter = 'all'
 let currentSort = 'date-desc'
-
-// -------------------------------------------------------
-// Page Initialization
-// -------------------------------------------------------
 const initTripsPage = async () => {
   try {
     // Ensure authHandler exists
@@ -13,91 +9,49 @@ const initTripsPage = async () => {
       window.location.href = './login.html'
       return
     }
-
-    // Require authentication
     if (!authHandler.requireAuth()) return
-
     showLoading(true)
-
     // Load trips from backend
     await loadTrips()
-
-    // Initialize UI controls
     initSearch()
     initFilters()
     initSort()
     initLogout()
-
     showLoading(false)
-
   } catch (error) {
     console.error('Initialization error:', error)
     showLoading(false)
   }
 }
-
-// -------------------------------------------------------
-// Loading state
-// -------------------------------------------------------
 const showLoading = (show) => {
   const loading = document.getElementById('loadingState')
   if (loading) loading.style.display = show ? 'block' : 'none'
 }
-
-// -------------------------------------------------------
 // Fetch trips from API
-// -------------------------------------------------------
 const loadTrips = async () => {
   try {
-    console.log('🔄 Loading trips from API...')
     const response = await apiService.trips.getAll()
-    
-    // ✅ ENHANCED DEBUGGING - Log the exact response structure
-    console.log('📦 Raw API Response:', response)
-    console.log('📦 Response type:', typeof response)
-    console.log('📦 Response keys:', Object.keys(response || {}))
-    console.log('📦 Is Array?:', Array.isArray(response))
-
-    // ✅ IMPROVED: Handle all possible response formats
     let trips = []
-    
     if (Array.isArray(response)) {
-      // Response is directly an array
-      console.log('✅ Response is array format')
       trips = response
     } else if (response?.success && response.data) {
-      // Response has success flag and data property
       if (Array.isArray(response.data)) {
-        console.log('✅ Response is {success: true, data: []} format')
         trips = response.data
       } else if (response.data.trips && Array.isArray(response.data.trips)) {
-        console.log('✅ Response is {success: true, data: {trips: []}} format')
         trips = response.data.trips
       }
     } else if (response?.data && Array.isArray(response.data)) {
-      // Response has data property (no success flag)
-      console.log('✅ Response is {data: []} format')
       trips = response.data
     } else if (response?.trips && Array.isArray(response.trips)) {
-      // Response has trips property
-      console.log('✅ Response is {trips: []} format')
       trips = response.trips
     } else if (response?.data?.trips && Array.isArray(response.data.trips)) {
-      // Nested trips
-      console.log('✅ Response is {data: {trips: []}} format')
       trips = response.data.trips
     }
-
-    console.log('📊 Parsed trips count:', trips.length)
-    console.log('📊 Trips data:', trips)
-
     allTrips = trips
     updateStats(allTrips)
     displayTrips(allTrips)
-
   } catch (error) {
-    console.error('❌ Error loading trips:', error)
-
+    console.error('Error loading trips:', error)
     if (typeof showToast === 'function') {
       if (error.message.includes('Failed to fetch')) {
         showToast('Cannot connect to server. Please check backend.', 'error')
@@ -108,38 +62,26 @@ const loadTrips = async () => {
         showToast('Failed to load trips', 'error')
       }
     }
-
     allTrips = []
     showEmptyState()
   }
 }
-
-// -------------------------------------------------------
 // Auto-detect trip status based on dates
-// -------------------------------------------------------
 const getAutoStatus = (trip) => {
   const now = new Date()
   const start = new Date(trip.startDate)
   const end = new Date(trip.endDate)
-
   // Respect explicit terminal states
   if (trip.status === 'cancelled' || trip.status === 'completed') {
     return trip.status
   }
-
   if (end < now) return 'completed'
   if (start <= now && end >= now) return 'ongoing'
   if (start > now) return 'upcoming'
-
   return trip.status || 'planning'
 }
-
-// -------------------------------------------------------
 // Update dashboard statistics
-// -------------------------------------------------------
 const updateStats = (trips) => {
-  console.log('📊 Updating stats for', trips.length, 'trips')
-  
   const stats = {
     planning: 0,
     upcoming: 0,
@@ -148,39 +90,28 @@ const updateStats = (trips) => {
     cancelled: 0,
     countries: new Set()
   }
-
   trips.forEach(trip => {
     const status = getAutoStatus(trip)
-    console.log(`Trip "${trip.title}" status:`, status)
-    
+    console.log(`Trip "${trip.title}" status:`, status) 
     if (stats.hasOwnProperty(status)) stats[status]++
-
     // Count visited countries
     if (status === 'completed' || status === 'ongoing') {
       const country = extractCountry(trip)
       if (country) stats.countries.add(country.toLowerCase())
     }
   })
-
-  console.log('📊 Final stats:', stats)
-
   updateStatElement('upcomingCount', stats.planning + stats.upcoming)
   updateStatElement('ongoingCount', stats.ongoing)
   updateStatElement('completedCount', stats.completed)
   updateStatElement('countriesCount', stats.countries.size)
 }
-
-// -------------------------------------------------------
 // Extract country from trip data
-// -------------------------------------------------------
 const extractCountry = (trip) => {
   if (trip.country?.trim()) return trip.country.trim()
-
   if (trip.destination?.includes(',')) {
     const parts = trip.destination.split(',').map(p => p.trim())
     return parts[parts.length - 1]
   }
-
   return trip.destination?.trim() || null
 }
 
@@ -188,59 +119,36 @@ const updateStatElement = (id, value) => {
   const element = document.getElementById(id)
   if (element) {
     element.textContent = value
-    console.log(`✅ Updated ${id} to ${value}`)
   } else {
-    console.warn(`⚠️ Element ${id} not found`)
+    console.warn(`Element ${id} not found`)
   }
 }
-
-// -------------------------------------------------------
-// Render trips
-// -------------------------------------------------------
 const displayTrips = (trips) => {
-  console.log('🎨 Displaying', trips.length, 'trips')
-  
   const grid = document.getElementById('tripsGrid')
   const empty = document.querySelector('.empty-state')
-  
   if (!grid) {
-    console.error('❌ tripsGrid element not found!')
     return
   }
-
   if (!trips || trips.length === 0) {
-    console.log('📭 No trips to display - showing empty state')
     showEmptyState(grid, empty)
     return
   }
-
   grid.style.display = 'grid'
   if (empty) empty.style.display = 'none'
-
   grid.innerHTML = trips.map(createTripCard).join('')
-  console.log('✅ Trip cards rendered')
-  
   attachTripListeners()
 }
 
 const showEmptyState = (grid, empty) => {
   grid = grid || document.getElementById('tripsGrid')
   empty = empty || document.querySelector('.empty-state')
-
-  console.log('📭 Showing empty state')
-  
   if (grid) grid.style.display = 'none'
   if (empty) empty.style.display = 'block'
 }
-
-// -------------------------------------------------------
 // Create trip card HTML
-// -------------------------------------------------------
 const createTripCard = (trip) => {
   const status = getAutoStatus(trip)
   const statusClass = status === 'ongoing' ? 'status-active' : ''
-
-  // ✅ Handle both _id and id
   const tripId = trip._id || trip.id
 
   const coverImage = trip.coverImage
@@ -288,10 +196,6 @@ const createTripCard = (trip) => {
     </div>
   `
 }
-
-// -------------------------------------------------------
-// Utilities
-// -------------------------------------------------------
 const formatDateRange = (trip) => {
   if (!trip.startDate || !trip.endDate) return 'Dates not set'
   const s = new Date(trip.startDate)
@@ -314,62 +218,39 @@ const escapeHtml = (text) => {
   div.textContent = text
   return div.innerHTML
 }
-
-// -------------------------------------------------------
 // Delete trip
-// -------------------------------------------------------
 const deleteTrip = async (tripId) => {
   if (!confirm('Are you sure you want to delete this trip?')) return
-
   try {
-    console.log('🗑️ Deleting trip:', tripId)
     await apiService.trips.delete(tripId)
     showToast?.('Trip deleted successfully', 'success')
-
     allTrips = allTrips.filter(t => (t._id || t.id) !== tripId)
     updateStats(allTrips)
     filterAndDisplayTrips()
-
   } catch (error) {
     console.error('Delete error:', error)
     showToast?.('Failed to delete trip', 'error')
   }
 }
-
-// -------------------------------------------------------
-// Event listeners
-// -------------------------------------------------------
 const attachTripListeners = () => {
-  console.log('🔗 Attaching trip listeners')
-  
   document.querySelectorAll('.delete-trip-btn').forEach(btn => {
     btn.onclick = e => {
       e.stopPropagation()
       deleteTrip(btn.dataset.tripId)
     }
   })
-
-  // ✅ Navigate to trip overview page
   document.querySelectorAll('.trip-card').forEach(card => {
     card.onclick = e => {
-      if (e.target.closest('.delete-trip-btn')) return
-      
+      if (e.target.closest('.delete-trip-btn')) return  
       const tripId = card.dataset.tripId
-      console.log('🔍 Clicked trip:', tripId)
-      
-      // Navigate to trip overview page
       window.location.href = `./trip-overview.html?id=${tripId}`
     }
   })
 }
-
-// -------------------------------------------------------
 // Search / Filter / Sort
-// -------------------------------------------------------
 const initSearch = () => {
   const input = document.getElementById('searchInput')
   if (!input) return
-
   let timeout
   input.oninput = e => {
     clearTimeout(timeout)
@@ -382,7 +263,6 @@ const initSearch = () => {
 const initFilters = () => {
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.onclick = () => {
-      console.log('🔍 Filter clicked:', tab.dataset.filter)
       document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'))
       tab.classList.add('active')
       currentFilter = tab.dataset.filter
@@ -395,7 +275,6 @@ const initSort = () => {
   const sortSelect = document.getElementById('sortSelect')
   if (sortSelect) {
     sortSelect.addEventListener('change', e => {
-      console.log('🔀 Sort changed:', e.target.value)
       currentSort = e.target.value
       filterAndDisplayTrips()
     })
@@ -404,11 +283,7 @@ const initSort = () => {
 
 const filterAndDisplayTrips = (query = '') => {
   let filtered = [...allTrips]
-  
-  console.log('🔍 Filtering trips. Total:', allTrips.length)
-
   if (query) {
-    console.log('🔍 Search query:', query)
     filtered = filtered.filter(t =>
       (t.title || '').toLowerCase().includes(query) ||
       (t.destination || '').toLowerCase().includes(query) ||
@@ -417,11 +292,8 @@ const filterAndDisplayTrips = (query = '') => {
   }
 
   if (currentFilter !== 'all') {
-    console.log('🔍 Status filter:', currentFilter)
     filtered = filtered.filter(t => getAutoStatus(t) === currentFilter)
   }
-
-  console.log('✅ Filtered to', filtered.length, 'trips')
   displayTrips(sortTrips(filtered, currentSort))
 }
 
@@ -435,10 +307,6 @@ const sortTrips = (trips, sortBy) => {
     default: return sorted
   }
 }
-
-// -------------------------------------------------------
-// Logout
-// -------------------------------------------------------
 const initLogout = () => {
   const logoutBtn = document.getElementById('logoutBtn')
   if (logoutBtn) {
@@ -448,13 +316,6 @@ const initLogout = () => {
     })
   }
 }
-
-// -------------------------------------------------------
-// ✅ CRITICAL: Initialize on page load
-// -------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Trips page initializing...')
   initTripsPage()
 })
-
-console.log('✅ trips.js loaded with enhanced debugging')
