@@ -1,18 +1,13 @@
-// ============================================================
-// ENHANCED API SERVICE WITH DETAILED ERROR MESSAGES
-// ============================================================
-
 const apiService = {
   baseURL: window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api',
   isRefreshing: false,
   refreshSubscribers: [],
 
-  // Subscribe to token refresh completion
+  // Queue requests while token is being refreshed
   subscribeTokenRefresh(callback) {
     this.refreshSubscribers.push(callback);
   },
 
-  // Notify all subscribers when token is refreshed
   onRefreshed(token) {
     this.refreshSubscribers.forEach(callback => callback(token));
     this.refreshSubscribers = [];
@@ -28,8 +23,6 @@ const apiService = {
         this.redirectToLogin();
         return null;
       }
-
-      console.log('🔄 Refreshing access token...');
 
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
@@ -47,19 +40,17 @@ const apiService = {
       
       if (data.accessToken) {
         sessionStorage.setItem('accessToken', data.accessToken);
-        console.log('✅ Access token refreshed successfully');
         return data.accessToken;
       }
 
       throw new Error('No access token in response');
     } catch (error) {
-      console.error('❌ Token refresh failed:', error);
+      console.error('Token refresh error:', error);
       this.redirectToLogin();
       return null;
     }
   },
 
-  // Redirect to login page
   redirectToLogin() {
     sessionStorage.clear();
     showToast('Session expired. Please login again.', 'error');
@@ -68,7 +59,6 @@ const apiService = {
     }, 1500);
   },
 
-  // ✅ ENHANCED REQUEST FUNCTION WITH DETAILED ERROR LOGGING
   async request(endpoint, options = {}) {
     const token = sessionStorage.getItem('accessToken');
     
@@ -83,22 +73,10 @@ const apiService = {
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-
-    try {
-      // Log the request for debugging
-      console.log(`🌐 API Request: ${config.method || 'GET'} ${endpoint}`);
-      if (config.body) {
-        console.log('📤 Request Body:', config.body);
-      }
-
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
-      // ✅ ENHANCED ERROR HANDLING
       if (!response.ok) {
-        // Try to get JSON error response
         let errorData;
         const contentType = response.headers.get('content-type');
-        
         if (contentType && contentType.includes('application/json')) {
           errorData = await response.json();
         } else {
@@ -106,26 +84,14 @@ const apiService = {
           errorData = { message: textError || `HTTP ${response.status}` };
         }
         
-        // Log detailed error info
-        console.error('═══════════════════════════════════════════');
-        console.error(`❌ API ERROR ${response.status}`);
-        console.error('═══════════════════════════════════════════');
         console.error('Endpoint:', `${this.baseURL}${endpoint}`);
         console.error('Method:', config.method || 'GET');
         console.error('Status:', response.status, response.statusText);
         console.error('Error Response:', errorData);
-        
-        // ✅ LOG FULL ERROR DATA OBJECT TO SEE ALL PROPERTIES
-        console.error('Full Error Data Keys:', Object.keys(errorData));
-        console.error('Full Error Data:', JSON.stringify(errorData, null, 2));
-        
-        console.error('═══════════════════════════════════════════');
 
         // Handle 401 Unauthorized - Token expired
         if (response.status === 401) {
           if (errorData.message?.includes('expired') || errorData.message?.includes('Token expired')) {
-            console.log('⚠️ Token expired, attempting refresh...');
-
             if (!this.isRefreshing) {
               this.isRefreshing = true;
               const newToken = await this.refreshToken();
@@ -167,18 +133,16 @@ const apiService = {
           }
         }
 
-        // ✅ IMPROVED 400 BAD REQUEST HANDLING
+        // IMPROVED 400 BAD REQUEST HANDLING
         if (response.status === 400) {
           let errorMessage = 'Validation Error';
           let backendErrors = null;
           
           // Check for errors array (express-validator format)
           if (errorData.errors && Array.isArray(errorData.errors)) {
-            console.error('🔍 VALIDATION ERRORS (Array Format):');
             errorData.errors.forEach(err => {
               const field = err.field || err.path || err.param || 'Unknown field';
               const message = err.message || err.msg || 'Invalid value';
-              console.error(`  ❌ ${field}: ${message}`);
             });
             
             backendErrors = errorData.errors;
@@ -190,7 +154,7 @@ const apiService = {
           } 
           // Check for error object (alternative format)
           else if (errorData.error && typeof errorData.error === 'object') {
-            console.error('🔍 VALIDATION ERRORS (Object Format):');
+            console.error('VALIDATION ERRORS (Object Format):');
             const errorObj = errorData.error;
             backendErrors = Object.keys(errorObj).map(key => ({
               field: key,
@@ -198,7 +162,7 @@ const apiService = {
             }));
             
             backendErrors.forEach(err => {
-              console.error(`  ❌ ${err.field}: ${err.message}`);
+              console.error(`${err.field}: ${err.message}`);
             });
             
             errorMessage = backendErrors.map(err => 
@@ -207,7 +171,7 @@ const apiService = {
           }
           // Simple error message
           else if (errorData.message) {
-            console.error('🔍 ERROR MESSAGE:', errorData.message);
+            console.error('ERROR MESSAGE:', errorData.message);
             errorMessage = errorData.message;
           }
           
@@ -223,11 +187,10 @@ const apiService = {
 
       // Success - log and return
       const data = await response.json();
-      console.log('✅ API Response:', data);
       return data;
 
     } catch (error) {
-      console.error(`❌ API request failed: ${endpoint}`, error);
+      console.error(`API error: ${endpoint}`, err);
       throw error;
     }
   },
@@ -477,8 +440,4 @@ const apiService = {
     }
   }
 };
-
-// Make it globally available
 window.apiService = apiService;
-
-console.log('Enhanced API Service loaded with IMPROVED ERROR LOGGING');
