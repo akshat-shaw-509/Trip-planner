@@ -1,25 +1,16 @@
-// Handles expense listing, creation, editing, filtering, and export
-
 (function () {
   'use strict';
-
-  // Prevent double initialization
   if (window.expensesPageLoaded) {
     console.warn('Expenses page already loaded');
     return;
   }
   window.expensesPageLoaded = true;
-
-  // ===================== State =====================
   let tripId = null;
   let expenses = [];
   let currentFilter = 'all';
   let currentExpenseId = null;
 
-  // ===================== Init =====================
   document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Initializing expenses page');
-
     // Basic auth check
     const token = sessionStorage.getItem('accessToken');
     if (!token) {
@@ -27,11 +18,9 @@
       setTimeout(() => (window.location.href = 'login.html'), 1500);
       return;
     }
-
     // Extract trip ID from URL
     const params = new URLSearchParams(window.location.search);
     tripId = params.get('id');
-
     if (!tripId) {
       showToast('Trip not found', 'error');
       setTimeout(() => (window.location.href = 'trips.html'), 1500);
@@ -41,25 +30,22 @@
     try {
       await loadExpenses();
       setupEventListeners();
-      console.log('Expenses page ready');
     } catch (err) {
       console.error('Initialization failed:', err);
       showToast('Failed to load expenses', 'error');
     }
   });
 
-  // ===================== Event Binding =====================
+  // Event Binding
   function setupEventListeners() {
     // Add expense buttons
     document
       .querySelectorAll('.btn-add-expense')
       .forEach(btn => (btn.onclick = openAddExpenseModal));
-
     // Modal controls
     document.getElementById('closeModal')?.addEventListener('click', closeExpenseModal);
     document.getElementById('cancelBtn')?.addEventListener('click', closeExpenseModal);
     document.getElementById('expenseForm')?.addEventListener('submit', handleSubmitExpense);
-
     // Close modal on backdrop click
     const modal = document.getElementById('expenseModal');
     if (modal) {
@@ -67,17 +53,14 @@
         if (e.target.id === 'expenseModal') closeExpenseModal();
       };
     }
-
     // Category filters
     document.querySelectorAll('.category-btn').forEach(btn => {
       btn.onclick = () => handleFilterChange(btn.dataset.category);
     });
-
-    // Export CSV
     document.querySelector('.btn-export')?.addEventListener('click', exportExpenses);
   }
 
-  // ===================== Data =====================
+  // Data
   async function loadExpenses() {
     try {
       const res = await apiService.expenses.getByTrip(tripId);
@@ -86,31 +69,25 @@
       console.error('Failed to load expenses:', err);
       expenses = [];
     }
-
     renderExpenses();
     updateSummary();
   }
 
-  // ===================== Rendering =====================
+  // Rendering
   function renderExpenses() {
     const list = document.getElementById('expensesList');
     const emptyState = document.querySelector('.empty-state');
     if (!list) return;
-
     const filtered = expenses.filter(e =>
       currentFilter === 'all' ? true : e.category === currentFilter
     );
-
     if (filtered.length === 0) {
       list.innerHTML = '';
       if (emptyState) emptyState.style.display = 'flex';
       return;
     }
-
     if (emptyState) emptyState.style.display = 'none';
-
     list.innerHTML = filtered.map(createExpenseCard).join('');
-
     // Enable edit on click
     filtered.forEach(exp => {
       const card = document.querySelector(`[data-expense-id="${exp._id}"]`);
@@ -124,7 +101,6 @@
       day: 'numeric',
       year: 'numeric'
     });
-
     const icons = {
       accommodation: 'bed',
       food: 'utensils',
@@ -134,9 +110,7 @@
       entertainment: 'theater-masks',
       miscellaneous: 'ellipsis-h'
     };
-
     const icon = icons[expense.category] || 'receipt';
-
     return `
       <div class="expense-item ${expense.category}" data-expense-id="${expense._id}">
         <div class="expense-info">
@@ -155,14 +129,11 @@
       </div>
     `;
   }
-
-  // ===================== Summary =====================
+  // Summary
   function updateSummary() {
     const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-
     document.getElementById('totalSpent').textContent = `₹${total.toLocaleString()}`;
     document.getElementById('transactionCount').textContent = expenses.length;
-
     updateBudgetInfo();
   }
 
@@ -171,13 +142,10 @@
       const res = await apiService.trips.getById(tripId);
       const trip = res.data;
       if (!trip?.budget) return;
-
       const spent = expenses.reduce((s, e) => s + e.amount, 0);
       const remaining = trip.budget - spent;
-
       document.getElementById('budgetAmount').textContent =
         `₹${trip.budget.toLocaleString()}`;
-
       const remainingEl = document.getElementById('remainingAmount');
       remainingEl.textContent = `₹${remaining.toLocaleString()}`;
       remainingEl.style.color = remaining < 0 ? '#ef4444' : '#4caf50';
@@ -186,21 +154,17 @@
     }
   }
 
-  // ===================== Modal =====================
+  // Modal
   function openAddExpenseModal() {
     currentExpenseId = null;
-
     document.getElementById('modalTitle').textContent = 'Add Expense';
     document.getElementById('expenseForm').reset();
     document.getElementById('expenseDate').value =
       new Date().toISOString().split('T')[0];
-
     document.getElementById('expenseModal').classList.add('active');
   }
-
   function editExpense(expense) {
     currentExpenseId = expense._id;
-
     document.getElementById('modalTitle').textContent = 'Edit Expense';
     document.getElementById('expenseDescription').value = expense.description;
     document.getElementById('expenseAmount').value = expense.amount;
@@ -210,7 +174,6 @@
       expense.paymentMethod || 'cash';
     document.getElementById('expensePaidBy').value = expense.paidBy || '';
     document.getElementById('expenseNotes').value = expense.notes || '';
-
     document.getElementById('expenseModal').classList.add('active');
   }
 
@@ -219,10 +182,9 @@
     currentExpenseId = null;
   }
 
-  // ===================== Save =====================
+  // Save
   async function handleSubmitExpense(e) {
     e.preventDefault();
-
     const data = {
       description: document.getElementById('expenseDescription').value.trim(),
       amount: parseFloat(document.getElementById('expenseAmount').value),
@@ -233,17 +195,14 @@
       notes: document.getElementById('expenseNotes').value.trim(),
       currency: 'INR'
     };
-
     if (!data.description || !data.amount || !data.category || !data.date) {
       showToast('Please fill all required fields', 'error');
       return;
     }
-
     if (data.amount <= 0) {
       showToast('Amount must be greater than zero', 'error');
       return;
     }
-
     try {
       if (currentExpenseId) {
         await apiService.expenses.update(currentExpenseId, data);
@@ -252,7 +211,6 @@
         await apiService.expenses.create(tripId, data);
         showToast('Expense added', 'success');
       }
-
       closeExpenseModal();
       await loadExpenses();
     } catch (err) {
@@ -261,75 +219,25 @@
     }
   }
 
-  // ===================== Filters =====================
   function handleFilterChange(category) {
     currentFilter = category;
-
     document.querySelectorAll('.category-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.category === category);
     });
-
     renderExpenses();
   }
 
-  // ===================== Export =====================
-  function exportExpenses() {
-    if (!expenses.length) {
-      showToast('No expenses to export', 'info');
-      return;
-    }
-
-    const headers = [
-      'Date',
-      'Description',
-      'Category',
-      'Amount',
-      'Payment Method',
-      'Paid By',
-      'Notes'
-    ];
-
-    const rows = expenses.map(e => [
-      new Date(e.date).toLocaleDateString(),
-      e.description,
-      e.category,
-      e.amount,
-      e.paymentMethod || '',
-      e.paidBy || '',
-      e.notes || ''
-    ]);
-
-    let csv = headers.join(',') + '\n';
-    rows.forEach(r => {
-      csv += r.map(v => `"${v}"`).join(',') + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-
-    URL.revokeObjectURL(url);
-    showToast('Expenses exported', 'success');
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
-
-  // ===================== Utils =====================
+  
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
-
-  function capitalizeFirst(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
+  
   function showToast(message, type = 'info') {
     window.showToast ? window.showToast(message, type) : alert(message);
   }
-
-  console.log('Expenses module loaded');
 })();
