@@ -60,6 +60,7 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
+    try{
     const token = sessionStorage.getItem('accessToken');
     
     const config = {
@@ -190,7 +191,7 @@ const apiService = {
       return data;
 
     } catch (error) {
-      console.error(`API error: ${endpoint}`, err);
+      console.error(`API error: ${endpoint}`, error);
       throw error;
     }
   },
