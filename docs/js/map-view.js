@@ -1,6 +1,3 @@
-// js/map-view.js
-// Enhanced map view with clustering for recommendations
-
 let mapViewState = {
   map: null,
   markers: [],
@@ -9,21 +6,16 @@ let mapViewState = {
   recommendations: [],
   tripCenter: null
 };
-
-// ===================== Initialization =====================
 function initEnhancedMapView(recommendations, tripCenter) {
   mapViewState.recommendations = recommendations;
   mapViewState.tripCenter = tripCenter;
 
   renderMapViewUI();
   attachMapListeners();
-}
 
-// ===================== UI Rendering =====================
 function renderMapViewUI() {
   const container = document.querySelector('.recommendations-section');
   if (!container) return;
-
   const html = `
     <div class="map-view-container">
       <div class="map-toggle-section">
@@ -88,41 +80,34 @@ function renderMapViewUI() {
       </div>
     </div>
   `;
-
   container.insertAdjacentHTML('afterend', html);
 }
 
-// ===================== Event Listeners =====================
 function attachMapListeners() {
   document
     .getElementById('mapViewToggleBtn')
     ?.addEventListener('click', toggleMapView);
-
   document
     .getElementById('mapLegendToggle')
     ?.addEventListener('click', toggleMapLegend);
 }
 
-// ===================== Map Toggle =====================
+// Map Toggle
 async function toggleMapView() {
   const wrapper = document.getElementById('mapWrapper');
   const btn = document.getElementById('mapViewToggleBtn');
   const text = document.getElementById('mapToggleText');
-
   if (!wrapper || !btn) return;
-
   if (!mapViewState.isMapActive) {
     // Show map
     wrapper.classList.add('active');
     btn.classList.add('active');
     text.textContent = 'Hide Map View';
-
     if (!mapViewState.map) {
       await initializeMap();
     } else {
       mapViewState.map.invalidateSize();
     }
-
     mapViewState.isMapActive = true;
   } else {
     // Hide map
@@ -132,12 +117,10 @@ async function toggleMapView() {
     mapViewState.isMapActive = false;
   }
 }
-
-// ===================== Map Initialization =====================
+// Map Initialization
 async function initializeMap() {
   const mapElement = document.getElementById('enhanced-map');
   if (!mapElement) return;
-
   // Loading placeholder
   mapElement.innerHTML = `
     <div class="map-loading">
@@ -145,25 +128,19 @@ async function initializeMap() {
       <div class="map-loading-text">Loading map...</div>
     </div>
   `;
-
   if (typeof L === 'undefined') {
     console.error('Leaflet not loaded');
     return;
   }
-
   mapElement.innerHTML = '';
-
   const center = mapViewState.tripCenter || { lat: 20.5937, lon: 78.9629 };
-
   mapViewState.map = L.map('enhanced-map')
     .setView([center.lat, center.lon], 13);
-
   // Base map tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19
   }).addTo(mapViewState.map);
-
   // Cluster group for better performance
   mapViewState.markerClusterGroup = L.markerClusterGroup({
     chunkedLoading: true,
@@ -173,10 +150,8 @@ async function initializeMap() {
     iconCreateFunction(cluster) {
       const count = cluster.getChildCount();
       let size = 'small';
-
       if (count > 10) size = 'large';
       else if (count > 5) size = 'medium';
-
       return L.divIcon({
         html: `<div class="marker-cluster marker-cluster-${size}">${count}</div>`,
         className: '',
@@ -193,35 +168,28 @@ async function initializeMap() {
       iconSize: [32, 32],
       iconAnchor: [16, 16]
     });
-
     L.marker([center.lat, center.lon], { icon: centerIcon })
       .addTo(mapViewState.map)
       .bindPopup('<b>Trip Center</b>');
   }
-
   addRecommendationMarkers();
   mapViewState.map.addLayer(mapViewState.markerClusterGroup);
-
   // Fit map to markers
   if (mapViewState.markers.length) {
     const group = L.featureGroup(mapViewState.markers);
     mapViewState.map.fitBounds(group.getBounds().pad(0.1));
   }
-
   setTimeout(() => mapViewState.map.invalidateSize(), 300);
 }
 
-// ===================== Markers =====================
+// Markers
 function addRecommendationMarkers() {
   mapViewState.markers = [];
-
   mapViewState.recommendations.forEach(rec => {
     if (!rec.location?.coordinates) return;
-
     const [lon, lat] = rec.location.coordinates;
     const category = rec.category?.toLowerCase() || 'other';
     const icon = getCategoryIcon(category);
-
     const markerIcon = L.divIcon({
       html: `<div class="map-legend-icon ${category}">
               <i class="fas fa-${icon}"></i>
@@ -230,23 +198,20 @@ function addRecommendationMarkers() {
       iconSize: [32, 32],
       iconAnchor: [16, 16]
     });
-
     const marker = L.marker([lat, lon], { icon: markerIcon });
     marker.bindPopup(createMapPopup(rec), {
       className: 'custom-popup',
       maxWidth: 300
     });
-
     mapViewState.markers.push(marker);
     mapViewState.markerClusterGroup.addLayer(marker);
   });
 }
 
-// ===================== Popup =====================
+// Popup
 function createMapPopup(rec) {
   const category = rec.category?.toLowerCase() || 'other';
   const icon = getCategoryIcon(category);
-
   return `
     <div class="map-popup-content">
       <div class="map-popup-header">
@@ -276,34 +241,25 @@ function createMapPopup(rec) {
     </div>
   `;
 }
-
-// ===================== Actions =====================
+// Actions
 window.addFromMapPopup = async function (placeName) {
   const rec = mapViewState.recommendations.find(r => r.name === placeName);
   if (!rec) return;
-
   await addRecommendationToTrip(rec);
   mapViewState.map.closePopup();
   showToast('Place added to your trip!', 'success');
-
   if (typeof loadRecommendations === 'function') await loadRecommendations();
   if (typeof loadPlaces === 'function') await loadPlaces();
 };
-
-// ===================== Utilities =====================
 function toggleMapLegend() {
   document.getElementById('mapLegend')?.classList.toggle('hidden');
 }
-
 function updateMapMarkers(recommendations) {
   if (!mapViewState.map || !mapViewState.markerClusterGroup) return;
-
   mapViewState.recommendations = recommendations;
   mapViewState.markerClusterGroup.clearLayers();
   mapViewState.markers = [];
-
   addRecommendationMarkers();
-
   if (mapViewState.markers.length) {
     const group = L.featureGroup(mapViewState.markers);
     mapViewState.map.fitBounds(group.getBounds().pad(0.1));
@@ -313,11 +269,8 @@ function updateMapMarkers(recommendations) {
 function focusMapOnPlace(placeName) {
   const rec = mapViewState.recommendations.find(r => r.name === placeName);
   if (!rec?.location) return;
-
   if (!mapViewState.isMapActive) toggleMapView();
-
   const [lon, lat] = rec.location.coordinates;
-
   setTimeout(() => {
     mapViewState.map.setView([lat, lon], 16);
     mapViewState.markerClusterGroup.eachLayer(layer => {
