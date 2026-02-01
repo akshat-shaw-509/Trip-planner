@@ -1,47 +1,31 @@
 (function () {
-  'use strict'
+  'use strict';
 
-  // --------------------------------------------
-  // Prevent loading toast system multiple times
-  // --------------------------------------------
-  if (window.toastLoaded) return
-  window.toastLoaded = true
+  if (window.toastLoaded) return;
+  window.toastLoaded = true;
 
-  // --------------------------------------------
-  // Toast container (created once)
-  // --------------------------------------------
-  let toastContainer = null
+  let container = null;
 
-  // --------------------------------------------
-  // Toast color configuration
-  // --------------------------------------------
   const COLORS = {
-    success: '#10b981', 
-    error: '#ef4444',   
-    warning: '#f59e0b', 
-    info: '#3b82f6',    
-  }
+    success: '#10b981',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6',
+  };
 
-  // --------------------------------------------
-  // FontAwesome icons per toast type
-  // --------------------------------------------
   const ICONS = {
     success: 'check-circle',
     error: 'exclamation-circle',
     warning: 'exclamation-triangle',
     info: 'info-circle',
-  }
+  };
 
-  // --------------------------------------------
-  // Initialize toast container (lazy loaded)
-  // --------------------------------------------
-  function initToastContainer() {
-    if (toastContainer) return
+  function ensureContainer() {
+    if (container) return;
 
-    toastContainer = document.createElement('div')
-    toastContainer.id = 'toast-container'
-
-    toastContainer.style.cssText = `
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
@@ -49,137 +33,80 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-width: 500px;
+      max-width: 480px;
       pointer-events: none;
-    `
+    `;
 
-    document.body.appendChild(toastContainer)
+    document.body.appendChild(container);
   }
 
-  // --------------------------------------------
-  // Show a toast notification
-  // --------------------------------------------
-  // @param message  - string (required)
-  // @param type     - success | error | warning | info
-  // @param duration - auto dismiss time (ms)
-  // --------------------------------------------
   function showToast(message, type = 'info', duration = 4000) {
-    initToastContainer()
+    ensureContainer();
 
-    const toast = document.createElement('div')
-    toast.className = `toast toast-${type}`
+    const toast = document.createElement('div');
+    const color = COLORS[type] || COLORS.info;
+    const icon = ICONS[type] || ICONS.info;
 
-    const bgColor = COLORS[type] || COLORS.info
-    const icon = ICONS[type] || ICONS.info
-
-    // Toast styles (inline to avoid CSS dependency)
+    toast.className = `toast toast-${type}`;
     toast.style.cssText = `
       display: flex;
-      align-items: flex-start;
       gap: 12px;
-      padding: 16px 20px;
-      background: white;
+      padding: 14px 18px;
+      background: #fff;
       color: #1f2937;
       border-radius: 8px;
+      border-left: 4px solid ${color};
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      border-left: 4px solid ${bgColor};
       font-size: 14px;
-      line-height: 1.6;
-      animation: slideIn 0.3s ease;
+      line-height: 1.5;
+      animation: slideIn 0.25s ease;
       pointer-events: auto;
       cursor: pointer;
-      max-width: 100%;
-      word-wrap: break-word;
-    `
+    `;
 
-    // Toast content
     toast.innerHTML = `
-      <i class="fas fa-${icon}" 
-         style="color:${bgColor}; font-size:18px; flex-shrink:0; margin-top:2px;">
-      </i>
+      <i class="fas fa-${icon}" style="color:${color}; font-size:16px; margin-top:2px;"></i>
+      <div style="flex:1; white-space:pre-line;">${escapeHtml(message)}</div>
+      <i class="fas fa-times" style="opacity:0.6;"></i>
+    `;
 
-      <span style="flex:1; white-space:pre-line;">
-        ${escapeHtml(message)}
-      </span>
+    toast.onclick = () => dismissToast(toast);
 
-      <i class="fas fa-times"
-         style="font-size:16px; opacity:0.7; flex-shrink:0;">
-      </i>
-    `
+    container.appendChild(toast);
+    setTimeout(() => dismissToast(toast), duration);
 
-    // Click = dismiss immediately
-    toast.onclick = () => removeToast(toast)
-
-    toastContainer.appendChild(toast)
-
-    // Auto dismiss after duration
-    setTimeout(() => removeToast(toast), duration)
-
-    return toast
+    return toast;
   }
 
-  // --------------------------------------------
-  // Remove toast with animation
-  // --------------------------------------------
-  function removeToast(toast) {
-    if (!toast || !toast.parentElement) return
+  function dismissToast(toast) {
+    if (!toast || !toast.parentNode) return;
 
-    toast.style.animation = 'slideOut 0.3s ease'
-
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.parentElement.removeChild(toast)
-      }
-    }, 300)
+    toast.style.animation = 'slideOut 0.25s ease';
+    setTimeout(() => toast.remove(), 250);
   }
 
-  // --------------------------------------------
-  // Escape HTML to prevent XSS
-  // --------------------------------------------
   function escapeHtml(text) {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
-  // --------------------------------------------
-  // Toast animations + hover effect
-  // --------------------------------------------
-  const style = document.createElement('style')
+  const style = document.createElement('style');
   style.textContent = `
     @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
+      from { transform: translateX(300px); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
     }
-
     @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
+      from { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(300px); opacity: 0; }
     }
-
     .toast:hover {
-      transform: translateX(-5px);
-      transition: transform 0.2s ease;
+      transform: translateX(-4px);
+      transition: transform 0.15s ease;
     }
-  `
-  document.head.appendChild(style)
+  `;
+  document.head.appendChild(style);
 
-  // --------------------------------------------
-  // Expose globally
-  // --------------------------------------------
-  window.showToast = showToast
-
-  console.log('Toast notification system loaded')
-})()
+  window.showToast = showToast;
+})();
