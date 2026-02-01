@@ -1,23 +1,15 @@
-let mongoose = require('mongoose')
-
-/**
- * -------------------- Trip Schema --------------------
- */
+const mongoose = require('mongoose')
+// Trip Schema
 let tripSchema = new mongoose.Schema(
   {
-    /**
-     * User who owns the trip
-     */
+    //User who owns the trip
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
       index: true,
     },
-
-    /**
-     * Trip title
-     */
+     // Trip title
     title: {
       type: String,
       required: [true, 'Trip title is required'],
@@ -26,19 +18,14 @@ let tripSchema = new mongoose.Schema(
       maxlength: [100, 'Trip title cannot exceed 100 characters']
     },
 
-    /**
-     * Optional trip description
-     */
+    //Optional trip description
     description: {
       type: String,
       trim: true,
       maxlength: [1000, 'Description cannot exceed 1000 characters'],
       default: ''
     },
-
-    /**
-     * Trip destination
-     */
+    // Trip destination
     destination: {
       type: String,
       required: [true, 'Destination is required'],
@@ -47,43 +34,33 @@ let tripSchema = new mongoose.Schema(
       maxlength: [100, 'Destination cannot exceed 100 characters']
     },
 
-    /**
-     * Trip start date
-     */
+    //Trip start date
     startDate: {
       type: Date,
       required: [true, 'Start date is required']
     },
 
-    /**
-     * Trip end date
-     */
+    //Trip end date
     endDate: {
       type: Date,
       required: [true, 'End date is required'],
     },
 
-    /**
-     * Estimated trip budget
-     */
+    //Estimated trip budget
     budget: {
       type: Number,
       min: [0, 'Budget cannot be negative'],
       default: 0
     },
 
-    /**
-     * Number of travelers
-     */
+    //Number of travelers
     travelers: {
       type: Number,
       min: [1, 'Number of travelers must be at least 1'],
       default: 1
     },
 
-    /**
-     * Current trip status
-     */
+    //Current trip status
     status: {
       type: String,
       lowercase: true,
@@ -94,60 +71,34 @@ let tripSchema = new mongoose.Schema(
         message: '{VALUE} is not a valid trip status'
       }
     },
-
-    /**
-     * Visibility flag
-     */
     isPublic: {
       type: Boolean,
       default: false
     },
-
-    /**
-     * Trip cover image URL
-     */
     coverImage: {
       type: String,
       default: null,
       trim: true
     },
-
-    /**
-     * Optional tags for filtering and grouping
-     */
     tags: {
       type: [String],
       default: []
     }
   },
   {
-    // Automatically manage createdAt & updatedAt fields
     timestamps: true,
-
-    // Customize JSON output
     toJSON: {
       transform: function (doc, ret) {
-        // Remove internal version key
         delete ret.__v
         return ret
       }
     },
   }
 )
-
-/**
- * -------------------- Indexes --------------------
- */
-
-// Optimize queries by user and creation time
 tripSchema.index({ userId: 1, createdAt: -1 })
-
-// Optimize queries by user and status
 tripSchema.index({ userId: 1, status: 1 })
 
-/**
- * -------------------- Schema Hooks --------------------
- */
+//Schema Hooks 
 
 // Ensure endDate is always after startDate
 tripSchema.pre('validate', async function () {
@@ -156,32 +107,17 @@ tripSchema.pre('validate', async function () {
   }
 })
 
-/**
- * -------------------- Virtual Fields --------------------
- */
-
-/**
- * Virtual: trip duration (in days)
- */
+//Virtual Fields
 tripSchema.virtual('duration').get(function () {
   if (!this.startDate || !this.endDate) {
     return 0
   }
-
   let diffTime = Math.abs(this.endDate - this.startDate)
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
 })
-
-/**
- * Virtual: check if trip is upcoming
- */
 tripSchema.virtual('isUpcoming').get(function () {
   return this.startDate > new Date() && this.status !== 'cancelled'
 })
-
-/**
- * Virtual: check if trip is currently active
- */
 tripSchema.virtual('isActive').get(function () {
   return (
     this.startDate <= new Date() &&
@@ -189,21 +125,10 @@ tripSchema.virtual('isActive').get(function () {
     this.status === 'ongoing'
   )
 })
-
-/**
- * Virtual: check if trip is past
- */
 tripSchema.virtual('isPast').get(function () {
   return this.endDate < new Date() || this.status === 'completed'
 })
-
-/**
- * -------------------- Instance Methods --------------------
- */
-
-/**
- * Returns a compact summary of the trip
- */
+//Returns a summary of the trip
 tripSchema.methods.getSummary = function () {
   return {
     id: this._id,
@@ -222,27 +147,15 @@ tripSchema.methods.getSummary = function () {
     coverImage: this.coverImage
   }
 }
-
-/**
- * -------------------- Static Methods --------------------
- */
-
-/**
- * Find all trips for a user (newest first)
- */
+//Find all trips for a user
 tripSchema.statics.findByUserId = function (userId) {
   return this.find({ userId }).sort('-createdAt')
 }
 
-/**
- * Find trips for a user filtered by status
- */
+// Find trips for a user filtered by status
 tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
   return this.find({ userId, status }).sort('-createdAt')
 }
-
-/**
- * Create and export Trip model
- */
 let Trip = mongoose.model('Trip', tripSchema)
 module.exports = Trip
+
