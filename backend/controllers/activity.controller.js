@@ -1,8 +1,4 @@
 const activityService = require('../services/activity.service')
-
-/**
- * Send standardized success response
- */
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true }
 
@@ -13,35 +9,26 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
 
   res.status(statusCode).json(response)
 }
-
-/**
- * Send standardized error response
- */
+//Send standardized error response
 const sendError = (res, statusCode, message) => {
   res.status(statusCode).json({
     success: false,
     message
   })
 }
-
-/**
- * Create a new activity for a trip
- * POST /api/trips/:tripId/activities
- */
+ //Create a new activity for a trip
+ //POST /api/trips/:tripId/activities
 const createActivity = async (req, res) => {
   const activity = await activityService.createActivity(
     req.params.tripId,
     req.body,
     req.user.id
   )
-
   sendSuccess(res, 201, activity, 'Activity created successfully')
 }
 
-/**
- * Get all activities for a trip
- * GET /api/trips/:tripId/activities
- */
+//Get all activities for a trip
+ //GET /api/trips/:tripId/activities
 const getActivitiesByTrip = async (req, res) => {
   const activities = await activityService.getActivitiesByTrip(
     req.params.tripId,
@@ -53,23 +40,18 @@ const getActivitiesByTrip = async (req, res) => {
   })
 }
 
-/**
- * Get a single activity by ID
- * GET /api/activities/:activityId
- */
+//Get a single activity by ID
+//GET /api/activities/:activityId
 const getActivityById = async (req, res) => {
   const activity = await activityService.getActivityById(
     req.params.activityId,
     req.user.id
   )
-
   sendSuccess(res, 200, activity)
 }
 
-/**
- * Update an activity
- * PUT /api/activities/:activityId
- */
+//Update an activity
+//PUT /api/activities/:activityId
 const updateActivity = async (req, res) => {
   const activity = await activityService.updateActivity(
     req.params.activityId,
@@ -80,10 +62,8 @@ const updateActivity = async (req, res) => {
   sendSuccess(res, 200, activity, 'Activity updated successfully')
 }
 
-/**
- * Delete an activity
- * DELETE /api/activities/:activityId
- */
+//Delete an activity
+//DELETE /api/activities/:activityId
 const deleteActivity = async (req, res) => {
   const result = await activityService.deleteActivity(
     req.params.activityId,
@@ -93,30 +73,24 @@ const deleteActivity = async (req, res) => {
   sendSuccess(res, 200, null, result.message)
 }
 
-/**
- * Get activities for a specific date
- * GET /api/trips/:tripId/activities/by-date?date=YYYY-MM-DD
- */
+//Get activities for a specific date
+ //GET /api/trips/:tripId/activities/by-date?date=YYYY-MM-DD
 const getActivitiesByDate = async (req, res) => {
   if (!req.query.date) {
     return sendError(res, 400, 'Date query parameter required')
   }
-
   const activities = await activityService.getActivitiesByDate(
     req.params.tripId,
     req.query.date,
     req.user.id
   )
-
   sendSuccess(res, 200, activities, null, {
     count: activities.length
   })
 }
 
-/**
- * Update activity status (planned / completed / cancelled)
- * PATCH /api/activities/:activityId/status
- */
+//Update activity status
+//PATCH /api/activities/:activityId/status
 const updateActivityStatus = async (req, res) => {
   if (!req.body.status) {
     return sendError(res, 400, 'Status required')
@@ -131,9 +105,6 @@ const updateActivityStatus = async (req, res) => {
   sendSuccess(res, 200, activity, 'Activity status updated successfully')
 }
 
-/**
- * Export controller methods
- */
 module.exports = {
   createActivity,
   getActivitiesByTrip,
@@ -143,4 +114,3 @@ module.exports = {
   getActivitiesByDate,
   updateActivityStatus
 }
-
