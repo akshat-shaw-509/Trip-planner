@@ -1,5 +1,3 @@
-// FIXED places.js - DIAGNOSTIC VERSION WITH PROPER INITIALIZATION ORDER
-
 let currentTripId = null;
 let allPlaces = [];
 let currentFilter = 'all';
@@ -8,108 +6,68 @@ let markers = [];
 let currentTripData = null;
 let recommendedPlaces = [];
 
-// ===================== Page Init (FIXED ORDER) =====================
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('🚀 Page loaded - Starting initialization...');
-  
   const token = sessionStorage.getItem('accessToken');
   if (!token) {
     showToast('Please login first', 'error');
     window.location.href = './login.html';
     return;
   }
-
   currentTripId =
     new URLSearchParams(window.location.search).get('id') ||
     sessionStorage.getItem('currentTripId');
-
   if (!currentTripId) {
     showToast('Trip not found', 'error');
     setTimeout(() => (window.location.href = './trips.html'), 2000);
     return;
   }
-
   sessionStorage.setItem('currentTripId', currentTripId);
 
-  // ✅ STEP 1: Load trip data FIRST
-  console.log('📍 STEP 1: Loading trip context...');
+  //Load trip data
   await loadTripContext();
-  
   if (!currentTripData) {
-    console.error('❌ Failed to load trip data');
+    console.error('Failed to load trip data');
     showToast('Failed to load trip details', 'error');
     return;
   }
-  
-  console.log('✅ Trip data loaded:', currentTripData);
-
-  // ✅ STEP 2: Initialize trip center selector (NEEDS trip data)
-  console.log('📍 STEP 2: Initializing trip center selector...');
+  //Trip center selector
   if (typeof initTripCenterSelector === 'function') {
     try {
       await initTripCenterSelector(currentTripData);
-      console.log('✅ Trip center initialized');
     } catch (err) {
-      console.error('❌ Trip center init failed:', err);
+      console.error('Trip center init failed:', err);
     }
-  } else {
-    console.error('❌ initTripCenterSelector function not found!');
-    console.log('Available functions:', Object.keys(window).filter(k => k.includes('Trip')));
   }
-
-  // ✅ STEP 3: Load places
-  console.log('📍 STEP 3: Loading places...');
+  // Load places
   await loadPlaces();
-
-  // ✅ STEP 4: Initialize recommendations (NEEDS trip data AND trip center)
-  console.log('📍 STEP 4: Initializing recommendations...');
+  // Recommendations
   if (typeof initRecommendations === 'function') {
     try {
       await initRecommendations(currentTripId, currentTripData);
-      console.log('✅ Recommendations initialized');
     } catch (err) {
-      console.error('❌ Recommendations init failed:', err);
+      console.error('Recommendations init failed:', err);
     }
   } else {
     console.error('❌ initRecommendations function not found!');
   }
-
-  // ✅ STEP 5: Initialize filters
   initFilters();
-  
-  // ✅ STEP 6: Initialize map
+  //Initialize map
   setTimeout(() => {
-    console.log('📍 STEP 6: Initializing map...');
     initMap();
   }, 500);
-
-  // UI handlers
   document.getElementById('addPlaceBtn')?.addEventListener('click', openAddPlaceModal);
   document.getElementById('addPlaceBtnBottom')?.addEventListener('click', openAddPlaceModal);
   document.getElementById('closeModal')?.addEventListener('click', closePlaceModal);
   document.getElementById('cancelBtn')?.addEventListener('click', closePlaceModal);
   document.getElementById('placeForm')?.addEventListener('submit', handlePlaceSubmit);
-
   document.getElementById('toggleMapBtn')?.addEventListener('click', toggleMap);
   document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
-  
-  console.log('✅ All initialization complete!');
 });
-
-// ===================== Trip Context =====================
+//Trip Context
 async function loadTripContext() {
   try {
-    console.log('📥 Fetching trip data for ID:', currentTripId);
     const res = await apiService.trips.getById(currentTripId);
     currentTripData = res.data;
-
-    console.log('📦 Trip data received:', {
-      destination: currentTripData.destination,
-      country: currentTripData.country,
-      hasCoords: !!currentTripData.destinationCoords,
-      coords: currentTripData.destinationCoords
-    });
-
     const tripInfoEl = document.getElementById('tripInfo');
     if (tripInfoEl && currentTripData) {
       const days =
@@ -118,21 +76,18 @@ async function loadTripContext() {
             new Date(currentTripData.startDate)) /
             (1000 * 60 * 60 * 24)
         ) + 1;
-
       tripInfoEl.textContent = `${currentTripData.destination}${
         currentTripData.country ? ', ' + currentTripData.country : ''
       } • ${days} Days`;
     }
-    
     return currentTripData;
   } catch (err) {
-    console.error('❌ Failed to load trip context:', err);
+    console.error('Failed to load trip context:', err);
     showToast('Failed to load trip details', 'error');
     throw err;
   }
 }
-
-// ===================== Places =====================
+//Places
 async function loadPlaces(filters = {}) {
   try {
     const res = await apiService.places.getByTrip(currentTripId, filters);
@@ -149,35 +104,28 @@ function displayPlaces() {
   const grid = document.getElementById('placesGrid');
   const emptyEl = document.getElementById('emptyPlaces');
   if (!grid) return;
-
   let filtered = currentFilter === 'all'
     ? allPlaces
     : allPlaces.filter(p => p.category.toLowerCase() === currentFilter);
-
   if (filtered.length === 0) {
     grid.style.display = 'none';
     emptyEl && (emptyEl.style.display = 'flex');
     return;
   }
-
   emptyEl && (emptyEl.style.display = 'none');
   grid.style.display = 'grid';
   grid.innerHTML = filtered.map(createPlaceCard).join('');
-
   filtered.forEach(place => {
     const card = document.querySelector(`[data-place-id="${place._id}"]`);
     if (!card) return;
-
     card.querySelector('.btn-toggle-favorite')?.addEventListener('click', e => {
       e.stopPropagation();
       toggleFavorite(place._id, e.currentTarget);
     });
-
     card.querySelector('.btn-add-schedule')?.addEventListener('click', e => {
       e.stopPropagation();
       addToSchedule(place._id);
     });
-
     card.querySelector('.btn-delete-place')?.addEventListener('click', e => {
       e.stopPropagation();
       deletePlace(place._id);
@@ -188,7 +136,6 @@ function displayPlaces() {
 function createPlaceCard(place) {
   const icon = getCategoryIcon(place.category);
   const isFavorite = place.isFavorite || false;
-
   return `
     <div class="place-card ${place.category.toLowerCase()}" data-place-id="${place._id}">
       <div class="place-card-header">
@@ -262,14 +209,8 @@ function closePlaceModal() {
 async function geocodePlace(placeName, address) {
   try {
     const query = address || placeName;
-    
-    // ✅ Use the correct API endpoint
     const baseURL = apiService?.baseURL || 'http://localhost:5000/api';
     const token = sessionStorage.getItem('accessToken');
-    
-    console.log('🔍 Geocoding:', query);
-    console.log('📍 Using API:', baseURL);
-    
     const response = await fetch(`${baseURL}/places/geocode`, {
       method: 'POST',
       headers: {
@@ -281,33 +222,27 @@ async function geocodePlace(placeName, address) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ Geocoding API error:', errorData);
+      console.error('Geocoding API error:', errorData);
       throw new Error(errorData.error || 'Geocoding failed');
     }
-
     const result = await response.json();
-    console.log('✅ Geocoding result:', result);
     return result.data;
   } catch (err) {
-    console.error('❌ Geocoding error:', err);
+    console.error('Geocoding error:', err);
     return null;
   }
 }
 
 async function handlePlaceSubmit(e) {
   e.preventDefault();
-
   const name = document.getElementById('placeName').value.trim();
   const address = document.getElementById('placeAddress').value.trim();
-
   showToast('Finding location...', 'info');
   const coords = await geocodePlace(name, address);
-
   if (!coords) {
     showToast('Could not find location. Please enter a valid address or place name.', 'error');
     return;
   }
-
   const data = {
     name: name,
     category: document.getElementById('placeCategory').value.toLowerCase(),
@@ -335,17 +270,14 @@ async function handlePlaceSubmit(e) {
     showToast('Failed to add place: ' + (err.message || 'Unknown error'), 'error');
   }
 }
-
 async function toggleFavorite(placeId, btn) {
   const wasFavorited = btn.classList.contains('favorited');
   btn.classList.toggle('favorited');
   btn.disabled = true;
-
   try {
     await apiService.places.toggleFavorite(placeId);
     const place = allPlaces.find(p => p._id === placeId);
     if (place) place.isFavorite = !wasFavorited;
-
     showToast(
       wasFavorited ? 'Removed from favorites' : 'Added to favorites',
       'success'
@@ -361,7 +293,6 @@ async function toggleFavorite(placeId, btn) {
 
 async function deletePlace(placeId) {
   if (!confirm('Delete this place?')) return;
-
   try {
     await apiService.places.delete(placeId);
     showToast('Place deleted', 'success');
@@ -375,11 +306,9 @@ async function deletePlace(placeId) {
 function toggleMap() {
   const mapEl = document.getElementById('map');
   mapEl.style.display = 'block';
-  
   if (!map) {
     initMap();
   }
-  
   setTimeout(() => {
     if (map) {
       map.invalidateSize();
@@ -387,32 +316,24 @@ function toggleMap() {
     }
   }, 100);
 }
-
 function closeMap() {
   document.getElementById('map').style.display = 'none';
 }
 
 function initMap() {
   if (typeof L === 'undefined') {
-    console.error('❌ Leaflet library not loaded!');
     showToast('Map library not loaded. Please refresh the page.', 'error');
     return;
   }
-
   if (map) {
-    console.log('ℹ️ Map already initialized');
     map.invalidateSize();
     return;
   }
-
   const mapContainer = document.getElementById('map');
   if (!mapContainer) {
-    console.error('❌ Map container not found!');
+    console.error('Map container not found!');
     return;
   }
-
-  console.log('🗺️ Initializing Leaflet map...');
-
   try {
     map = L.map('map', {
       center: [20.5937, 78.9629],
@@ -425,9 +346,6 @@ function initMap() {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
-
-    console.log('✅ Map initialized successfully');
-
     setTimeout(() => {
       if (map) {
         map.invalidateSize();
@@ -436,17 +354,16 @@ function initMap() {
     }, 300);
 
   } catch (err) {
-    console.error('❌ Map initialization failed:', err);
+    console.error('Map initialization failed:', err);
     showToast('Failed to initialize map', 'error');
   }
 }
 
 function updateRecommendedMarkers() {
   if (!map) {
-    console.warn('⚠️ Cannot update markers - map not initialized');
+    console.warn('Cannot update markers - map not initialized');
     return;
   }
-
   markers.forEach(marker => {
     try {
       map.removeLayer(marker);
@@ -455,17 +372,11 @@ function updateRecommendedMarkers() {
     }
   });
   markers = [];
-
   const recommendationCards = document.querySelectorAll('.recommendation-card');
-  
   if (recommendationCards.length === 0) {
-    console.log('ℹ️ No recommended places to show on map');
-    showToast('No recommendations available yet. AI is generating suggestions...', 'info');
+    showToast('No recommendations available yet', 'info');
     return;
   }
-
-  console.log(`📍 Adding ${recommendationCards.length} recommended places to map...`);
-
   const bounds = [];
   let markersAdded = 0;
 
@@ -474,22 +385,18 @@ function updateRecommendedMarkers() {
     const category = card.dataset.category || 'attraction';
     const rating = card.querySelector('.rec-rating')?.textContent || 'N/A';
     const description = card.querySelector('.rec-description')?.textContent || '';
-    
     const lat = parseFloat(card.dataset.lat);
     const lon = parseFloat(card.dataset.lon);
 
     if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
-      console.warn('⚠️ Skipping place with invalid coordinates:', name);
+      console.warn('Skipping place with invalid coordinates:', name);
       return;
     }
-
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.warn('⚠️ Invalid coordinate range for:', name, [lat, lon]);
+      console.warn('Invalid coordinate range for:', name, [lat, lon]);
       return;
     }
-
     const icon = getCategoryIcon(category);
-
     const categoryColors = {
       restaurant: '#EF4444',
       attraction: '#3B82F6',
@@ -501,7 +408,6 @@ function updateRecommendedMarkers() {
     };
 
     const color = categoryColors[category.toLowerCase()] || categoryColors.other;
-
     const markerIcon = L.divIcon({
       html: `<div style="background: ${color}; color: white; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 3px solid white;">
               <i class="fas fa-${icon}" style="font-size: 18px;"></i>
@@ -546,7 +452,6 @@ function updateRecommendedMarkers() {
           maxWidth: 300,
           className: 'custom-popup'
         });
-
       markers.push(marker);
       bounds.push([lat, lon]);
       markersAdded++;
@@ -565,9 +470,6 @@ function updateRecommendedMarkers() {
       console.error('Error fitting bounds:', err);
     }
   }
-
-  console.log(`✅ Added ${markersAdded} recommended place markers to map`);
-  
   if (markersAdded === 0) {
     showToast('No location data available for recommended places', 'warning');
   }
@@ -577,7 +479,6 @@ window.handleAddRecommendedPlace = function(name, category) {
   document.getElementById('placeName').value = name;
   document.getElementById('placeCategory').value = category.toLowerCase();
   openAddPlaceModal();
-  
   if (map) {
     map.closePopup();
   }
@@ -602,7 +503,6 @@ function escapeHtml(text = '') {
 
 function addToSchedule(placeId) {
   showToast('Schedule feature coming soon!', 'info');
-  console.log('Add to schedule:', placeId);
 }
 
 window.updateMapWithRecommendations = function() {
@@ -610,5 +510,3 @@ window.updateMapWithRecommendations = function() {
     updateRecommendedMarkers();
   }
 };
-
-console.log('✅ Fixed places.js loaded with proper initialization order');
