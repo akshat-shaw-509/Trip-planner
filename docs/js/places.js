@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Recommendations init failed:', err);
     }
   } else {
-    console.error('❌ initRecommendations function not found!');
+    console.error('initRecommendations function not found!');
   }
   initFilters();
   //Initialize map
@@ -302,7 +302,6 @@ async function deletePlace(placeId) {
     showToast('Failed to delete place', 'error');
   }
 }
-
 function toggleMap() {
   const mapEl = document.getElementById('map');
   mapEl.style.display = 'block';
@@ -475,6 +474,8 @@ function updateRecommendedMarkers() {
   }
 }
 
+
+
 window.handleAddRecommendedPlace = function(name, category) {
   document.getElementById('placeName').value = name;
   document.getElementById('placeCategory').value = category.toLowerCase();
@@ -510,3 +511,154 @@ window.updateMapWithRecommendations = function() {
     updateRecommendedMarkers();
   }
 };
+//Update visit status for a place
+async function updateVisitStatus(placeId, status) {
+  try {
+    await apiService.places.updateVisitStatus(placeId, status)
+    showToast(`Marked as ${status}`, 'success')
+    await loadPlaces()
+  } catch (err) {
+    console.error('Failed to update visit status:', err)
+    showToast('Failed to update status', 'error')
+  }
+}
+
+//Search nearby places
+async function searchNearbyPlaces() {
+  try {
+    const radius = document.getElementById('nearbyRadius')?.value || 5000
+    const category = document.getElementById('nearbyCategory')?.value || ''
+    showToast('Searching nearby places...', 'info')
+    const options = {
+      radius: parseInt(radius),
+      limit: 20
+    }
+    
+    if (category && category !== 'all') {
+      options.category = category
+    }
+    const res = await apiService.places.searchNearby(currentTripId, options)
+    const nearbyPlaces = res.data || []
+    displayNearbyResults(nearbyPlaces)
+    showToast(`Found ${nearbyPlaces.length} nearby places`, 'success')
+  } catch (err) {
+    console.error('Nearby search failed:', err)
+    showToast('Failed to search nearby places', 'error')
+  }
+}
+
+//Display nearby search results
+function displayNearbyResults(places) {
+  const modal = document.createElement('div')
+  modal.className = 'modal active'
+  modal.id = 'nearbyResultsModal'
+  
+  modal.innerHTML = `
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3><i class="fas fa-map-marker-alt"></i> Nearby Places</h3>
+        <button class="modal-close" onclick="closeNearbyModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="nearby-results-grid">
+          ${places.map(place => `
+            <div class="nearby-place-card">
+              <div class="nearby-place-header">
+                <h4>${escapeHtml(place.name)}</h4>
+                ${place.rating ? `<span class="rating"><i class="fas fa-star"></i> ${place.rating.toFixed(1)}</span>` : ''}
+              </div>
+              
+              <div class="nearby-place-info">
+                ${place.address ? `<p><i class="fas fa-location-dot"></i> ${escapeHtml(place.address)}</p>` : ''}
+                ${place.distance ? `<p><i class="fas fa-route"></i> ${place.distance.toFixed(2)} km away</p>` : ''}
+              </div>
+              
+              <button class="btn-primary btn-small" onclick="addNearbyPlace('${place._id}')">
+                <i class="fas fa-plus"></i> Add to Trip
+              </button>
+            </div>
+          `).join('')}
+        </div>
+        
+        ${places.length === 0 ? '<div class="empty-state"><p>No nearby places found</p></div>' : ''}
+      </div>
+    </div>
+  `
+  document.body.appendChild(modal)
+}
+
+//Add nearby place to trip
+async function addNearbyPlace(placeId) {
+  try {
+    // Get place details first
+    const place = await apiService.places.getPlaceById(placeId)
+    await apiService.places.create(currentTripId, place.data)
+    
+    showToast('Place added to trip!', 'success')
+    await loadPlaces()
+    closeNearbyModal()
+    
+  } catch (err) {
+    console.error('Failed to add nearby place:', err)
+    showToast('Failed to add place', 'error')
+  }
+}
+
+function closeNearbyModal() {
+  document.getElementById('nearbyResultsModal')?.remove()
+}
+
+function createPlaceCard(place) {
+  const icon = getCategoryIcon(place.category)
+  const isFavorite = place.isFavorite || false
+  const visitStatus = place.visitStatus || 'planned'
+  
+  return `
+    <div class="place-card ${place.category.toLowerCase()}" data-place-id="${place._id}">
+      <div class="place-card-header">
+        <div class="place-avatar">
+          <i class="fas fa-${icon}"></i>
+        </div>
+
+        <div class="place-info">
+          <div class="place-name">${escapeHtml(place.name)}</div>
+          <div class="place-meta">
+            ${place.visitDate ? `<span><i class="fas fa-calendar"></i> ${new Date(place.visitDate).toLocaleDateString()}</span>` : ''}
+            ${place.rating > 0 ? `<span><i class="fas fa-star"></i> ${place.rating.toFixed(1)}</span>` : ''}
+          </div>
+        </div>
+
+        <button class="btn-toggle-favorite ${isFavorite ? 'favorited' : ''}">
+          <i class="fas fa-heart"></i>
+        </button>
+      </div>
+
+      ${place.notes || place.description ? `
+        <div class="place-description">${escapeHtml(place.notes || place.description)}</div>
+      ` : ''}
+
+      <div class="place-visit-status">
+        <label>Visit Status:</label>
+        <select class="visit-status-select" onchange="updateVisitStatus('${place._id}', this.value)">
+          <option value="planned" ${visitStatus === 'planned' ? 'selected' : ''}>📋 Planned</option>
+          <option value="visited" ${visitStatus === 'visited' ? 'selected' : ''}>✅ Visited</option>
+          <option value="skipped" ${visitStatus === 'skipped' ? 'selected' : ''}>⏭️ Skipped</option>
+        </select>
+      </div>
+
+      <div class="place-actions">
+        <button class="btn-primary btn-small btn-add-schedule">
+          <i class="fas fa-calendar-plus"></i> Add to Schedule
+        </button>
+        <button class="btn-delete-place btn-small">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `
+}
+window.updateVisitStatus = updateVisitStatus
+window.searchNearbyPlaces = searchNearbyPlaces
+window.addNearbyPlace = addNearbyPlace
+window.closeNearbyModal = closeNearbyModal
