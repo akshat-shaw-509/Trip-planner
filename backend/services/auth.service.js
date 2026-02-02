@@ -1,7 +1,5 @@
 let User = require('../models/User.model')
 let RefreshToken = require('../models/RefreshToken.model')
-let AuditLog = require('../models/AuditLog.model')
-const emailService = require('../services/email.service')
 let jwtUtils = require('../utils/jwt')
 let crypto = require('crypto')
 
@@ -23,7 +21,6 @@ let createAudit = async (userId, action, req, details = {}) => {
       details
     })
   } catch (err) {
-    // Audit failures should not break main flow
     console.error('Audit log failed:', err)
   }
 }
