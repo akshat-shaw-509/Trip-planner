@@ -1,37 +1,19 @@
-// HTTP client for calling OpenRouter (Groq-compatible) API
 const axios = require('axios')
-
-// Geoapify service for geocoding AI-suggested places
 const geoapifyService = require('./geoapify.service')
-
-// Helper to calculate distance between two coordinates
 const { calculateDistance } = require('../utils/helpers')
 
-// OpenRouter / Groq configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-// Simple delay helper for rate limiting
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 /**
- * AI Recommendations Entry Point
- * Generates place recommendations using LLM
+ * -------------------- AI Recommendations --------------------
  */
 const getAIRecommendations = async (category, destination, tripContext = {}) => {
-  console.log('OPENROUTER CALLED:', category, destination)
-
-  // Ensure API key is present
   if (!OPENROUTER_API_KEY) {
-    console.error('OPENROUTER_API_KEY missing in environment')
     throw new Error('OPENROUTER_API_KEY missing')
   }
 
-  console.log('API Key present:', OPENROUTER_API_KEY.substring(0, 15) + '...')
-
-  /**
-   * Extract trip context
-   */
   const {
     budget,
     duration,
@@ -39,220 +21,125 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     currency = 'INR'
   } = tripContext
 
-  /**
-   * Simple, focused prompt for better results
-   */
-  const prompt = `List exactly 10 popular ${category} places in ${destination}.
+  const prompt = `
+List exactly 10 popular ${category} places in ${destination}.
+
+Trip context:
+- Budget: ${budget || 'Not specified'} ${currency}
+- Trip duration: ${duration || 'Not specified'} days
+- Number of people: ${peopleCount || 'Not specified'}
 
 For each place, provide:
-- NAME: [name]
-- DESCRIPTION: [brief description]
-- RATING: [number from 3.5 to 5.0]
-- PRICE: [1=budget, 2=moderate, 3=expensive, 4=luxury]
-- WHY: [one reason to visit]
-- LOCATION: [specific area/neighborhood]
+- NAME
+- DESCRIPTION (short)
+- RATING (3.5–5.0)
+- PRICE (1=budget, 2=moderate, 3=expensive, 4=luxury)
+- LOCATION (area or neighborhood)
 
-Format each place with "---" separator.
-Start immediately with the first place.`
+Separate places using "---".
+Start immediately.
+`
 
   try {
-    /**
-     * OpenRouter API Call
-     */
-    console.log('Making OpenRouter request...')
-    console.log('Model:', MODEL)
-    
     const response = await axios.post(
       OPENROUTER_URL,
       {
         model: MODEL,
         messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful travel guide. Provide accurate, real place recommendations.'
-          },
-          { 
-            role: 'user', 
-            content: prompt 
-          }
+          { role: 'system', content: 'You are a helpful travel guide.' },
+          { role: 'user', content: prompt }
         ],
         temperature: 0.7,
         max_tokens: 2000
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:5000',
-          'X-Title': 'Planora Trip Planner'
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json'
         },
         timeout: 30000
       }
     )
 
-    console.log('OpenRouter response received')
-    console.log('Response status:', response.status)
-
     const aiText = response.data?.choices?.[0]?.message?.content
-    
     if (!aiText) {
-      console.error('No AI response content')
-      console.log('Full response:', JSON.stringify(response.data, null, 2))
-      return {
-        budgetAnalysis: null,
-        places: [],
-        message: 'AI returned no content'
-      }
+      return { places: [], message: 'AI returned no content' }
     }
 
-    console.log('AI response length:', aiText.length)
-    console.log('AI response preview:', aiText.substring(0, 200))
-
-    /**
-     * Parse AI response into structured places
-     */
-    const places = parseAIResponse(aiText, category)
-    console.log('Parsed', places.length, 'places from AI')
-
-    if (places.length === 0) {
-      console.warn('AI response parsing resulted in 0 places')
-      console.log('Full AI text:', aiText)
-      return {
-        budgetAnalysis: null,
-        places: [],
-        message: 'Could not parse AI recommendations'
-      }
+    const parsedPlaces = parseAIResponse(aiText, category)
+    if (!parsedPlaces.length) {
+      return { places: [], message: 'Could not parse AI response' }
     }
 
-    /**
-     * Geocode the places
-     */
-    console.log('Starting geocoding for', places.length, 'places...')
-    const geocodedPlaces = await geocodePlaces(places, destination)
-    console.log('Geocoded', geocodedPlaces.length, 'places successfully')
+    const geocodedPlaces = await geocodePlaces(parsedPlaces, destination)
+
+    const rankedPlaces = scoreAndRankPlaces(
+      geocodedPlaces,
+      tripContext.centerLocation || null
+    )
 
     return {
-      budgetAnalysis: {
-        budgetLevel: budget ? 'AVERAGE' : 'NOT_SPECIFIED',
-        minimumRequired: null,
-        averageRange: null,
-        explanation: `Found ${geocodedPlaces.length} recommendations for ${category} in ${destination}`
-      },
-      places: geocodedPlaces,
-      message: `Found ${geocodedPlaces.length} ${category} recommendations`
+      places: rankedPlaces,
+      message: `Found ${rankedPlaces.length} ${category} recommendations`
     }
-
   } catch (error) {
-    console.error('OpenRouter API Error:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    })
-
-    // Return empty results instead of throwing
+    console.error('AI recommendation error:', error.message)
     return {
-      budgetAnalysis: null,
       places: [],
-      message: `API Error: ${error.message}`
+      message: `AI Error: ${error.message}`
     }
   }
 }
 
 /**
- * AI Place Parser
- * Converts AI free-text response into structured place objects
+ * -------------------- AI Response Parser --------------------
  */
 const parseAIResponse = (text, category) => {
-  console.log('Parsing AI response...')
-  
-  const places = []
-  const sections = text.split('---').filter(s => s.trim())
+  const sections = text.split('---').filter(Boolean)
 
-  console.log('Found', sections.length, 'sections in response')
-
-  for (const section of sections) {
-    try {
-      const get = (regex) => {
-        const match = section.match(regex)
-        return match ? match[1].trim() : null
-      }
+  return sections
+    .map(section => {
+      const get = (r) => section.match(r)?.[1]?.trim()
 
       const name = get(/NAME:\s*(.+)/i)
-      
-      if (!name) {
-        console.log('Skipping section - no name found')
-        continue
-      }
+      if (!name) return null
 
-      const place = {
-        category,
+      return {
         source: 'groq_ai',
+        category,
         name,
-        description: get(/DESCRIPTION:\s*(.+)/i) || `A popular ${category} in the area`,
+        description: get(/DESCRIPTION:\s*(.+)/i) || '',
         rating: parseFloat(get(/RATING:\s*([\d.]+)/i)) || 4.0,
         priceLevel: parseInt(get(/PRICE:\s*(\d+)/i)) || 2,
-        whyVisit: get(/WHY:\s*(.+)/i) || 'Highly recommended',
         addressHint: get(/LOCATION:\s*(.+)/i) || ''
       }
-
-      places.push(place)
-      console.log('Parsed place:', place.name)
-
-    } catch (err) {
-      console.error('Error parsing section:', err.message)
-    }
-  }
-
-  return places
+    })
+    .filter(Boolean)
 }
 
 /**
- * Geocode AI Places
- * Converts AI-generated place names into coordinates
+ * -------------------- Geocoding --------------------
  */
 const geocodePlaces = async (places, destination) => {
   const results = []
 
   for (const p of places) {
     try {
-      const query = `${p.name}, ${p.addressHint || ''}, ${destination}`
-        .replace(/,\s*,/g, ',')
-        .trim()
-
-      console.log('Geocoding:', query)
-
+      const query = `${p.name}, ${p.addressHint}, ${destination}`.trim()
       const geo = await geoapifyService.geocodeLocation(query)
 
       if (geo?.lat && geo?.lon) {
         results.push({
           ...p,
-
-          // ✅ GeoJSON format (DB + maps)
+          address: geo.formatted,
           location: {
             type: 'Point',
             coordinates: [geo.lon, geo.lat]
-          },
-
-          // ✅ Compatibility format (frontend / filters)
-          lat: geo.lat,
-          lon: geo.lon,
-
-          address: geo.formatted,
-          confidence: geo.rank?.confidence || 0,
-          popularity: geo.rank?.popularity || 0
+          }
         })
-
-        console.log('✓ Geocoded:', p.name)
-      } else {
-        console.warn('✗ Geocoding failed for:', p.name)
       }
-
-      // ✅ Rate limiting: 100ms between requests
-      await sleep(100)
-
     } catch (err) {
-      console.error('Geocoding error for', p.name, ':', err.message)
+      console.error('Geocoding failed:', err.message)
     }
   }
 
@@ -260,16 +147,12 @@ const geocodePlaces = async (places, destination) => {
 }
 
 /**
- * Scoring & Ranking
- * Assigns recommendation score based on rating, distance, popularity
+ * -------------------- Scoring & Ranking --------------------
  */
 const scoreAndRankPlaces = (places, centerLocation) => {
   return places
     .map(place => {
       let score = (place.rating || 4) * 2
-
-      if (place.popularity) score += Math.min(5, place.popularity * 10)
-      if (place.confidence) score += place.confidence * 5
 
       if (centerLocation && place.location?.coordinates) {
         const dist = calculateDistance(
@@ -291,6 +174,5 @@ const scoreAndRankPlaces = (places, centerLocation) => {
 }
 
 module.exports = {
-  getAIRecommendations,
-  scoreAndRankPlaces
+  getAIRecommendations
 }
