@@ -6,8 +6,8 @@ const PLACE_CATEGORIES = [
   'transport',
   'shopping',
   'entertainment',
-  'other',
-
+  'other'
+]
 const VISIT_STATUS = ['planned', 'visited', 'skipped']
 
 /**
@@ -184,3 +184,4 @@ placeSchema.methods.getSummary = function () {
 }
 
 module.exports = mongoose.model('Place', placeSchema)
+
