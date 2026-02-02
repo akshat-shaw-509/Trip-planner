@@ -1,15 +1,14 @@
 const groqService = require('./groq.service')
 const geoapifyService = require('./geoapify.service')
 
+// Shared distance helper (single source of truth)
+const { calculateDistance } = require('../utils/helpers')
+
 /**
  * Main recommendation service
- * Fetches AI recommendations with STRICT city validation
+ * Fetches AI recommendations for a trip
  */
 const getRecommendations = async (tripId, options = {}) => {
-  console.log('📍 recommendation.service.getRecommendations called')
-  console.log('  Trip ID:', tripId)
-  console.log('  Options:', options)
-
   try {
     const Trip = require('../models/Trip.model')
     const trip = await Trip.findById(tripId)
@@ -18,333 +17,111 @@ const getRecommendations = async (tripId, options = {}) => {
       throw new Error('Trip not found')
     }
 
-    console.log('  Destination:', trip.destination)
-    console.log('  Country:', trip.country)
-    console.log('  Category:', options.category || 'all')
+    /**
+     * STEP 1: Resolve trip center coordinates
+     */
+    let centerLocation
 
-    // ✅ STEP 1: Get center location coordinates
-    let centerLocation = null
-    
-    if (trip.destinationCoords && trip.destinationCoords.length === 2) {
+    if (trip.destinationCoords?.length === 2) {
       centerLocation = {
         lat: trip.destinationCoords[1],
         lon: trip.destinationCoords[0]
       }
-      console.log('  ✓ Using saved trip coords:', centerLocation)
     } else {
-      // ✅ GEOCODE THE DESTINATION
-      console.log('  🔍 Geocoding destination:', trip.destination)
-      
-      let geocoded = null
-      
-      // Build a precise query
-      const searchQuery = trip.country 
+      const query = trip.country
         ? `${trip.destination}, ${trip.country}`
         : trip.destination
-      
-      console.log('  🔍 Search query:', searchQuery)
-      
-      geocoded = await geoapifyService.geocodeLocation(searchQuery)
-      
-      if (geocoded) {
-        centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
-        console.log('  ✓ Geocoded successfully:', geocoded.formatted)
-        console.log('  ✓ Coordinates:', centerLocation)
-        
-        // Save to trip for future use
-        trip.destinationCoords = [geocoded.lon, geocoded.lat]
-        await trip.save()
-        console.log('  ✓ Saved coordinates to trip')
-      } else {
-        // ✅ CRITICAL: FAIL if we can't find the destination
-        console.error('  ❌ GEOCODING FAILED for:', searchQuery)
+
+      const geocoded = await geoapifyService.geocodeLocation(query)
+
+      if (!geocoded) {
         throw new Error(
-          `Unable to find location for "${trip.destination}". ` +
-          `Please verify the destination name. Examples: "Venice, Italy", "Paris, France", "Tokyo, Japan"`
+          `Unable to find location for "${trip.destination}". Please verify destination name.`
         )
       }
+
+      centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
+
+      // Cache for future calls
+      trip.destinationCoords = [geocoded.lon, geocoded.lat]
+      await trip.save()
     }
 
-    // Verify we have valid coordinates
-    if (!centerLocation || !centerLocation.lat || !centerLocation.lon) {
-      throw new Error('Invalid center location coordinates')
-    }
+    /**
+     * STEP 2: Determine categories
+     */
+    const categories =
+      options.category && options.category !== 'all'
+        ? [options.category]
+        : ['restaurant', 'attraction', 'accommodation']
 
-    console.log('  ✅ Trip center established:', centerLocation)
-
-    // ✅ STEP 2: Determine categories to search
-    let categories = []
-    if (options.category && options.category !== 'all') {
-      categories = [options.category]
-    } else {
-      categories = ['restaurant', 'attraction', 'accommodation']
-    }
-
-    console.log('  📋 Fetching categories:', categories.join(', '))
-
-    // ✅ STEP 3: Fetch AI recommendations
+    /**
+     * STEP 3: Fetch AI recommendations
+     */
     let allPlaces = []
 
     for (const category of categories) {
-      console.log(`\n Requesting ${category}s from AI for ${trip.destination}...`)
-      
-      try {
-        const result = await groqService.getAIRecommendations(
-          category,
-          trip.destination,
-          {
-            budget: trip.budget,
-            duration: trip.duration,
-            peopleCount: trip.peopleCount,
-            centerLocation: centerLocation
-          }
+      const result = await groqService.getAIRecommendations(
+        category,
+        trip.destination,
+        {
+          budget: trip.budget,
+          duration: trip.duration,
+          peopleCount: trip.peopleCount,
+          centerLocation
+        }
+      )
+
+      if (!result?.places?.length) continue
+
+      /**
+       * STEP 4: Distance validation only (no re-geocoding)
+       */
+      const validPlaces = result.places.filter(place => {
+        if (!place.location?.coordinates) return false
+
+        const [lon, lat] = place.location.coordinates
+        const distance = calculateDistance(
+          centerLocation.lat,
+          centerLocation.lon,
+          lat,
+          lon
         )
 
-        if (result.places && result.places.length > 0) {
-          console.log(`✓ AI returned ${result.places.length} ${category}s`)
-          
-          // ✅ STEP 4: GEOCODE & VALIDATE EACH PLACE
-          const validatedPlaces = []
-          
-          for (const place of result.places) {
-            try {
-              // Build precise geocoding query including destination city
-              const placeQuery = `${place.name}, ${trip.destination}${trip.country ? ', ' + trip.country : ''}`
-              
-              console.log(`Geocoding: ${placeQuery}`)
-              
-              const coords = await geoapifyService.geocodeLocation(placeQuery)
-              
-              if (!coords) {
-                console.warn(`Geocoding failed for: ${place.name}`)
-                continue
-              }
-              // ✅ HARD COUNTRY VALIDATION (CRITICAL FIX)
-if (
-  trip.country &&
-  coords.country &&
-  coords.country.toLowerCase() !== trip.country.toLowerCase()
-) {
-  console.warn(`    ❌ REJECTED ${place.name}: Wrong country`)
-  console.warn(`       Found: ${coords.country}`)
-  console.warn(`       Expected: ${trip.country}`)
-  continue
-}
+        return distance <= 50
+      })
 
-              // ✅ STRICT VALIDATION: Check distance from trip center
-              const distance = calculateDistance(
-                centerLocation.lat,
-                centerLocation.lon,
-                coords.lat,
-                coords.lon
-              )
-              
-              // ✅ REJECT if place is more than 50km from destination center
-              if (distance > 50) {
-                console.warn(`REJECTED ${place.name}: ${distance.toFixed(1)}km away (expected <50km)`)
-                console.warn(`AI suggested: ${coords.formatted}`)
-                console.warn(`Expected near: ${trip.destination}`)
-                continue
-              }
-              
-              const resultCity =
-  coords.city ||
-  coords.town ||
-  coords.village ||
-  coords.county ||
-  ''
-
-const expectedCity = trip.destination
-  .split(',')[0]
-  .trim()
-  .toLowerCase()
-              
-             // ✅ City validation ONLY if destination is a city, not a country
-// ✅ Determine if destination is a city (not a country)
-const isCityTrip =
-  trip.destination &&
-  trip.country &&
-  trip.destination.toLowerCase() !== trip.country.toLowerCase()
-
-if (
-  isCityTrip &&
-  resultCity &&
-  expectedCity &&
-  !resultCity.toLowerCase().includes(expectedCity)
-) {
-  console.warn(`❌ REJECTED ${place.name}: Wrong city`)
-  console.warn(`   Found: ${resultCity}`)
-  console.warn(`   Expected: ${expectedCity}`)
-  continue
-}
-
- 
-              console.log(`VALIDATED ${place.name}: ${distance.toFixed(1)}km from center`)
-              
-              // Add the validated place
-              validatedPlaces.push({
-                ...place,
-                location: {
-                  type: 'Point',
-                  coordinates: [coords.lon, coords.lat]
-                },
-                lat: coords.lat,
-                lon: coords.lon,
-                address: coords.formatted || place.address,
-                distanceFromCenter: distance,
-                city: coords.city,
-                country: coords.country
-              })
-              
-              // Rate limiting
-              await sleep(100)
-              
-            } catch (err) {
-              console.error(`Error processing ${place.name}:`, err.message)
-            }
-          }
-          
-          console.log(`Validated ${validatedPlaces.length}/${result.places.length} ${category}s`)
-          allPlaces.push(...validatedPlaces)
-          
-        } else {
-          console.log(`No AI results for ${category}`)
-        }
-
-      } catch (err) {
-        console.error(`AI request failed for ${category}:`, err.message)
-      }
+      allPlaces.push(...validPlaces)
     }
-
-    console.log(`\n Total validated places for ${trip.destination}: ${allPlaces.length}`)
 
     if (allPlaces.length === 0) {
-      console.warn(`No valid recommendations found for ${trip.destination}`)
       return {
         places: [],
-        centerLocation: centerLocation,
-        budgetAnalysis: null,
-        message: `No recommendations found for ${trip.destination}. The AI may need more specific guidance.`
+        centerLocation,
+        message: `No recommendations found for ${trip.destination}`
       }
     }
 
-    // ✅ STEP 5: Score and rank
-    if (centerLocation) {
-      allPlaces = groqService.scoreAndRankPlaces(allPlaces, centerLocation)
-    }
+    /**
+     * STEP 5: Score & rank
+     */
+    allPlaces = groqService.scoreAndRankPlaces(allPlaces, centerLocation)
 
-    // ✅ STEP 6: Apply limit
+    /**
+     * STEP 6: Apply limit
+     */
     const limit = options.limit || 50
-    allPlaces = allPlaces.slice(0, limit)
-
-    console.log(`Returning ${allPlaces.length} recommendations for ${trip.destination}`)
 
     return {
-      places: allPlaces,
-      centerLocation: centerLocation,
-      budgetAnalysis: null,
-      message: `Found ${allPlaces.length} recommendations in ${trip.destination}`
+      places: allPlaces.slice(0, limit),
+      centerLocation,
+      message: `Found ${Math.min(allPlaces.length, limit)} recommendations`
     }
-
   } catch (error) {
-    console.error('Error in getRecommendations:', error.message)
-    console.error('Stack:', error.stack)
-    throw error
-  }
-}
-
-/**
- * Calculate distance between two coordinates (Haversine formula)
- * Returns distance in kilometers
- */
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371 // Earth's radius in km
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  const distance = R * c
-  
-  return Math.round(distance * 10) / 10
-}
-
-function toRad(degrees) {
-  return degrees * (Math.PI / 180)
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-/**
- * Generate day plans
- */
-const getDayPlans = async (tripId) => {
-  console.log('getDayPlans called for trip:', tripId)
-  
-  try {
-    const Place = require('../models/Place.model')
-    const Trip = require('../models/Trip.model')
-
-    const trip = await Trip.findById(tripId)
-    if (!trip) {
-      throw new Error('Trip not found')
-    }
-
-    const places = await Place.find({ tripId })
-
-    if (places.length === 0) {
-      console.log('No places found, returning empty day plans')
-      return []
-    }
-
-    const dayPlans = []
-    const tripDuration = Math.ceil(
-      (new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24)
-    ) || 1
-
-    const placesPerDay = Math.ceil(places.length / tripDuration)
-
-    for (let day = 1; day <= tripDuration; day++) {
-      const startIdx = (day - 1) * placesPerDay
-      const endIdx = Math.min(startIdx + placesPerDay, places.length)
-      const dayPlaces = places.slice(startIdx, endIdx)
-
-      if (dayPlaces.length > 0) {
-        dayPlans.push({
-          day,
-          date: new Date(
-            new Date(trip.startDate).getTime() + (day - 1) * 24 * 60 * 60 * 1000
-          ),
-          places: dayPlaces.map(p => ({
-            name: p.name,
-            category: p.category,
-            rating: p.rating,
-            location: p.location
-          })),
-          totalPlaces: dayPlaces.length,
-          estimatedDuration: dayPlaces.length * 2
-        })
-      }
-    }
-
-    console.log(`Generated ${dayPlans.length} day plans`)
-    return dayPlans
-
-  } catch (error) {
-    console.error('Error generating day plans:', error.message)
     throw error
   }
 }
 
 module.exports = {
-  getRecommendations,
-  getDayPlans
+  getRecommendations
 }
-
-console.log('recommendation.service.js loaded with STRICT CITY VALIDATION')
