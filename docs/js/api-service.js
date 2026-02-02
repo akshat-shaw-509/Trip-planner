@@ -194,53 +194,51 @@ const apiService = {
       const params = new URLSearchParams(filters);
       return await apiService.request(`/trips?${params}`);
     },
-
     async getById(id) {
       return await apiService.request(`/trips/${id}`);
     },
-
     async create(data) {
       return await apiService.request('/trips', {
         method: 'POST',
         body: JSON.stringify(data)
       });
     },
-
     async update(id, data) {
       return await apiService.request(`/trips/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       });
     },
-
     async delete(id) {
       return await apiService.request(`/trips/${id}`, {
         method: 'DELETE'
       });
     }
   },
-
+   async removeBanner(tripId) {
+      return await apiService.request(`/trips/${tripId}/banner`, {
+        method: 'DELETE'
+      });
+    }
+  },
   // Place endpoints
   places: {
     async getByTrip(tripId, filters = {}) {
       const params = new URLSearchParams(filters);
       return await apiService.request(`/trips/${tripId}/places?${params}`);
     },
-
     async create(tripId, data) {
       return await apiService.request(`/trips/${tripId}/places`, {
         method: 'POST',
         body: JSON.stringify(data)
       });
     },
-
     async update(placeId, data) {
       return await apiService.request(`/places/${placeId}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       });
     },
-
     async delete(placeId) {
       return await apiService.request(`/places/${placeId}`, {
         method: 'DELETE'
@@ -253,7 +251,47 @@ const apiService = {
       });
     }
   },
-
+   async updateVisitStatus(placeId, visitStatus) {
+      return await apiService.request(`/places/${placeId}/visit-status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ visitStatus })
+      });
+    },
+  async searchNearby(tripId, options = {}) {
+      const params = new URLSearchParams(options);
+      return await apiService.request(`/trips/${tripId}/places/nearby?${params}`);
+    }
+  },
+  //Prefrences endpoints
+   preferences: {
+    async get() {
+      return await apiService.request('/preferences');
+    },
+    async update(data) {
+      return await apiService.request('/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+    async trackSearch(data) {
+      return await apiService.request('/preferences/track-search', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+    async updateRatingThreshold(threshold) {
+      return await apiService.request('/preferences/rating-threshold', {
+        method: 'PUT',
+        body: JSON.stringify({ threshold })
+      });
+    },
+    async resetPreferences() {
+      return await apiService.request('/preferences/reset', {
+        method: 'POST'
+      });
+    }
+  }
+};
   // Expense endpoints
   expenses: {
     async getByTrip(tripId) {
