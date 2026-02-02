@@ -62,7 +62,6 @@ router.use(authenticate)
 router.post('/trips/:tripId/places', validatePlace, placeController.createPlace)
 router.get('/trips/:tripId/places', placeController.getPlacesByTrip)
 router.get('/trips/:tripId/places/nearby', placeController.searchNearbyPlaces)
-router.get('/trips/:tripId/places/by-category', placeController.getPlacesByCategory)
 
 router.get('/:placeId', placeController.getPlaceById)
 router.put('/:placeId', validatePlaceUpdate, placeController.updatePlace)
