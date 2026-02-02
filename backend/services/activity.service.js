@@ -23,6 +23,7 @@ let validateActivityDate = async (tripId, startTime) => {
   let activityDate = new Date(startTime)
   let tripStart = new Date(trip.startDate)
   let tripEnd = new Date(trip.endDate)
+  if (isNaN(activityDate.getTime())) throw BadRequestError('Invalid activity startTime')
   if (activityDate < tripStart || activityDate > tripEnd) {
     throw BadRequestError('Activity date must be within trip dates')
   }
@@ -31,112 +32,109 @@ let validateActivityDate = async (tripId, startTime) => {
 // Create a new activity under a trip
 let createActivity = async (tripId, activityData, userId) => {
   // Ensure user owns the trip
-  await checkTripOwnership(tripId, userId)
+ const trip = await checkTripOwnership(tripId, userId)
   // Validate activity date
   await validateActivityDate(tripId, activityData.startTime)
   // Create activity
-  let activity = await Activity.create({
+  const payload = {
     ...activityData,
     tripId,
-    userId,
-  })
+    userId
+  }
+   const activity = await Activity.create(payload)
   return activity
 }
 
 //Get all activities for a specific trip
-let getActivitiesByTrip = async (tripId, userId) => {
+const getActivitiesByTrip = async (tripId, userId, options = {}) => {
   await checkTripOwnership(tripId, userId)
-  return Activity.find({
-    tripId,
-    isDeleted: false
-  })
-    .sort({ startTime: 1 })
+  const { sort = { startTime: 1 }, limit = 0 } = options
+  return Activity.find({ tripId })
+    .sort(sort)
+    .limit(limit || undefined)
     .populate('placeId')
     .lean()
 }
-
 //Update an existing activity
-let updateActivity = async (activityId, updateData, userId) => {
-  let activity = await Activity.findOne({
-    _id: activityId,
-    isDeleted: false
-  }).lean()
-  if (!activity) {
-    throw NotFoundError('Activity not found')
-  }
+const updateActivity = async (activityId, updateData, userId) => {
+  // fetch the activity to check ownership & trip context
+  let activity = await Activity.findById(activityId)
+  if (!activity) throw NotFoundError('Activity not found')
   if (activity.userId.toString() !== userId.toString()) {
     throw ForbiddenError('You do not have permission to update this activity')
   }
-  // Validate updated date
-  await validateActivityDate(activity.tripId, updateData.startTime)
-  // Apply update
-  let updated = await Activity.findByIdAndUpdate(
+
+  // Prevent changing protected/system fields
+  const prohibited = ['_id', 'userId', 'tripId', 'createdAt', 'updatedAt']
+  for (const p of prohibited) {
+    if (p in updateData) delete updateData[p]
+  }
+
+  // if startTime provided, validate against trip dates
+  if (updateData.startTime) {
+    const trip = await Trip.findById(activity.tripId).lean()
+    validateActivityDate(trip, updateData.startTime)
+  }
+
+  const updated = await Activity.findByIdAndUpdate(
     activityId,
     { $set: updateData },
     { new: true, runValidators: true }
   ).populate('placeId tripId')
+
   return updated
 }
-
 // Delete an activity
-let deleteActivity = async (activityId, userId) => {
-  let activity = await Activity.findOneAndUpdate(
-    { _id: activityId, isDeleted: false, userId },
-    { isDeleted: true },
-    { new: true }
-  )
-  if (!activity) {
-    throw NotFoundError('Activity not found')
+const deleteActivity = async (activityId, userId) => {
+  const activity = await Activity.findById(activityId)
+  if (!activity) throw NotFoundError('Activity not found')
+  if (activity.userId.toString() !== userId.toString()) {
+    throw ForbiddenError('You do not have permission to delete this activity')
   }
+
+  await Activity.deleteOne({ _id: activityId })
   return { message: 'Activity deleted successfully' }
 }
 
 //Get activities for a specific date
-let getActivitiesByDate = async (tripId, date, userId) => {
+const getActivitiesByDate = async (tripId, date, userId) => {
   await checkTripOwnership(tripId, userId)
-  let startOfDay = new Date(date)
+  const startOfDay = new Date(date)
   startOfDay.setHours(0, 0, 0, 0)
-  let endOfDay = new Date(date)
+  const endOfDay = new Date(date)
   endOfDay.setHours(23, 59, 59, 999)
+
   return Activity.find({
     tripId,
-    isDeleted: false,
     startTime: { $gte: startOfDay, $lte: endOfDay }
   })
     .sort({ startTime: 1 })
     .populate('placeId')
     .lean()
 }
-
 //Update activity status
-let updateActivityStatus = async (activityId, status, userId) => {
-  let activity = await Activity.findOneAndUpdate(
-    { _id: activityId, isDeleted: false, userId },
-    { status },
-    { new: true, runValidators: true }
-  ).populate('placeId')
-  if (!activity) {
-    throw NotFoundError('Activity not found')
+const updateActivityStatus = async (activityId, status, userId) => {
+  const activity = await Activity.findById(activityId)
+  if (!activity) throw NotFoundError('Activity not found')
+  if (activity.userId.toString() !== userId.toString()) {
+    throw ForbiddenError('You do not have permission to update this activity')
   }
-  return activity
+
+  activity.status = status
+  await activity.save()
+  return activity.populate('placeId')
 }
 
 //Get a single activity by ID
-let getActivityById = async (activityId, userId) => {
-  let activity = await Activity.findOne({
-    _id: activityId,
-    isDeleted: false
-  })
-    .populate('placeId tripId')
-    .lean()
-  if (!activity) {
-    throw NotFoundError('Activity not found')
-  }
+const getActivityById = async (activityId, userId) => {
+  const activity = await Activity.findById(activityId).populate('placeId tripId').lean()
+  if (!activity) throw NotFoundError('Activity not found')
   if (activity.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Not authorized for this activity')
   }
   return activity
 }
+
 module.exports = {
   createActivity,
   getActivitiesByTrip,
@@ -144,5 +142,5 @@ module.exports = {
   updateActivity,
   deleteActivity,
   getActivitiesByDate,
-  updateActivityStatus,
+  updateActivityStatus
 }
