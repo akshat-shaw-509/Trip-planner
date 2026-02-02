@@ -1,73 +1,115 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
-const crypto = require('crypto')   
-//User Schema 
+const crypto = require('crypto')
+const AUTH_PROVIDERS = ['local', 'google']
+/**
+ * User Schema
+ * Represents a registered user
+ */
 const UserSchema = new mongoose.Schema(
   {
-    //User full name
+    // User full name
     name: {
       type: String,
-      required: true,
-      trim: true
+      required: [true, 'Name is required'],
+      trim: true,
+      minlength: [2, 'Name must be at least 2 characters'],
+      maxlength: [100, 'Name cannot exceed 100 characters'],
     },
-    //User email address
+    // User email (unique identifier)
     email: {
       type: String,
-      required: true,
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        'Please enter a valid email',
+      ],
     },
-    //User password (hashed)
-     //select: false -> excluded from queries by default
-   password: {
-  type: String,
-  required: true,
-  minlength: 8,
-  select: false
-},
-  //Google OAuth ID (if registered via Google)
-  //sparse -> allows multiple null values
+    // Hashed password (excluded from queries by default)
+    password: {
+      type: String,
+      required: function() {
+        return this.authProvider === 'local'
+      },
+      minlength: [8, 'Password must be at least 8 characters'],
+      select: false,
+    },
+    // Google OAuth ID (if registered via Google)
     googleId: {
       type: String,
       unique: true,
-      sparse: true
+      sparse: true, // Allows multiple null values
     },
-    //Authentication provider
+    // Authentication provider
     authProvider: {
       type: String,
-      enum: ['local', 'google'],
-      default: 'local'
-    }
+      enum: {
+        values: AUTH_PROVIDERS,
+        message: '{VALUE} is not a valid auth provider',
+      },
+      default: 'local',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+      transform: function(doc, ret) {
+        delete ret.password
+        delete ret.passwordResetToken
+        delete ret.passwordResetExpires
+        delete ret.__v
+        return ret
+      }
+    }
   }
 )
-//Schema Hooks
-// Hash password before saving to database
-UserSchema.pre('save', async function () {
-  // Only hash if password field is modified
-  if (!this.isModified('password')) return
-  // Hash password with salt rounds = 12
-  this.password = await bcrypt.hash(this.password, 12)
+
+// Indexes
+UserSchema.index({ email: 1 })
+UserSchema.index({ googleId: 1 })
+UserSchema.index({ isActive: 1 })
+// Pre-save hook: Hash password before saving
+UserSchema.pre('save', async function (next) {
+  // Only hash if password is modified
+  if (!this.isModified('password')) return next()
+  try {
+    // Hash password with 12 salt rounds
+    this.password = await bcrypt.hash(this.password, 12)
+    next()
+  } catch (error) {
+    next(error)
+  }
 })
-//Compare provided password with hashed password
+// Instance method: Compare passwords
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
 }
-//Compare provided password with hashed password
+// Instance method: Create password reset token
 UserSchema.methods.createPasswordResetToken = function () {
   // Generate random token
-  const resetToken = crypto.randomBytes(32).toString('hex')
-  // Hash token & store in DB
+  const resetToken = crypto.randomBytes(32).toString('hex') 
+  // Hash token and store in database
   this.passwordResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex')
   // Token expires in 1 hour
   this.passwordResetExpires = Date.now() + 60 * 60 * 1000
-  return resetToken
+  return resetToken // Return unhashed token to send via email
 }
-module.exports = mongoose.model('User', UserSchema)
 
+// Instance method: Update last login timestamp
+UserSchema.methods.updateLastLogin = function () {
+  this.lastLogin = new Date()
+  return this.save({ validateBeforeSave: false })
+}
+
+// Static method: Find active users
+UserSchema.statics.findActiveUsers = function () {
+  return this.find({ isActive: true })
+}
+
+module.exports = mongoose.model('User', UserSchema)
