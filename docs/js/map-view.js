@@ -1,4 +1,4 @@
-let mapViewState = {
+/*let mapViewState = {
   map: null,
   markers: [],
   markerClusterGroup: null,
