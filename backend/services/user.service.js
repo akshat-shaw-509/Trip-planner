@@ -1,4 +1,4 @@
-
+/*
 // -------------------- Models --------------------
 let User = require('../models/User.model')
 
@@ -13,7 +13,6 @@ let {
 /**
  * -------------------- Get User By ID --------------------
  * Optionally includes password (used internally only)
- */
 let getUserById = async (userId, options = {}) => {
   if (!userId) {
     throw createValidationError('User ID is required')
