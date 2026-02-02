@@ -41,7 +41,193 @@ if (!window.recommendationsState) {
 }
 
 const recommendationsState = window.recommendationsState;
+let userPreferences = null
 
+//Load user preferences
+async function loadUserPreferences() {
+  try {
+    const res = await apiService.preferences.get()
+    userPreferences = res.data || null
+    if (userPreferences) {
+      applyUserPreferences()
+    }
+  } catch (err) {
+    console.error('Failed to load preferences:', err)
+  }
+}
+
+//Apply user preferences 
+function applyUserPreferences() {
+  if (!userPreferences) return
+  // Apply rating threshold
+  if (userPreferences.ratingThreshold) {
+    const ratingSlider = document.getElementById('ratingSlider')
+    if (ratingSlider) {
+      ratingSlider.value = userPreferences.ratingThreshold
+      document.getElementById('ratingValue').textContent = 
+        `${userPreferences.ratingThreshold.toFixed(1)} ⭐`
+      advancedRecState.options.minRating = userPreferences.ratingThreshold
+    }
+  }
+  // Show preferred categories
+  if (userPreferences.topCategories && userPreferences.topCategories.length > 0) {
+    showPreferenceBanner(userPreferences)
+  }
+}
+
+//Show preference banner
+function showPreferenceBanner(prefs) {
+  const container = document.querySelector('.recommendations-section')
+  if (!container) return
+  const banner = document.createElement('div')
+  banner.className = 'preference-banner'
+  banner.innerHTML = `
+    <div class="preference-info">
+      <i class="fas fa-user-check"></i>
+      <div>
+        <strong>Your Preferences:</strong>
+        <span>You prefer ${prefs.topCategories.slice(0, 3).join(', ')}</span>
+      </div>
+    </div>
+    <button class="btn-manage-preferences" onclick="openPreferencesPanel()">
+      <i class="fas fa-cog"></i> Manage
+    </button>
+  `
+  container.insertBefore(banner, container.firstChild)
+}
+
+//Track search automatically
+async function trackUserSearch(query, category = null) {
+  try {
+    await apiService.preferences.trackSearch({
+      query,
+      category,
+      location: recommendationsState.tripData?.destination
+    })
+  } catch (err) {
+    console.error('Failed to track search:', err)
+  }
+}
+
+//Open preferences management panel
+function openPreferencesPanel() {
+  const modal = document.createElement('div')
+  modal.className = 'modal active'
+  modal.id = 'preferencesModal'
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-sliders-h"></i> Your Preferences</h3>
+        <button class="modal-close" onclick="closePreferencesPanel()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Minimum Rating Threshold</label>
+          <input type="range" id="prefRatingSlider" min="0" max="5" step="0.5" 
+                 value="${userPreferences?.ratingThreshold || 3.0}">
+          <span id="prefRatingValue">${(userPreferences?.ratingThreshold || 3.0).toFixed(1)} ⭐</span>
+        </div>
+        
+        ${userPreferences?.topCategories?.length > 0 ? `
+          <div class="preference-stats">
+            <h4>Your Top Categories</h4>
+            <div class="category-tags">
+              ${userPreferences.topCategories.map(cat => `
+                <span class="category-tag">${cat}</span>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+        
+        ${userPreferences?.searchHistory?.length > 0 ? `
+          <div class="preference-stats">
+            <h4>Recent Searches</h4>
+            <ul class="search-history">
+              ${userPreferences.searchHistory.slice(0, 5).map(search => `
+                <li>${search.query || search.category}</li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        
+        <div class="preference-actions">
+          <button class="btn-secondary" onclick="resetUserPreferences()">
+            <i class="fas fa-undo"></i> Reset to Default
+          </button>
+          <button class="btn-primary" onclick="saveUserPreferences()">
+            <i class="fas fa-save"></i> Save Preferences
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+  document.body.appendChild(modal)
+  // Add slider listener
+  document.getElementById('prefRatingSlider').oninput = (e) => {
+    const value = parseFloat(e.target.value)
+    document.getElementById('prefRatingValue').textContent = `${value.toFixed(1)} ⭐`
+  }
+}
+
+//Save user preferences
+async function saveUserPreferences() {
+  try {
+    const threshold = parseFloat(document.getElementById('prefRatingSlider').value)
+    await apiService.preferences.updateRatingThreshold(threshold)
+    showToast('Preferences saved!', 'success')
+    closePreferencesPanel()
+    // Reload preferences and recommendations
+    await loadUserPreferences()
+    await loadRecommendations()
+  } catch (err) {
+    console.error('Failed to save preferences:', err)
+    showToast('Failed to save preferences', 'error')
+  }
+}
+
+//Reset preferences
+async function resetUserPreferences() {
+  if (!confirm('Reset all preferences to default?')) return
+  try {
+    await apiService.preferences.resetPreferences()
+    showToast('Preferences reset!', 'success')
+    closePreferencesPanel()
+    userPreferences = null
+    await loadUserPreferences()
+    await loadRecommendations()
+  } catch (err) {
+    console.error('Failed to reset preferences:', err)
+    showToast('Failed to reset preferences', 'error')
+  }
+}
+
+//Close preferences panel
+function closePreferencesPanel() {
+  document.getElementById('preferencesModal')?.remove()
+}
+// Update initRecommendations to load preferences first
+async function initRecommendations(tripId, tripData) {
+  recommendationsState.currentTripId = tripId
+  recommendationsState.tripData = tripData
+  // Load user preferences first
+  await loadUserPreferences()
+  renderAdvancedControls()
+  attachAdvancedListeners()
+  loadSavedPreferences()
+  await loadRecommendations()
+}
+// Update category filter to track searches
+document.querySelectorAll('.category-filter-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const category = this.dataset.category
+    //Track this search
+    if (category !== 'all') {
+      await trackUserSearch(category, category)
+    }
+    
+  })
+})
 // ---------- STORAGE ----------
 function saveSavedPreferences() {
   try {
@@ -60,17 +246,6 @@ function loadSavedPreferences() {
   } catch (err) {
     console.error('Error loading preferences:', err);
   }
-}
-
-// ---------- INIT ----------
-async function initRecommendations(tripId, tripData) {
-  recommendationsState.currentTripId = tripId;
-  recommendationsState.tripData = tripData;
-  renderAdvancedControls();
-  attachAdvancedListeners();
-  loadSavedPreferences();
-  
-  await loadRecommendations();
 }
 
 window.initRecommendations = initRecommendations;
@@ -449,20 +624,6 @@ function renderAdvancedControls() {
     grid.insertAdjacentHTML('beforebegin', controlsHTML);
   }
 }
-
-function attachAdvancedListeners() {
-  document.querySelectorAll('.category-filter-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      
-      const category = this.dataset.category;
-      await loadRecommendations({ 
-        category: category === 'all' ? undefined : category 
-      });
-    });
-  });
-
   const toggle = document.getElementById('recControlsToggle');
   const body = document.getElementById('recControlsBody');
   if (toggle && body) {
@@ -818,3 +979,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+window.openPreferencesPanel = openPreferencesPanel
+window.closePreferencesPanel = closePreferencesPanel
+window.saveUserPreferences = saveUserPreferences
+window.resetUserPreferences = resetUserPreferences
