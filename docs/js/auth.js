@@ -101,10 +101,10 @@ let authHandler = {
       console.error('Logout error:', error)
     } finally {
       this.clearAuthData()
-      localStorage.removeItem('googleClientId')
       window.location.href = '/Trip-planner/index.html'
     }
   },
+
   requireAuth() {
     if (!this.isAuthenticated()) {
       window.location.href = '/Trip-planner/index.html'
@@ -121,18 +121,14 @@ if (document.getElementById('loginForm')) {
     const email = document.getElementById('email').value
     const password = document.getElementById('password').value
     
-    // Get submit button and save original content
     const submitBtn = e.target.querySelector('button[type="submit"]')
     const originalHTML = submitBtn.innerHTML
     
-    // Disable button and show loading state
     submitBtn.disabled = true
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'
     
-    // Attempt login
     const result = await authHandler.handleLogin(email, password)
     
-    // Reset button if login failed
     if (!result.success) {
       submitBtn.disabled = false
       submitBtn.innerHTML = originalHTML
@@ -194,34 +190,15 @@ function togglePassword(inputId) {
   }
 }
 
-// Google OAuth
+// Google OAuth - Simplified (no caching)
 async function loadGoogleClientId() {
   try {
-    // Check localStorage cache first
-    const cachedClientId = localStorage.getItem('googleClientId')
-    const cacheTimestamp = localStorage.getItem('googleClientIdTimestamp')
-    
-    // Use cache if it's less than 24 hours old
-    if (cachedClientId && cacheTimestamp) {
-      const age = Date.now() - parseInt(cacheTimestamp)
-      const maxAge = 24 * 60 * 60 * 1000 // 24 hours
-      
-      if (age < maxAge) {
-        window.GOOGLE_CLIENT_ID = cachedClientId
-        initializeGoogleSignIn()
-        return
-      }
-    }
-
-    // Fetch from server if cache is stale or missing
     const baseURL = apiService.baseURL
     const response = await fetch(`${baseURL}/auth/google-client-id`)
     const data = await response.json()
     
     if (data.success && data.clientId) {
       window.GOOGLE_CLIENT_ID = data.clientId
-      localStorage.setItem('googleClientId', data.clientId)
-      localStorage.setItem('googleClientIdTimestamp', Date.now().toString())
       initializeGoogleSignIn()
     } else {
       console.error('Failed to load Google Client ID')
@@ -267,7 +244,6 @@ async function handleGoogleLogin(response) {
   }
 }
 
-//  Google SDK init
 let googleInitialized = false
 
 function initializeGoogleSignIn() {
