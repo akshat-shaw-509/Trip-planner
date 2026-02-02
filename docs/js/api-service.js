@@ -4,13 +4,11 @@ const apiService = {
   async refreshToken() {
     try {
       const refreshToken = sessionStorage.getItem('refreshToken');
-      
       if (!refreshToken) {
         console.error('No refresh token available');
         this.redirectToLogin();
         return null;
       }
-
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -186,6 +184,7 @@ const apiService = {
       } finally {
         sessionStorage.clear();
       }
+    }
     },
 
   // Trip endpoints
