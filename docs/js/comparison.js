@@ -4,12 +4,9 @@ window.comparisonState = {
   isOpen: false
 };
 
-// CREATE PANEL HTML
 function createComparisonPanelHTML() {
   const panelHTML = `
-    <!-- Comparison Overlay -->
     <div class="comparison-overlay" id="comparisonOverlay" onclick="closeComparisonPanel()"></div>
-    <!-- Comparison Panel -->
     <div class="comparison-panel" id="comparisonPanel">
       <div class="comparison-header">
         <h3>
@@ -42,9 +39,7 @@ function createComparisonPanelHTML() {
   document.body.insertAdjacentHTML('beforeend', panelHTML);  
 }
 
-// FLOATING BUTTON
 function createFloatingCompareButton() {
-  // Check if button already exists
   if (document.getElementById('floatingCompareBtn')) {
     return;
   }
@@ -57,8 +52,6 @@ function createFloatingCompareButton() {
     </button>
   `;
   document.body.insertAdjacentHTML('beforeend', buttonHTML);
-  // Verify it exists
-  const btn = document.getElementById('floatingCompareBtn');
 }
 
 function initComparisonPanel() {
@@ -66,17 +59,7 @@ function initComparisonPanel() {
     createComparisonPanelHTML();
   }
   createFloatingCompareButton();
-  attachComparisonListeners();
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComparisonPanel);
-} else {
-  initComparisonPanel();
-}
-
-// LISTENERS
-function attachComparisonListeners() {
-  // Close on escape key
+  
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && window.comparisonState.isOpen) {
       closeComparisonPanel();
@@ -84,23 +67,30 @@ function attachComparisonListeners() {
   });
 }
 
-// ADD TO COMPARISON
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initComparisonPanel);
+} else {
+  initComparisonPanel();
+}
+
 function addToComparison(place) {
   if (!place || !place.name) {
     console.error('Invalid place data:', place);
     return;
   }
-  // Add to state
+  
   window.comparisonState.selectedPlaces.add(place.name);
   window.comparisonState.placesData.set(place.name, place);
   updateComparisonPanel();
+  
   if (typeof showToast === 'function') {
     showToast(`Added ${place.name} to comparison`, 'success');
   }
 }
 
 window.addToComparison = addToComparison;
-// REMOVE FROM COMPARISON
+
 function removeFromComparison(placeName) {
   window.comparisonState.selectedPlaces.delete(placeName);
   window.comparisonState.placesData.delete(placeName);
@@ -117,50 +107,49 @@ function removeFromComparison(placeName) {
     showToast(`Removed from comparison`, 'info');
   }
 }
+
 window.removeFromComparison = removeFromComparison;
 
-// FLOATING BUTTON 
 function updateFloatingCompareButton(count) {
   let floatingBtn = document.getElementById('floatingCompareBtn');
-  // Create button if it doesn't exist
+  
   if (!floatingBtn) {
     console.warn('Floating button not found, creating it...');
     createFloatingCompareButton();
     floatingBtn = document.getElementById('floatingCompareBtn');
   }
+  
   const floatingCount = document.getElementById('floatingCompareCount');
+  
   if (floatingBtn && floatingCount) {
     floatingCount.textContent = count;
-    // Only show when 2 or more places are selected
+    
     if (count >= 2) {
       floatingBtn.style.display = 'flex';
       floatingBtn.classList.add('bounce-in');
       setTimeout(() => floatingBtn.classList.remove('bounce-in'), 600);
-      const computedStyle = window.getComputedStyle(floatingBtn);
     } else {
       floatingBtn.style.display = 'none';
     }
-  } else {
-    console.error('Floating button or count element not found!');
   }
 }
 
-//COMPARISON PANEL
 function updateComparisonPanel() {
   const count = window.comparisonState.selectedPlaces.size;
   const countBadge = document.getElementById('comparisonCount');
   const body = document.getElementById('comparisonBody');
   const compareBtn = document.getElementById('compareBtn');
   const compareBadge = document.getElementById('compareCountBadge');
-  // Count badges
+  
   if (countBadge) countBadge.textContent = count;
   if (compareBadge) compareBadge.textContent = count;
-  // Show/hide header compare button (if it exists)
+  
   if (compareBtn) {
     compareBtn.style.display = count >= 2 ? 'inline-flex' : 'none';
   }
+  
   updateFloatingCompareButton(count);
-  // Panel content
+  
   if (body) {
     if (count === 0) {
       body.innerHTML = `
@@ -183,10 +172,11 @@ function updateComparisonPanel() {
   }
 }
 
-window.updateComparisonPanel = updateComparisonPanel
-// COMPARISON CARD
+window.updateComparisonPanel = updateComparisonPanel;
+
 function createComparisonCard(place) {
   const icon = getCategoryIcon(place.category);
+  
   return `
     <div class="comparison-item">
       <div class="comparison-item-header">
@@ -261,10 +251,11 @@ function createComparisonCard(place) {
     </div>
   `;
 }
-// DETERMINE BEST VALUES
+
 function getBestValue(type, value) {
   const places = Array.from(window.comparisonState.placesData.values());
   if (places.length < 2) return false;
+  
   if (type === 'rating' || type === 'score') {
     const maxValue = Math.max(...places.map(p => {
       if (type === 'rating') return p.rating || 0;
@@ -274,13 +265,15 @@ function getBestValue(type, value) {
   } else if (type === 'distance') {
     const minValue = Math.min(...places.map(p => p.distanceFromCenter || Infinity));
     return value === minValue;
-  } 
+  }
+  
   return false;
 }
-// OPEN/CLOSE PANEL
+
 function openComparisonPanel() {
   const panel = document.getElementById('comparisonPanel');
   const overlay = document.getElementById('comparisonOverlay');
+  
   if (panel && overlay) {
     panel.classList.add('active');
     overlay.classList.add('active');
@@ -292,11 +285,13 @@ function openComparisonPanel() {
     setTimeout(openComparisonPanel, 100);
   }
 }
+
 window.openComparisonPanel = openComparisonPanel;
 
 function closeComparisonPanel() {
   const panel = document.getElementById('comparisonPanel');
   const overlay = document.getElementById('comparisonOverlay');
+  
   if (panel && overlay) {
     panel.classList.remove('active');
     overlay.classList.remove('active');
@@ -307,35 +302,38 @@ function closeComparisonPanel() {
 
 window.closeComparisonPanel = closeComparisonPanel;
 
-// CLEAR ALL
 function clearAllComparisons() {
-  // Remove comparing class from all cards
   document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
     card.classList.remove('comparing');
     const checkbox = card.querySelector('.rec-card-compare-checkbox i');
     if (checkbox) checkbox.style.display = 'none';
   });
+  
   window.comparisonState.selectedPlaces.clear();
   window.comparisonState.placesData.clear();
   updateComparisonPanel();
+  
   if (typeof showToast === 'function') {
     showToast('Comparison cleared', 'info');
   }
 }
+
 window.clearAllComparisons = clearAllComparisons;
 
-// ADD ALL TO TRIP
 async function addAllToTrip() {
   const places = Array.from(window.comparisonState.placesData.values());
+  
   if (places.length === 0) {
     if (typeof showToast === 'function') {
       showToast('No places to add', 'warning');
     }
     return;
   }
+  
   if (typeof showToast === 'function') {
     showToast(`Adding ${places.length} place(s)...`, 'info');
   }
+  
   let successCount = 0;
   for (const place of places) {
     try {
@@ -347,6 +345,7 @@ async function addAllToTrip() {
       console.error('Error adding place:', err);
     }
   }
+  
   if (successCount > 0) {
     if (typeof showToast === 'function') {
       showToast(`Added ${successCount} place(s) to your trip!`, 'success');
@@ -355,18 +354,22 @@ async function addAllToTrip() {
     closeComparisonPanel();
   }
 }
+
 window.addAllToTrip = addAllToTrip;
-// ADD SINGLE PLACE TO TRIP 
+
 async function addSinglePlaceToTrip(placeName) {
   const place = window.comparisonState.placesData.get(placeName);
+  
   if (!place) {
     console.error('Place not found:', placeName);
     return;
   }
+  
   try {
     if (typeof addRecommendationToTrip === 'function') {
       await addRecommendationToTrip(place);
       removeFromComparison(placeName);
+      
       if (typeof showToast === 'function') {
         showToast(`Added ${placeName} to your trip!`, 'success');
       }
@@ -378,21 +381,24 @@ async function addSinglePlaceToTrip(placeName) {
     }
   }
 }
+
 window.addSinglePlaceToTrip = addSinglePlaceToTrip;
 
-// PLACE DETAILS
 function showPlaceDetails(placeName) {
   const place = window.comparisonState.placesData.get(placeName);
+  
   if (!place) {
     console.error('Place not found:', placeName);
     return;
   }
+  
   if (typeof showRecommendationDetails === 'function') {
     showRecommendationDetails(place);
   } else {
     alert(`${place.name}\n\nCategory: ${place.category}\nRating: ${place.rating || 'N/A'}\n${place.description || ''}`);
   }
 }
+
 window.showPlaceDetails = showPlaceDetails;
 
 function getCategoryIcon(category) {
@@ -415,16 +421,14 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// CHECKBOX CLICK HANDLER
 window.handleCompareCheckboxClick = function(rec, card) {
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
+  
   if (card.classList.contains('comparing')) {
-    // Remove from comparison
     card.classList.remove('comparing');
     if (checkIcon) checkIcon.style.display = 'none';
     removeFromComparison(rec.name);
   } else {
-    // Add to comparison
     card.classList.add('comparing');
     if (checkIcon) checkIcon.style.display = 'block';
     addToComparison(rec);
