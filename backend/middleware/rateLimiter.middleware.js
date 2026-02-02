@@ -39,14 +39,10 @@ let uploadLimiter = rateLimit({
   }
 })
 
-let logRateLimitHit = (req, res, next) => {
-  next()
-}
-
 module.exports = {
   apiLimiter,
   authLimiter,
   uploadLimiter,
-  logRateLimitHit
 }
+
 
