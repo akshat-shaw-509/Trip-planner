@@ -81,17 +81,6 @@ router.put(
   }
 )
 
-router.patch(
-  '/:expenseId/receipt',
-  async (req, res, next) => {
-    try {
-      await expenseController.attachReceipt(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
-)
-
 router.delete(
   '/:expenseId',
   async (req, res, next) => {
