@@ -299,8 +299,8 @@ function openTripCenterModal() {
               <i class="fas fa-map-pin"></i> First Added Place
             </button>
             <button onclick="useCurrentLocation()">
-              <i class="fas fa-map-marked-alt"></i> Average of Places
-            </button>
+  <i class="fas fa-location-crosshairs"></i> My Current Location
+</button>
           </div>
         </div>
 
