@@ -1,23 +1,15 @@
 let Place = require('../models/Place.model')
 let Trip = require('../models/Trip.model')
 
-// Custom error helpers
 let { NotFoundError, ForbiddenError, BadRequestError } = require('../utils/errors')
-
-// Geocoding service (Mapbox / fallback)
-let geocodingService = require('./mapbox.service')
 
 /**
  * -------------------- Ownership Checks --------------------
- * Ensures the trip belongs to the requesting user
  */
 let checkTripOwnership = async (tripId, userId) => {
   let trip = await Trip.findById(tripId).lean()
 
-  if (!trip) {
-    throw NotFoundError('Trip not found')
-  }
-
+  if (!trip) throw NotFoundError('Trip not found')
   if (trip.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
   }
@@ -27,23 +19,10 @@ let checkTripOwnership = async (tripId, userId) => {
 
 /**
  * -------------------- Create Place --------------------
- * Adds a new place to a trip
- * Automatically geocodes address if coordinates are missing
+ * Coordinates must already be provided (Geoapify / AI)
  */
 let createPlace = async (tripId, placeData, userId) => {
   await checkTripOwnership(tripId, userId)
-
-  // If address is provided but coordinates are missing → geocode
-  if (placeData.address && !placeData.location?.coordinates) {
-    try {
-      let geocoded = await geocodingService.geocodeAddress(placeData.address)
-      if (geocoded.length > 0) {
-        placeData.location = geocoded[0].coordinates
-      }
-    } catch (error) {
-      console.warn('Geocoding failed:', error.message)
-    }
-  }
 
   return Place.create({
     ...placeData,
@@ -53,20 +32,14 @@ let createPlace = async (tripId, placeData, userId) => {
 
 /**
  * -------------------- Get Places by Trip --------------------
- * Supports filtering by category and visit status
  */
 let getPlacesByTrip = async (tripId, userId, filters = {}) => {
   await checkTripOwnership(tripId, userId)
 
   let query = { tripId }
 
-  if (filters.category) {
-    query.category = filters.category
-  }
-
-  if (filters.visitStatus) {
-    query.visitStatus = filters.visitStatus
-  }
+  if (filters.category) query.category = filters.category
+  if (filters.visitStatus) query.visitStatus = filters.visitStatus
 
   return Place.find(query)
     .sort('-createdAt')
@@ -75,15 +48,11 @@ let getPlacesByTrip = async (tripId, userId, filters = {}) => {
 
 /**
  * -------------------- Get Place by ID --------------------
- * Ensures user has access to the parent trip
  */
 let getPlaceById = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId').lean()
 
-  if (!place) {
-    throw NotFoundError('Place not found')
-  }
-
+  if (!place) throw NotFoundError('Place not found')
   if (place.tripId.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
   }
@@ -93,29 +62,13 @@ let getPlaceById = async (placeId, userId) => {
 
 /**
  * -------------------- Update Place --------------------
- * Re-geocodes if address changes
  */
 let updatePlace = async (placeId, updateData, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
-  if (!place) {
-    throw NotFoundError('Place not found')
-  }
-
+  if (!place) throw NotFoundError('Place not found')
   if (place.tripId.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
-  }
-
-  // If address changed → attempt re-geocoding
-  if (updateData.address && updateData.address !== place.address) {
-    try {
-      let geocoded = await geocodingService.geocodeAddress(updateData.address)
-      if (geocoded.length > 0) {
-        updateData.location = geocoded[0].coordinates
-      }
-    } catch (error) {
-      console.warn('Geocoding failed:', error.message)
-    }
   }
 
   Object.assign(place, updateData)
@@ -130,10 +83,7 @@ let updatePlace = async (placeId, updateData, userId) => {
 let deletePlace = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
-  if (!place) {
-    throw NotFoundError('Place not found')
-  }
-
+  if (!place) throw NotFoundError('Place not found')
   if (place.tripId.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
   }
@@ -144,15 +94,11 @@ let deletePlace = async (placeId, userId) => {
 
 /**
  * -------------------- Toggle Favorite --------------------
- * Marks or unmarks a place as favorite
  */
 let toggleFavorite = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
-  if (!place) {
-    throw NotFoundError('Place not found')
-  }
-
+  if (!place) throw NotFoundError('Place not found')
   if (place.tripId.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
   }
@@ -165,15 +111,12 @@ let toggleFavorite = async (placeId, userId) => {
 
 /**
  * -------------------- Update Visit Status --------------------
- * Automatically sets visit date when marked as visited
+ * Auto-sets visitDate when visited
  */
 let updateVisitStatus = async (placeId, status, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
-  if (!place) {
-    throw NotFoundError('Place not found')
-  }
-
+  if (!place) throw NotFoundError('Place not found')
   if (place.tripId.userId.toString() !== userId.toString()) {
     throw ForbiddenError('Access denied')
   }
@@ -190,7 +133,7 @@ let updateVisitStatus = async (placeId, status, userId) => {
 
 /**
  * -------------------- Search Nearby Places --------------------
- * Uses MongoDB geospatial queries
+ * Planned feature – MongoDB geospatial query
  */
 let searchNearby = async (tripId, query, userId) => {
   await checkTripOwnership(tripId, userId)
@@ -219,7 +162,8 @@ let searchNearby = async (tripId, query, userId) => {
 }
 
 /**
- * -------------------- Group Places by Category --------------------
+ * -------------------- Group Places by Category (LEAN) --------------------
+ * Count only (no $$ROOT push)
  */
 let getByCategory = async (tripId, userId) => {
   await checkTripOwnership(tripId, userId)
@@ -229,8 +173,7 @@ let getByCategory = async (tripId, userId) => {
     {
       $group: {
         _id: '$category',
-        count: { $sum: 1 },
-        places: { $push: '$$ROOT' }
+        count: { $sum: 1 }
       }
     },
     { $sort: { count: -1 } }
@@ -239,7 +182,6 @@ let getByCategory = async (tripId, userId) => {
 
 /**
  * -------------------- Add AI Suggested Place --------------------
- * Saves AI-generated recommendations into the trip
  */
 let addAIPlaceToTrip = async (tripId, aiPlace, userId) => {
   await checkTripOwnership(tripId, userId)
@@ -258,9 +200,6 @@ let addAIPlaceToTrip = async (tripId, aiPlace, userId) => {
   })
 }
 
-/**
- * Export place services
- */
 module.exports = {
   createPlace,
   addAIPlaceToTrip,
