@@ -9,7 +9,6 @@ let { uploadBanner } = require('../middleware/upload.middleware')
 // Single file uploads - uploadBanner works for single files
 router.post('/image', uploadBanner.single('file'), uploadController.uploadImage)
 router.post('/document', uploadBanner.single('file'), uploadController.uploadDocument) 
-router.post('/receipt/:tripId', uploadBanner.single('file'), uploadController.uploadReceipt)
 
 // Multiple file uploads - TEMPORARILY DISABLED
 // router.post('/multiple', uploadBanner.array('files', 5), uploadController.uploadMultiple)
