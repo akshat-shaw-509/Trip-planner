@@ -123,7 +123,6 @@ async function handleTripCreation(e) {
             description: document.getElementById('description').value.trim(),
             travelers: parseInt(document.getElementById('travelers').value) || 1,
             tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t),
-            isPublic: document.getElementById('isPublic').checked,
             status: 'planning',
             userId: user.userId,
         };
