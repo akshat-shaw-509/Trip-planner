@@ -1,4 +1,4 @@
-let filterState = {
+/*let filterState = {
   activeFilters: {
     categories: [],
     minRating: 0,
@@ -241,3 +241,4 @@ function resetAllFilters() {
 function getFilteredRecommendations() {
   return filterState.filteredResults;
 }
+*/
