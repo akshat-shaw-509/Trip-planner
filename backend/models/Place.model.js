@@ -1,105 +1,130 @@
 const mongoose = require('mongoose')
-// Place Schema
-let placeSchema = new mongoose.Schema(
+const PLACE_CATEGORIES = [
+  'accommodation',
+  'restaurant',
+  'attraction',
+  'transport',
+  'shopping',
+  'entertainment',
+  'other',
+
+const VISIT_STATUS = ['planned', 'visited', 'skipped']
+
+/**
+ * Place Schema
+ * Represents a location/venue in a trip
+ */
+const placeSchema = new mongoose.Schema(
   {
+    // Reference to parent trip
     tripId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Trip',
       required: [true, 'Trip ID is required'],
       index: true,
+    }, 
+    // User who added the place
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User ID is required'],
+      index: true,
     },
+    // Place name
     name: {
       type: String,
       required: [true, 'Place name is required'],
       trim: true,
-      maxlength: [200, 'Name must not exceed 200 characters'],
+      maxlength: [200, 'Name cannot exceed 200 characters'],
     },
+    // Place description
     description: {
       type: String,
       trim: true,
-      maxlength: [2000, 'Description must not exceed 2000 characters'],
+      maxlength: [2000, 'Description cannot exceed 2000 characters'],
     },
+    // Place category
     category: {
       type: String,
-      enum: [
-        'accommodation',
-        'restaurant',
-        'attraction',
-        'transport',
-        'other',
-      ],
+      enum: {
+        values: PLACE_CATEGORIES,
+        message: '{VALUE} is not a valid category'
+      },
       default: 'other',
+      lowercase: true,
     },
+    // Physical address
     address: {
       type: String,
       trim: true,
-      maxlength: [500, 'Address must not exceed 500 characters']
+      maxlength: [500, 'Address cannot exceed 500 characters'],
     },
-
-    //GeoJSON location field
-     //Used for map and proximity-based queries
+    // GeoJSON location (required for map features)
     location: {
       type: {
         type: String,
         enum: ['Point'],
-        default: 'Point'
+        default: 'Point',
       },
       coordinates: {
-        type: [Number],
-        required: [true, 'Coordinates required'],
+        type: [Number], // [longitude, latitude]
+        required: [true, 'Coordinates are required'],
         validate: {
-          validator: function (v) {
-            if (!Array.isArray(v) || v.length !== 2) return false
-            const [lng, lat] = v
+          validator: function (coords) {
+            if (!Array.isArray(coords) || coords.length !== 2) return false
+            const [lng, lat] = coords
             return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90
           },
-          message: 'Coordinates must be [lng, lat]'
-        }
-      }
+          message: 'Coordinates must be [longitude, latitude] with valid ranges',
+        },
+      },
     },
+    // User rating (0-5 scale)
     rating: {
       type: Number,
-      min: 0,
-      max: 5,
-      default: 0
+      min: [0, 'Rating cannot be less than 0'],
+      max: [5, 'Rating cannot exceed 5'],
+      default: 0,
     },
-
-    //ADDED: Price level (0-5 scale)
+    // Price level (0-5 scale, 0 = free)
     priceLevel: {
       type: Number,
-      min: 0,
-      max: 5,
-      default: 0
+      min: [0, 'Price level cannot be less than 0'],
+      max: [5, 'Price level cannot exceed 5'],
+      default: 0,
     },
-
-    // Visit status of the place
+    // Visit status
     visitStatus: {
       type: String,
-      lowercase: true,
-      enum: ['planned', 'visited', 'skipped'],
+      enum: {
+        values: VISIT_STATUS,
+        message: '{VALUE} is not a valid visit status'
+      },
       default: 'planned',
+      lowercase: true,
     },
-
-    //Date when the place was visited
+    // Date when visited/planned
     visitDate: {
       type: Date,
     },
-
-    //Additional user notes
+    // User notes
     notes: {
       type: String,
       trim: true,
-      maxlength: [2000, 'Notes must not exceed 2000 characters'],
+      maxlength: [2000, 'Notes cannot exceed 2000 characters'],
     },
+    // Favorite flag
     isFavorite: {
       type: Boolean,
-      default: false
+      default: false,
+      index: true,
     },
+    // Source of place data
     source: {
       type: String,
       enum: ['manual', 'ai', 'imported'],
-      default: 'manual'
-    }
+      default: 'manual',
+    },
   },
   {
     timestamps: true,
@@ -108,27 +133,43 @@ let placeSchema = new mongoose.Schema(
       transform: (doc, ret) => {
         delete ret.__v
         return ret
-      }
-    }
+      },
+    },
   }
 )
-
+// Geospatial index for proximity queries
 placeSchema.index({ location: '2dsphere' })
+// Compound indexes
 placeSchema.index({ tripId: 1, createdAt: -1 })
 placeSchema.index({ tripId: 1, visitStatus: 1 })
-
-placeSchema.virtual('distanceFromCenter').get(function (centerLngLat) {
-  if (!centerLngLat || !this.location?.coordinates) return 0
-
-  const [centerLng, centerLat] = centerLngLat
-  const [lng, lat] = this.location.coordinates
-
-  return Math.sqrt(
-    Math.pow(lng - centerLng, 2) + Math.pow(lat - centerLat, 2)
-  )
-})
-
-//Returns a summary of the place
+placeSchema.index({ tripId: 1, category: 1 })
+// Static method: Find places by trip
+placeSchema.statics.findByTripId = function (tripId) {
+  return this.find({ tripId }).sort('-createdAt')
+}
+// Static method: Find planned places
+placeSchema.statics.findPlannedByTripId = function (tripId) {
+  return this.find({
+    tripId,
+    visitStatus: 'planned',
+  }).sort('createdAt')
+}
+// Static method: Find nearby places using geospatial query
+placeSchema.statics.findNearby = function (tripId, coordinates, radiusInMeters = 5000) {
+  return this.find({
+    tripId,
+    location: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates: coordinates, // [lng, lat]
+        },
+        $maxDistance: radiusInMeters,
+      },
+    },
+  })
+}
+// Instance method: Get summary
 placeSchema.methods.getSummary = function () {
   return {
     id: this._id,
@@ -137,24 +178,9 @@ placeSchema.methods.getSummary = function () {
     status: this.visitStatus,
     location: this.location,
     rating: this.rating,
-    priceLevel: this.priceLevel
+    priceLevel: this.priceLevel,
+    isFavorite: this.isFavorite,
   }
 }
 
-//Find all places for a trip
-placeSchema.statics.findByTripId = function (tripId) {
-  return this.find({ tripId }).sort('-createdAt')
-}
-
-//Find planned places for a trip
-placeSchema.statics.findPlannedByTripId = function (tripId) {
-  return this.find({
-    tripId,
-    visitStatus: 'planned',
-    isDeleted: { $ne: true }
-  }).sort('createdAt')
-}
-
-let Place = mongoose.model('Place', placeSchema)
-module.exports = Place
-
+module.exports = mongoose.model('Place', placeSchema)
