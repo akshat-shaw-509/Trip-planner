@@ -1,57 +1,58 @@
-let recommendationService = require('../services/recommendation.service')
-let userPreferenceService = require('../services/userPreference.service')
-let sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
-  let response = { success: true }
+const recommendationService = require('../services/recommendation.service')
+const userPreferenceService = require('../services/userPreference.service')
+
+const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
+  const response = { success: true }
   if (data) response.data = data
   if (message) response.message = message
   Object.assign(response, extra)
   res.status(statusCode).json(response)
 }
 
-let getRecommendations = async (req, res, next) => {
+//Get AI-powered recommendations for a trip
+//GET /api/trips/:tripId/recommendations
+const getRecommendations = async (req, res, next) => {
   try {
-    let tripId = req.params.tripId
-    let options = {
+    const tripId = req.params.tripId
+    const options = {
       limit: parseInt(req.query.limit) || 50,
       radius: parseInt(req.query.radius) || 10000,
       category: req.query.category
     }
-    let recommendations = await recommendationService.getRecommendations(
+    const recommendations = await recommendationService.getRecommendations(
       tripId,
       options
     )
-sendSuccess(res,200,
-  { places: recommendations.places },
-  recommendations.message,
-  { count: recommendations.places.length }
-)    
+    sendSuccess(
+      res,
+      200,
+      { places: recommendations.places },
+      recommendations.message,
+      { count: recommendations.places.length }
+    )    
   } catch (error) {
-    console.error(' Controller error:', error.message)
-    console.error(' Stack:', error.stack)
+    console.error('Recommendation controller error:', error.message)
     next(error)
   }
 }
 
-let getUserPreferences = async (req, res, next) => {
+// Get user preferences summary
+// GET /api/preferences
+const getUserPreferences = async (req, res, next) => {
   try {
-    console.log('\nController: getUserPreferences called')
-    
-    let summary = await userPreferenceService.getPreferenceSummary(req.user.id)
+    const summary = await userPreferenceService.getPreferenceSummary(req.user.id)
     sendSuccess(res, 200, summary)
-    
-    console.log('  Preferences sent\n')
-    
   } catch (error) {
-    console.error('  Controller error:', error.message)
+    console.error('Get preferences error:', error.message)
     next(error)
   }
 }
 
-let trackSearch = async (req, res, next) => {
+//Track user search behavior
+//POST /api/preferences/track-search
+const trackSearch = async (req, res, next) => {
   try {
-    let query = req.body.query
-    let category = req.body.category
-    let location = req.body.location
+    const { query, category, location } = req.body
     await userPreferenceService.trackSearch(req.user.id, {
       query,
       category,
@@ -63,10 +64,12 @@ let trackSearch = async (req, res, next) => {
   }
 }
 
-let updateRatingThreshold = async (req, res, next) => {
+//Update minimum rating threshold
+//PUT /api/preferences/rating-threshold
+const updateRatingThreshold = async (req, res, next) => {
   try {
-    let threshold = req.body.threshold
-    let pref = await userPreferenceService.updateRatingThreshold(
+    const { threshold } = req.body
+    const pref = await userPreferenceService.updateRatingThreshold(
       req.user.id,
       threshold
     )
@@ -76,7 +79,9 @@ let updateRatingThreshold = async (req, res, next) => {
   }
 }
 
-let resetPreferences = async (req, res, next) => {
+// Reset user preferences to default
+//POST /api/preferences/reset
+const resetPreferences = async (req, res, next) => {
   try {
     await userPreferenceService.resetPreferences(req.user.id)
     sendSuccess(res, 200, null, 'Preferences reset successfully')
@@ -87,8 +92,8 @@ let resetPreferences = async (req, res, next) => {
 
 module.exports = {
   getRecommendations,
-  getUserPreferences,
-  trackSearch,
-  updateRatingThreshold,
-  resetPreferences
+  getUserPreferences,     
+  trackSearch,            
+  updateRatingThreshold,  
+  resetPreferences        
 }
