@@ -2,7 +2,6 @@ const tripService = require('../services/trip.service')
 const { asyncHandler } = require('../middleware/error.middleware')
 const { ValidationError } = require('../utils/errors')
 
-//Standard success response helper
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true }
   if (data) response.data = data
@@ -28,7 +27,9 @@ const getUserTrips = asyncHandler(async (req, res) => {
     page: req.query.page,
     limit: req.query.limit,
   }
+  
   const result = await tripService.getTripsByUser(req.user._id, filters)
+  
   sendSuccess(res, 200, result.trips, null, {
     pagination: result.pagination
   })
@@ -41,8 +42,8 @@ const getTripById = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, trip)
 })
 
-//Update trip details
-//PUT /api/trips/:tripId
+// Update trip details
+// PUT /api/trips/:tripId
 const updateTrip = asyncHandler(async (req, res) => {
   const trip = await tripService.updateTrip(
     req.params.tripId,
@@ -59,30 +60,8 @@ const deleteTrip = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, null, result.message)
 })
 
-//Get upcoming trips
-//GET /api/trips/upcoming
-const getUpcomingTrips = asyncHandler(async (req, res) => {
-  const trips = await tripService.getUpcomingTrips(req.user._id)
-  sendSuccess(res, 200, trips, null, { count: trips.length })
-})
-
-//Get ongoing trips
-///GET /api/trips/ongoing
-const getOngoingTrips = asyncHandler(async (req, res) => {
-  const trips = await tripService.getOngoingTrips(req.user._id)
-  sendSuccess(res, 200, trips, null, { count: trips.length })
-})
-
-//Get completed trips
-//GET /api/trips/past
-const getPastTrips = asyncHandler(async (req, res) => {
-  const limit = parseInt(req.query.limit, 10) || 10
-  const trips = await tripService.getPastTrips(req.user._id, limit)
-  sendSuccess(res, 200, trips, null, { count: trips.length })
-})
-
 //Update trip status (planning / ongoing / completed / cancelled)
- //PATCH /api/trips/:tripId/status
+//PATCH /api/trips/:tripId/status
 const updateTripStatus = asyncHandler(async (req, res) => {
   if (!req.body.status) {
     return res.status(400).json({
@@ -90,13 +69,11 @@ const updateTripStatus = asyncHandler(async (req, res) => {
       message: 'Status is required'
     })
   }
-
   const trip = await tripService.updateTripStatus(
     req.params.tripId,
     req.body.status,
     req.user._id
   )
-
   sendSuccess(res, 200, trip, 'Trip status updated successfully')
 })
 
@@ -106,13 +83,11 @@ const uploadBanner = asyncHandler(async (req, res) => {
   if (!req.file) {
     throw ValidationError('No image file provided')
   }
-
   const updatedTrip = await tripService.uploadBanner(
     req.params.tripId,
     req.user._id,
     req.file
   )
-
   res.status(200).json({
     success: true,
     message: 'Banner uploaded successfully',
@@ -123,8 +98,8 @@ const uploadBanner = asyncHandler(async (req, res) => {
   })
 })
 
-//Remove trip banner image
- //DELETE /api/trips/:tripId/banner
+// Remove trip banner image
+//DELETE /api/trips/:tripId/banner
 const removeBanner = asyncHandler(async (req, res) => {
   const updatedTrip = await tripService.removeBanner(
     req.params.tripId,
@@ -147,13 +122,7 @@ module.exports = {
   getTripById,
   updateTrip,
   deleteTrip,
-  getUpcomingTrips,
-  getOngoingTrips,
-  getPastTrips,
   updateTripStatus,
   uploadBanner,
-  removeBanner
+  removeBanner  
 }
-
-
-
