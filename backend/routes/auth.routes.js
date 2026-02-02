@@ -1,6 +1,5 @@
 let express = require('express')
-let rateLimit = require('express-rate-limit')
-
+let rateLimit = require('express-rate-limit'
 let router = express.Router()
 let authController = require('../controllers/auth.controller')
 let { authenticate } = require('../middleware/auth.middleware')
@@ -28,33 +27,6 @@ router.post('/google', authController.googleLogin)
 router.post('/refresh', authController.refreshToken)
 // Protected routes
 router.get('/me', authenticate, authController.getCurrentUser)
-router.post('/logout', authenticate, authController.logout)
-
-// Config Endpoints
-router.get('/config', (req, res) => {
-  res.json({ 
-    success: true,
-    config: {
-      apiBaseURL: process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}/api`,
-      googleClientId: process.env.GOOGLE_CLIENT_ID,
-      geoapifyApiKey: process.env.GEOAPIFY_API_KEY
-    }
-  });
-});
-
-// Individual config endpoints
-router.get('/google-client-id', (req, res) => {
-  res.json({ 
-    success: true, 
-    clientId: process.env.GOOGLE_CLIENT_ID 
-  });
-});
-
-router.get('/geoapify-api-key', (req, res) => {
-  res.json({ 
-    success: true, 
-    apiKey: process.env.GEOAPIFY_API_KEY 
-  });
-});
+router.post('/logout', authenticate, authController.logout);
 
 module.exports = router
