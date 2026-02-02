@@ -1,161 +1,199 @@
 const mongoose = require('mongoose')
-// Trip Schema
-let tripSchema = new mongoose.Schema(
+const TRIP_STATUS = ['planning', 'booked', 'upcoming', 'ongoing', 'completed', 'cancelled'
+/**
+ * Trip Schema
+ * Represents a travel itinerary
+ */
+const tripSchema = new mongoose.Schema(
   {
-    //User who owns the trip
+    // User who owns the trip
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required'],
       index: true,
     },
-     // Trip title
+    // Trip title
     title: {
       type: String,
       required: [true, 'Trip title is required'],
       trim: true,
-      minlength: [3, 'Trip title must be at least 3 characters long'],
-      maxlength: [100, 'Trip title cannot exceed 100 characters']
+      minlength: [3, 'Title must be at least 3 characters'],
+      maxlength: [200, 'Title cannot exceed 200 characters'],
     },
-
-    //Optional trip description
+    // Trip description
     description: {
       type: String,
       trim: true,
-      maxlength: [1000, 'Description cannot exceed 1000 characters'],
-      default: ''
+      maxlength: [2000, 'Description cannot exceed 2000 characters'],
+      default: '',
     },
-    // Trip destination
+    // Destination (city/region name)
     destination: {
       type: String,
       required: [true, 'Destination is required'],
       trim: true,
-      minlength: [2, 'Destination must be at least 2 characters long'],
-      maxlength: [100, 'Destination cannot exceed 100 characters']
+      minlength: [2, 'Destination must be at least 2 characters'],
+      maxlength: [200, 'Destination cannot exceed 200 characters'],
     },
-
-    //Trip start date
+    //Country name
+    country: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Country cannot exceed 100 characters'],
+    },
+    // Destination coordinates [longitude, latitude]
+    destinationCoords: {
+      type: [Number],
+      validate: {
+        validator: function (coords) {
+          if (!coords || coords.length === 0) return true
+          if (coords.length !== 2) return false
+          const [lng, lat] = coords
+          return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90
+        },
+        message: 'Destination coordinates must be [longitude, latitude]',
+      },
+    },
+    // Trip start date
     startDate: {
       type: Date,
-      required: [true, 'Start date is required']
+      required: [true, 'Start date is required'],
     },
-
-    //Trip end date
+    // Trip end date
     endDate: {
       type: Date,
       required: [true, 'End date is required'],
     },
-
-    //Estimated trip budget
+    // Estimated budget
     budget: {
       type: Number,
       min: [0, 'Budget cannot be negative'],
-      default: 0
+      default: 0,
     },
-
-    //Number of travelers
+    // Currency code
+    currency: {
+      type: String,
+      default: 'INR',
+      trim: true,
+      uppercase: true,
+      maxlength: 3,
+    },
+    // Number of travelers
     travelers: {
       type: Number,
       min: [1, 'Number of travelers must be at least 1'],
-      default: 1
+      default: 1,
     },
-
-    //Current trip status
+    // Current trip status
     status: {
       type: String,
-      lowercase: true,
-      trim: true,
-      default: 'planning',
       enum: {
-        values: ['planning', 'booked', 'ongoing', 'completed', 'cancelled'],
-        message: '{VALUE} is not a valid trip status'
-      }
+        values: TRIP_STATUS,
+        message: '{VALUE} is not a valid trip status',
+      },
+      default: 'planning',
+      lowercase: true,
+      index: true,
     },
-    isPublic: {
-      type: Boolean,
-      default: false
-    },
+    // Cover/banner image URL
     coverImage: {
       type: String,
       default: null,
-      trim: true
+      trim: true,
     },
+    // Trip tags for categorization
     tags: {
       type: [String],
-      default: []
-    }
+      default: [],
+      validate: {
+        validator: function(tags) {
+          return tags.every(tag => tag.length <= 50)
+        },
+        message: 'Each tag must be 50 characters or less'
+      }
+    },
+    // Public/private flag (for future sharing features)
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
     toJSON: {
+      virtuals: true,
       transform: function (doc, ret) {
         delete ret.__v
         return ret
-      }
+      },
     },
   }
 )
+// Indexes for performance
 tripSchema.index({ userId: 1, createdAt: -1 })
 tripSchema.index({ userId: 1, status: 1 })
-
-//Schema Hooks 
-
-// Ensure endDate is always after startDate
-tripSchema.pre('validate', async function () {
+tripSchema.index({ userId: 1, startDate: 1 })
+// Pre-save validation hook
+tripSchema.pre('save', function (next) {
+  // Validate date range
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    throw new Error('End date must be after start date')
+    return next(new Error('End date must be after start date'))
   }
+  next()
 })
-
-//Virtual Fields
+// Virtual: Calculate trip duration in days
 tripSchema.virtual('duration').get(function () {
-  if (!this.startDate || !this.endDate) {
-    return 0
-  }
-  let diffTime = Math.abs(this.endDate - this.startDate)
+  if (!this.startDate || !this.endDate) return 0
+  const diffTime = Math.abs(this.endDate - this.startDate)
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
 })
+// Virtual: Check if trip is upcoming
 tripSchema.virtual('isUpcoming').get(function () {
-  return this.startDate > new Date() && this.status !== 'cancelled'
+  const now = new Date()
+  return this.startDate > now && this.status !== 'cancelled'
 })
+// Virtual: Check if trip is currently active
 tripSchema.virtual('isActive').get(function () {
+  const now = new Date()
   return (
-    this.startDate <= new Date() &&
-    this.endDate >= new Date() &&
+    this.startDate <= now &&
+    this.endDate >= now &&
     this.status === 'ongoing'
   )
 })
+// Virtual: Check if trip is past
 tripSchema.virtual('isPast').get(function () {
-  return this.endDate < new Date() || this.status === 'completed'
+  const now = new Date()
+  return this.endDate < now || this.status === 'completed'
 })
-//Returns a summary of the trip
+// Instance method: Get trip summary
 tripSchema.methods.getSummary = function () {
   return {
     id: this._id,
     title: this.title,
     destination: this.destination,
+    country: this.country,
+    destinationCoords: this.destinationCoords,
     dates: {
       start: this.startDate,
       end: this.endDate,
-      duration: this.duration
+      duration: this.duration,
     },
     status: this.status,
     travelers: this.travelers,
-    budget: {
-      amount: this.budget,
-    },
-    coverImage: this.coverImage
+    budget: this.budget,
+    currency: this.currency,
+    coverImage: this.coverImage,
   }
 }
-//Find all trips for a user
+// Static method: Find trips by user
 tripSchema.statics.findByUserId = function (userId) {
   return this.find({ userId }).sort('-createdAt')
 }
-
-// Find trips for a user filtered by status
+// Static method: Find trips by user and status
 tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
   return this.find({ userId, status }).sort('-createdAt')
 }
-let Trip = mongoose.model('Trip', tripSchema)
-module.exports = Trip
 
+module.exports = mongoose.model('Trip', tripSchema)
