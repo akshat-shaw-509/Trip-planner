@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-let ACTIVITY_TYPES = [
+const ACTIVITY_TYPES = [
   'flight',
   'accommodation',
   'restaurant',
@@ -9,64 +9,51 @@ let ACTIVITY_TYPES = [
   'entertainment',
   'other',
 ]
-let ACTIVITY_STATUS = ['planned', 'confirmed', 'completed', 'cancelled']
-let PRIORITY_LEVELS = ['low', 'medium', 'high']
-
+const ACTIVITY_STATUS = ['planned', 'in_progress', 'completed', 'cancelled']
 //Activity Schema 
-let activitySchema = new mongoose.Schema(
+const activitySchema = new mongoose.Schema(
   {
     tripId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Trip',
-      required: true,
+      required: [true, 'User ID is required'],
       index: true,
     },
-
-    // User who created / owns the activity
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-
     //Optional reference to a saved place
     placeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Place',
     },
-
     //Activity title
-    title: {
+   title: {
       type: String,
-      required: true,
+      required: [true, 'Title is required'],
       trim: true,
-      minlength: 3,
-      maxlength: 200,
+      minlength: [3, 'Title must be at least 3 characters'],
+      maxlength: [200, 'Title cannot exceed 200 characters'],
     },
-
     //Optional activity description
     description: {
       type: String,
       trim: true,
-      maxlength: 2000,
+      maxlength: [2000, 'Description cannot exceed 2000 characters'],
       default: '',
     },
-
     //Type of activity
-    type: {
+     type: {
       type: String,
-      enum: ACTIVITY_TYPES,
-      required: true,
+      enum: {
+        values: ACTIVITY_TYPES,
+        message: '{VALUE} is not a valid activity type'
+      },
+      required: [true, 'Activity type is required'],
       default: 'other',
     },
-
     //Activity start time
     startTime: {
       type: Date,
-      required: true,
+      required: [true, 'Start time is required'],
     },
-
     //Activity end time
      //Must always be after startTime
     endTime: {
@@ -78,65 +65,41 @@ let activitySchema = new mongoose.Schema(
         message: 'End time must be after start time',
       },
     },
-
     //Current status of the activity
     status: {
       type: String,
-      enum: ACTIVITY_STATUS,
+      enum: {
+        values: ACTIVITY_STATUS,
+        message: '{VALUE} is not a valid status'
+      },
       default: 'planned',
       index: true,
     },
-
-    //Priority level of the activity
-    priority: {
+    //Location details
+    location: {
       type: String,
-      enum: PRIORITY_LEVELS,
-      default: 'medium',
+      trim: true,
+      maxlength: [500, 'Location cannot exceed 500 characters'],
     },
-
     //Cost details
     cost: {
       type: Number,
-      min: 0,
+      min: [0, 'Cost cannot be negative'],
       default: 0,
     },
     currency: {
       type: String,
-      default: 'USD',
+      default: 'INR',
       trim: true,
+      uppercase: true,
+      maxlength: 3,
     },
-
-    //Booking and reference information
-    bookingReference: { type: String, trim: true, default: '' },
-    confirmationNumber: { type: String, trim: true, default: '' },
-    url: { type: String, trim: true, default: '' },
-
-    /**
-     * Additional notes
-     */
+    //Additional notes
     notes: {
       type: String,
       trim: true,
-      maxlength: 1000,
+      maxlength: [1000, 'Notes cannot exceed 1000 characters'],
       default: '',
-    },
-    reminders: [
-      {
-        time: { type: Date, required: true },
-        message: { type: String, trim: true, default: '' },
-        sent: { type: Boolean, default: false },
-      },
-    ],
-    attendees: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    isDeleted: {
-      type: Boolean,
-      default: false,
-      index: true,
     },
   },
   {
@@ -145,16 +108,22 @@ let activitySchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 )
-
-//Indexes 
+// Indexes for better query performance
 activitySchema.index({ tripId: 1, startTime: 1 })
 activitySchema.index({ userId: 1, status: 1 })
+activitySchema.index({ tripId: 1, status: 1 })
 
-//Virtual Fields 
-
+// Virtual: Calculate duration in minutes
 activitySchema.virtual('duration').get(function () {
   if (!this.startTime || !this.endTime) return null
   return Math.floor((this.endTime - this.startTime) / (1000 * 60))
+})
+// Pre-save hook: Validate date logic
+activitySchema.pre('save', function(next) {
+  if (this.endTime && this.endTime <= this.startTime) {
+    return next(new Error('End time must be after start time'))
+  }
+  next()
 })
 
 module.exports = mongoose.model('Activity', activitySchema)
