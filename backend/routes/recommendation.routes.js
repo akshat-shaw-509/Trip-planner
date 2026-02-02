@@ -14,6 +14,6 @@ router.get('/trips/:tripId/recommendations', recommendationController.getRecomme
 router.get('/preferences', recommendationController.getUserPreferences);
 router.post('/preferences/track-search', recommendationController.trackSearch);
 router.put('/preferences/rating-threshold', recommendationController.updateRatingThreshold);
-router.delete('/preferences', recommendationController.resetPreferences);
+router.post('/preferences/reset', recommendationController.resetPreferences);
 
 module.exports = router;
