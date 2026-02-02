@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const TRIP_STATUS = ['planning', 'booked', 'upcoming', 'ongoing', 'completed', 'cancelled'
+const TRIP_STATUS = ['planning', 'booked', 'upcoming', 'ongoing', 'completed', 'cancelled']
 /**
  * Trip Schema
  * Represents a travel itinerary
@@ -197,3 +197,4 @@ tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
 }
 
 module.exports = mongoose.model('Trip', tripSchema)
+
