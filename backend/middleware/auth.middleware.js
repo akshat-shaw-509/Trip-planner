@@ -124,9 +124,9 @@ const invalidateUserCache = (userId) => {
 }
 module.exports = {
   authenticate,
-  authorize,
   optionalAuth,
   invalidateUserCache
 }
+
 
 
