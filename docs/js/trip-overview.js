@@ -207,6 +207,138 @@ const uploadBanner = async (file) => {
   }
 }
 
+//Remove trip banner
+const removeBanner = async () => {
+  if (!confirm('Are you sure you want to remove the banner? It will revert to the default.')) {
+    return
+  }
+  try {
+    const btn = document.querySelector('.banner-upload-btn')
+    const removeBannerBtn = document.querySelector('.banner-remove-btn') 
+    if (btn) {
+      btn.disabled = true
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...'
+    }
+    if (removeBannerBtn) {
+      removeBannerBtn.disabled = true
+    }
+    await apiService.trips.removeBanner(currentTrip._id)
+    currentTrip.coverImage = null
+    const bannerImg = document.querySelector('.trip-banner img')
+    if (bannerImg) {
+      bannerImg.dataset.locked = 'true'
+      bannerImg.src = getDefaultBanner(currentTrip.destination)
+    }
+    showToast?.('Banner removed successfully!', 'success')
+  } catch (err) {
+    console.error('Remove banner error:', err)
+    showToast?.('Failed to remove banner', 'error')
+  } finally {
+    const btn = document.querySelector('.banner-upload-btn')
+    const removeBannerBtn = document.querySelector('.banner-remove-btn')
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
+    }
+    if (removeBannerBtn) {
+      removeBannerBtn.disabled = false
+    }
+  }
+}
+
+const initBannerUpload = () => {
+  const container = document.querySelector('.trip-banner')
+  if (!container) return
+  let uploadBtn = container.querySelector('.banner-upload-btn')
+  if (!uploadBtn) {
+    uploadBtn = document.createElement('button')
+    uploadBtn.className = 'banner-upload-btn'
+    uploadBtn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
+    container.appendChild(uploadBtn)
+  }
+
+  // Remove button
+  let removeBtn = container.querySelector('.banner-remove-btn')
+  if (!removeBtn) {
+    removeBtn = document.createElement('button')
+    removeBtn.className = 'banner-remove-btn'
+    removeBtn.innerHTML = '<i class="fas fa-trash"></i><span>Remove</span>'
+    removeBtn.style.cssText = `
+      position: absolute;
+      top: 20px;
+      right: 200px;
+      background: rgba(239, 68, 68, 0.9);
+      backdrop-filter: blur(10px);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    `
+    container.appendChild(removeBtn)
+  }
+  // Hidden file input
+  let fileInput = document.getElementById('bannerFileInput')
+  if (!fileInput) {
+    fileInput = document.createElement('input')
+    fileInput.type = 'file'
+    fileInput.accept = 'image/jpeg,image/png,image/webp'
+    fileInput.id = 'bannerFileInput'
+    fileInput.style.display = 'none'
+    container.appendChild(fileInput)
+  }
+  // Event listeners
+  uploadBtn.onclick = e => {
+    e.stopPropagation()
+    fileInput.click()
+  }
+  //Remove button click
+  removeBtn.onclick = e => {
+    e.stopPropagation()
+    removeBanner()
+  }
+  fileInput.onchange = async e => {
+    const file = e.target.files[0]
+    if (!file || !validateBannerImage(file)) return
+    previewBanner(file)
+    await uploadBanner(file)
+  }
+}
+
+// Add CSS for remove button hover
+const style = document.createElement('style')
+style.textContent = `
+  .banner-remove-btn:hover {
+    background: rgba(239, 68, 68, 1) !important;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  }
+  .banner-remove-btn:active {
+    transform: translateY(0);
+  }
+  @media (max-width: 768px) {
+    .banner-remove-btn {
+      top: 60px !important;
+      right: 12px !important;
+      padding: 10px 16px !important;
+      font-size: 13px !important;
+    }
+    .banner-remove-btn span {
+      display: none;
+    }
+  }
+`
+document.head.appendChild(style)
+
 const formatDateRange = (trip) => {
   if (!trip.startDate || !trip.endDate) return 'Dates not set'
   const s = new Date(trip.startDate)
