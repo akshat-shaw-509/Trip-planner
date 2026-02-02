@@ -1,4 +1,3 @@
-
 let Expense = require('../models/Expense.model')
 let Trip = require('../models/Trip.model')
 
@@ -29,10 +28,7 @@ let checkTripOwnership = async (tripId, userId) => {
  * Verify that the user owns the given expense
  */
 let checkExpenseOwnership = async (expenseId, userId) => {
-  let expense = await Expense.findOne({
-    _id: expenseId,
-    isDeleted: false
-  }).lean()
+  let expense = await Expense.findById(expenseId).lean()
 
   if (!expense) {
     throw NotFoundError('Expense not found')
@@ -53,13 +49,12 @@ let checkExpenseOwnership = async (expenseId, userId) => {
  * Create a new expense under a trip
  */
 let createExpense = async (tripId, expenseData, userId) => {
-  // Ensure user owns the trip
   await checkTripOwnership(tripId, userId)
 
   return Expense.create({
     ...expenseData,
     tripId,
-    userId,
+    userId
   })
 }
 
@@ -67,17 +62,14 @@ let createExpense = async (tripId, expenseData, userId) => {
  * Get all expenses for a trip (with optional filters)
  */
 let getExpensesByTrip = async (tripId, userId, filters = {}) => {
-  // Ownership check
   await checkTripOwnership(tripId, userId)
 
-  let query = { tripId, isDeleted: false }
+  let query = { tripId }
 
-  // Optional category filter
   if (filters.category) {
     query.category = filters.category
   }
 
-  // Optional date range filter
   if (filters.startDate || filters.endDate) {
     query.date = {}
 
@@ -100,10 +92,7 @@ let getExpensesByTrip = async (tripId, userId, filters = {}) => {
  * Get a single expense by ID
  */
 let getExpenseById = async (expenseId, userId) => {
-  let expense = await Expense.findOne({
-    _id: expenseId,
-    isDeleted: false
-  })
+  let expense = await Expense.findById(expenseId)
     .populate('activityId tripId')
     .lean()
 
@@ -122,7 +111,6 @@ let getExpenseById = async (expenseId, userId) => {
  * Update an existing expense
  */
 let updateExpense = async (expenseId, updateData, userId) => {
-  // Ownership check
   await checkExpenseOwnership(expenseId, userId)
 
   return Expense.findByIdAndUpdate(
@@ -133,18 +121,12 @@ let updateExpense = async (expenseId, updateData, userId) => {
 }
 
 /**
- * Soft delete an expense
+ * Delete an expense (hard delete)
  */
 let deleteExpense = async (expenseId, userId) => {
-  let result = await Expense.findOneAndUpdate(
-    { _id: expenseId, isDeleted: false, userId },
-    { isDeleted: true },
-    { new: true }
-  )
+  await checkExpenseOwnership(expenseId, userId)
 
-  if (!result) {
-    throw NotFoundError('Expense not found')
-  }
+  await Expense.deleteOne({ _id: expenseId })
 
   return { message: 'Expense deleted successfully' }
 }
@@ -153,18 +135,12 @@ let deleteExpense = async (expenseId, userId) => {
  * Get summarized expense data for a trip
  */
 let getTripExpenseSummary = async (tripId, userId) => {
-  // Ownership check
   let trip = await checkTripOwnership(tripId, userId)
 
-  let expenses = await Expense.find({
-    tripId,
-    isDeleted: false
-  }).lean()
+  let expenses = await Expense.find({ tripId }).lean()
 
-  // Calculate total amount
   let totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0)
 
-  // Group totals by category
   let byCategory = expenses.reduce((acc, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + exp.amount
     return acc
@@ -178,7 +154,7 @@ let getTripExpenseSummary = async (tripId, userId) => {
     budgetRemaining: trip.budget ? trip.budget - totalAmount : null,
     budgetPercentUsed: trip.budget
       ? ((totalAmount / trip.budget) * 100).toFixed(2)
-      : null,
+      : null
   }
 }
 
@@ -189,12 +165,7 @@ let getExpensesByCategory = async (tripId, userId) => {
   await checkTripOwnership(tripId, userId)
 
   return Expense.aggregate([
-    {
-      $match: {
-        tripId,
-        isDeleted: false
-      }
-    },
+    { $match: { tripId } },
     {
       $group: {
         _id: '$category',
@@ -203,28 +174,10 @@ let getExpensesByCategory = async (tripId, userId) => {
         averageAmount: { $avg: '$amount' }
       }
     },
-    {
-      $sort: { totalAmount: -1 }
-    }
+    { $sort: { totalAmount: -1 } }
   ])
 }
 
-/**
- * Attach receipt URL to an expense
- */
-let attachReceipt = async (expenseId, receiptUrl, userId) => {
-  await checkExpenseOwnership(expenseId, userId)
-
-  return Expense.findByIdAndUpdate(
-    expenseId,
-    { receipt: receiptUrl },
-    { new: true }
-  ).populate('activityId')
-}
-
-/**
- * Export expense service functions
- */
 module.exports = {
   createExpense,
   getExpensesByTrip,
@@ -232,6 +185,5 @@ module.exports = {
   updateExpense,
   deleteExpense,
   getTripExpenseSummary,
-  getExpensesByCategory,
-  attachReceipt,
+  getExpensesByCategory
 }
