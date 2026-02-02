@@ -1,8 +1,5 @@
 let tripCenterState = {
   currentCenter: null,
-  searchResults: [],
-  isSearching: false,
-  selectedLocation: null,
   geoapifyApiKey: null
 }
 
@@ -17,6 +14,7 @@ async function loadGeoapifyApiKey() {
     tripCenterState.geoapifyApiKey = window.CONFIG.GEOAPIFY_API_KEY
     return true
   }
+  
   try {
     const baseURL = window.CONFIG?.API_BASE_URL || apiService?.baseURL || 'http://localhost:5000/api'
     const token = sessionStorage.getItem('accessToken')
@@ -34,11 +32,15 @@ async function loadGeoapifyApiKey() {
         return true
       }
     }
+  } catch (err) {
+    console.error('Failed to load API key:', err)
   }
+  
   if (window.GEOAPIFY_API_KEY) {
     tripCenterState.geoapifyApiKey = window.GEOAPIFY_API_KEY
     return true
   }
+  
   return false
 }
 
@@ -47,7 +49,9 @@ async function geocodeDestination(destination) {
     console.error('Geoapify API key not loaded')
     return null
   }
+  
   const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&apiKey=${tripCenterState.geoapifyApiKey}&limit=1&format=json`
+  
   try {
     const res = await fetch(url)
     const data = await res.json()
@@ -61,11 +65,12 @@ async function geocodeDestination(destination) {
         country: result.country
       }
     }
+  } catch (err) {
+    console.error('Geocoding error:', err)
   }
+  
   return null
 }
-
-// SAVE COORDINATES
 
 async function saveTripCoordinates(tripId, coords) {
   try {
@@ -81,8 +86,6 @@ async function saveTripCoordinates(tripId, coords) {
     console.error('Failed to save coordinates:', err.message)
   }
 }
-
-// CALCULATE CENTER FROM PLACES
 
 async function calculateCenterFromPlaces(tripId) {
   try {
@@ -118,12 +121,13 @@ async function calculateCenterFromPlaces(tripId) {
   }
 }
 
-// CALCULATE TRIP CENTER
 async function calculateTripCenter(tripData) {
   if (!tripData) {
     console.warn('No trip data provided')
     return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
   }
+  
+  // Check if coordinates already saved
   if (tripData.destinationCoords && tripData.destinationCoords.length === 2) {
     return {
       lat: tripData.destinationCoords[1],
@@ -132,26 +136,27 @@ async function calculateTripCenter(tripData) {
     }
   }
 
+  // Try geocoding destination
   if (tripData.destination && tripCenterState.geoapifyApiKey) {
-      const searchQuery = tripData.country 
-        ? `${tripData.destination}, ${tripData.country}`
-        : tripData.destination
-      
-      const geocoded = await geocodeDestination(searchQuery)
-      
-      if (geocoded) {
-        // Save coordinates to trip for future use
-        await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
-        return {
-          lat: geocoded.lat,
-          lon: geocoded.lon,
-          formatted: geocoded.formatted || tripData.destination
-        }
-      } 
+    const searchQuery = tripData.country 
+      ? `${tripData.destination}, ${tripData.country}`
+      : tripData.destination
+    
+    const geocoded = await geocodeDestination(searchQuery)
+    
+    if (geocoded) {
+      await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
+      return {
+        lat: geocoded.lat,
+        lon: geocoded.lon,
+        formatted: geocoded.formatted || tripData.destination
+      }
+    } 
   } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
     console.warn('Skipping geocoding - API key not available')
   }
 
+  // Try calculating from places
   if (tripData._id) {
     try {
       const center = await calculateCenterFromPlaces(tripData._id)
@@ -163,7 +168,7 @@ async function calculateTripCenter(tripData) {
     }
   }
 
-  // Fallback: Default location
+  // Fallback
   console.warn('Using default location - no coordinates available')
   return { 
     lat: 20.5937, 
@@ -216,6 +221,7 @@ function attachTripCenterListeners() {
 function updateTripCenterBanner() {
   const banner = document.querySelector('.trip-center-banner')
   if (!banner) return
+  
   banner.querySelector('.trip-center-name').textContent =
     tripCenterState.currentCenter.formatted
   banner.querySelector('.trip-center-coords').textContent =
@@ -229,18 +235,17 @@ async function initTripCenterSelector(tripData) {
     console.warn('Geoapify API key not available - search will be limited')
   }
   
-  // Calculate center automatically from trip destination
   tripCenterState.currentCenter = await calculateTripCenter(tripData)
-  // Render UI and attach events
   renderTripCenterUI()
   attachTripCenterListeners()
 }
-// MODAL FUNCTIONS
+
 function openTripCenterModal() {
   const canSearch = tripCenterState.geoapifyApiKey !== null
   const modal = document.createElement('div')
   modal.className = 'modal active'
   modal.id = 'tripCenterModal'
+  
   modal.innerHTML = `
     <div class="modal-content modal-large">
       <div class="modal-header">
@@ -293,7 +298,7 @@ function openTripCenterModal() {
             <button onclick="useFirstPlace()">
               <i class="fas fa-map-pin"></i> First Added Place
             </button>
-            <button onclick="usePlacesAverage()">
+            <button onclick="useCurrentLocation()">
               <i class="fas fa-map-marked-alt"></i> Average of Places
             </button>
           </div>
@@ -318,7 +323,9 @@ function openTripCenterModal() {
       </div>
     </div>
   `
+  
   document.body.appendChild(modal)
+  
   if (canSearch) {
     setupSearchHandlers()
   }
@@ -327,16 +334,20 @@ function openTripCenterModal() {
 function closeTripCenterModal() {
   document.getElementById('tripCenterModal')?.remove()
 }
+
 function setupSearchHandlers() {
   const input = document.getElementById('tripCenterSearch')
   const clearBtn = document.getElementById('btnSearchClear')
   const saveBtn = document.getElementById('btnSaveCenter')
+  
   if (!input) return
+  
   let timeout
   input.oninput = e => {
     const query = e.target.value.trim()
     clearBtn.style.display = query ? 'block' : 'none'
     clearTimeout(timeout)
+    
     if (query.length >= 3) {
       timeout = setTimeout(() => searchLocations(query), 500)
     } else {
@@ -349,6 +360,7 @@ function setupSearchHandlers() {
     clearBtn.style.display = 'none'
     document.getElementById('searchResults').innerHTML = ''
   }
+  
   saveBtn.onclick = saveTripCenter
 }
 
@@ -358,6 +370,7 @@ async function searchLocations(query) {
     showToast('Search unavailable - API key not loaded', 'error')
     return
   }
+  
   const resultsContainer = document.getElementById('searchResults')
   resultsContainer.innerHTML = `<div class="search-loading">
     <i class="fas fa-spinner fa-spin"></i> Searching...
@@ -367,32 +380,35 @@ async function searchLocations(query) {
     const destination = recommendationsState.tripData?.destination || ''
     const searchQuery = destination ? `${query}, ${destination}` : query
     const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(searchQuery)}&apiKey=${tripCenterState.geoapifyApiKey}&limit=8`
+    
     const res = await fetch(url)
     const data = await res.json()
+    
     if (!data.features?.length) {
       resultsContainer.innerHTML = `<div class="search-empty">No results found</div>`
       return
     }
 
-    tripCenterState.searchResults = data.features.map(f => ({
+    const searchResults = data.features.map(f => ({
       name: f.properties.name || f.properties.formatted,
       address: f.properties.formatted,
       lat: f.properties.lat,
       lon: f.properties.lon,
       type: f.properties.result_type
     }))
-    displaySearchResults()
+    
+    displaySearchResults(searchResults)
   } catch (err) {
     console.error(err)
     resultsContainer.innerHTML = `<div class="search-error">Search failed</div>`
   }
 }
 
-function displaySearchResults() {
+function displaySearchResults(results) {
   const container = document.getElementById('searchResults')
-  container.innerHTML = tripCenterState.searchResults
+  container.innerHTML = results
     .map((r, i) => `
-      <div class="search-result-item" onclick="selectLocation(${i})">
+      <div class="search-result-item" onclick="selectLocation(${i}, ${escapeHtml(JSON.stringify(r))})">
         <i class="fas fa-map-marker-alt"></i>
         <div>
           <div>${escapeHtml(r.name)}</div>
@@ -402,9 +418,9 @@ function displaySearchResults() {
     `).join('')
 }
 
-function selectLocation(index) {
-  const loc = tripCenterState.searchResults[index]
-  tripCenterState.selectedLocation = loc
+function selectLocation(index, locationData) {
+  const loc = typeof locationData === 'string' ? JSON.parse(locationData) : locationData
+  
   document.getElementById('previewContent').innerHTML = `
     <strong>${escapeHtml(loc.name)}</strong><br>
     ${escapeHtml(loc.address)}<br>
@@ -412,6 +428,9 @@ function selectLocation(index) {
   `
   document.getElementById('selectedLocationPreview').style.display = 'block'
   document.getElementById('btnSaveCenter').disabled = false
+  
+  // Store in button's data attribute for later use
+  document.getElementById('btnSaveCenter').dataset.selectedLocation = JSON.stringify(loc)
 }
 
 async function useDestinationCenter() {
@@ -425,20 +444,25 @@ async function useDestinationCenter() {
     showToast('Geocoding unavailable - API key not configured', 'error')
     return
   }
+  
   const previewEl = document.getElementById('selectedLocationPreview')
   const previewContent = document.getElementById('previewContent')
   const saveBtn = document.getElementById('btnSaveCenter')
+  
   if (previewEl && previewContent) {
     previewEl.style.display = 'block'
     previewContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Geocoding destination...'
     saveBtn.disabled = true
   }
+  
   const searchQuery = tripData.country 
     ? `${tripData.destination}, ${tripData.country}`
     : tripData.destination
+    
   const geocoded = await geocodeDestination(searchQuery)
+  
   if (geocoded) {
-    tripCenterState.selectedLocation = {
+    const selectedLocation = {
       name: tripData.destination,
       address: geocoded.formatted,
       lat: geocoded.lat,
@@ -454,6 +478,7 @@ async function useDestinationCenter() {
     }
     if (saveBtn) {
       saveBtn.disabled = false
+      saveBtn.dataset.selectedLocation = JSON.stringify(selectedLocation)
     }
     showToast('Destination center found!', 'success')
   } else {
@@ -468,6 +493,7 @@ async function useFirstPlace() {
   try {
     const res = await apiService.places.getByTrip(recommendationsState.currentTripId)
     const places = res.data || []
+    
     if (places.length === 0) {
       showToast('No places added yet', 'warning')
       return
@@ -475,7 +501,7 @@ async function useFirstPlace() {
 
     const first = places[0]
     if (first.location?.coordinates) {
-      tripCenterState.selectedLocation = {
+      const selectedLocation = {
         name: first.name,
         address: first.address || '',
         lon: first.location.coordinates[0],
@@ -488,75 +514,78 @@ async function useFirstPlace() {
         ${first.location.coordinates[1].toFixed(4)}, ${first.location.coordinates[0].toFixed(4)}
       `
       document.getElementById('selectedLocationPreview').style.display = 'block'
-      document.getElementById('btnSaveCenter').disabled = false
+      const saveBtn = document.getElementById('btnSaveCenter')
+      saveBtn.disabled = false
+      saveBtn.dataset.selectedLocation = JSON.stringify(selectedLocation)
     }
   } catch (err) {
     showToast('Failed to load places', 'error')
   }
 }
 
-async function usePlacesAverage() {
-  try {
-    const res = await apiService.places.getByTrip(recommendationsState.currentTripId)
-    const places = res.data || []
-    if (places.length === 0) {
-      showToast('No places added yet', 'warning')
-      return
-    }
-
-    let totalLat = 0, totalLon = 0, count = 0
-    places.forEach(p => {
-      if (p.location?.coordinates?.length === 2) {
-        totalLon += p.location.coordinates[0]
-        totalLat += p.location.coordinates[1]
-        count++
-      }
-    })
-
-    if (count === 0) {
-      showToast('No valid coordinates found', 'warning')
-      return
-    }
-
-    tripCenterState.selectedLocation = {
-      name: 'Average of All Places',
-      address: `Calculated from ${count} places`,
-      lon: totalLon / count,
-      lat: totalLat / count
-    }
-
-    document.getElementById('previewContent').innerHTML = `
-      <strong>Average of All Places</strong><br>
-      Calculated from ${count} places<br>
-      ${(totalLat / count).toFixed(4)}, ${(totalLon / count).toFixed(4)}
-    `
-    document.getElementById('selectedLocationPreview').style.display = 'block'
-    document.getElementById('btnSaveCenter').disabled = false
-  } catch (err) {
-    showToast('Failed to calculate average', 'error')
+async function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    showToast('Geolocation not supported by browser', 'error')
+    return
   }
+  
+  const previewEl = document.getElementById('selectedLocationPreview')
+  const previewContent = document.getElementById('previewContent')
+  const saveBtn = document.getElementById('btnSaveCenter')
+  
+  previewEl.style.display = 'block'
+  previewContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting your location...'
+  saveBtn.disabled = true
+  
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords
+      
+      const selectedLocation = {
+        name: 'My Current Location',
+        address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        lat: latitude,
+        lon: longitude
+      }
+      
+      previewContent.innerHTML = `
+        <strong>My Current Location</strong><br>
+        ${latitude.toFixed(4)}, ${longitude.toFixed(4)}
+      `
+      saveBtn.disabled = false
+      saveBtn.dataset.selectedLocation = JSON.stringify(selectedLocation)
+      showToast('Current location found!', 'success')
+    },
+    (error) => {
+      previewContent.innerHTML = '<span style="color: red;">Failed to get location</span>'
+      showToast('Please enable location access', 'error')
+      console.error('Geolocation error:', error)
+    }
+  )
 }
 
 function clearSelection() {
-  tripCenterState.selectedLocation = null
   document.getElementById('selectedLocationPreview').style.display = 'none'
-  document.getElementById('btnSaveCenter').disabled = true
+  const saveBtn = document.getElementById('btnSaveCenter')
+  saveBtn.disabled = true
+  delete saveBtn.dataset.selectedLocation
 }
 
 async function saveTripCenter() {
-  if (!tripCenterState.selectedLocation) return
-
-  const loc = tripCenterState.selectedLocation
+  const saveBtn = document.getElementById('btnSaveCenter')
+  const selectedLocation = JSON.parse(saveBtn.dataset.selectedLocation || '{}')
+  
+  if (!selectedLocation.lat || !selectedLocation.lon) return
 
   try {
     await apiService.trips.update(recommendationsState.currentTripId, {
-      destinationCoords: [loc.lon, loc.lat]
+      destinationCoords: [selectedLocation.lon, selectedLocation.lat]
     })
 
     tripCenterState.currentCenter = {
-      lat: loc.lat,
-      lon: loc.lon,
-      formatted: loc.name
+      lat: selectedLocation.lat,
+      lon: selectedLocation.lon,
+      formatted: selectedLocation.name
     }
 
     updateTripCenterBanner()
@@ -576,7 +605,6 @@ window.initTripCenterSelector = initTripCenterSelector
 window.tripCenterState = tripCenterState
 window.useDestinationCenter = useDestinationCenter
 window.useFirstPlace = useFirstPlace
-window.usePlacesAverage = usePlacesAverage
+window.useCurrentLocation = useCurrentLocation
 window.clearSelection = clearSelection
 window.closeTripCenterModal = closeTripCenterModal
-
