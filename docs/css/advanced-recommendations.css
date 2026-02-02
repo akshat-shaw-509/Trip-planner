@@ -1,6 +1,5 @@
 /* =====================================================================
    ADVANCED RECOMMENDATIONS - FINAL VERSION
-   - Bulk actions bar with 3 buttons: Add All, Compare, Clear
    ===================================================================== */
 
 /* ===================== RECOMMENDATIONS SECTION ===================== */
@@ -780,4 +779,220 @@
         width: 100%;
         justify-content: center;
     }
+}
+/* ===== Visit Status Dropdown ===== */
+.place-visit-status {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.place-visit-status label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+}
+
+.visit-status-select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.visit-status-select:hover {
+  border-color: #0066cc;
+}
+
+.visit-status-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+/* ===== Nearby Search Button ===== */
+.btn-search-nearby {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.btn-search-nearby:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== Nearby Results Grid ===== */
+.nearby-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.nearby-place-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s;
+}
+
+.nearby-place-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.nearby-place-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.nearby-place-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #212529;
+}
+
+.nearby-place-header .rating {
+  background: #ffc107;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nearby-place-info {
+  margin: 12px 0;
+}
+
+.nearby-place-info p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nearby-place-info i {
+  color: #0066cc;
+}
+
+/* ===== Preference Banner ===== */
+.preference-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.preference-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preference-info i {
+  font-size: 24px;
+}
+
+.preference-info strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.btn-manage-preferences {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-manage-preferences:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== Preference Stats ===== */
+.preference-stats {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.preference-stats h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-tag {
+  background: #0066cc;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-history li {
+  padding: 8px;
+  background: white;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #495057;
+}
+
+.preference-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.preference-actions button {
+  flex: 1;
 }
