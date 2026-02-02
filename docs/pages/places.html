@@ -4,16 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Places to Visit - Planora</title>
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    
-    <!-- ✅ CSS Files in correct order -->
     <link rel="stylesheet" href="../css/nav.css">
     <link rel="stylesheet" href="../css/places.css">
     <link rel="stylesheet" href="../css/recommendations.css">
@@ -115,6 +109,67 @@
         </div>
     </div>
 
+     <div class="my-places-section">
+  <div class="section-header">
+    <h2><i class="fas fa-bookmark"></i> My Added Places</h2>
+    <div class="header-actions">
+      <!-- ✅ NEW: Nearby Search Button -->
+      <button class="btn-search-nearby" onclick="openNearbySearchModal()">
+        <i class="fas fa-search-location"></i> Search Nearby
+      </button>
+      
+      <button class="btn-add-place" id="addPlaceBtn">
+        <i class="fas fa-plus"></i> Add Place
+      </button>
+    </div>
+  </div>
+  
+  <!-- Rest of existing code... -->
+</div>
+
+<!-- ✅ NEW: Nearby Search Modal -->
+<div class="modal" id="nearbySearchModal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-search-location"></i> Search Nearby Places</h3>
+      <button class="modal-close" onclick="closeNearbySearchModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="nearbyRadius">
+          <i class="fas fa-arrows-alt"></i>
+          Search Radius
+        </label>
+        <select id="nearbyRadius" class="form-control">
+          <option value="1000">1 km</option>
+          <option value="2000">2 km</option>
+          <option value="5000" selected>5 km</option>
+          <option value="10000">10 km</option>
+          <option value="20000">20 km</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="nearbyCategory">
+          <i class="fas fa-filter"></i>
+          Category Filter
+        </label>
+        <select id="nearbyCategory" class="form-control">
+          <option value="all">All Categories</option>
+          <option value="restaurant">🍴 Restaurants</option>
+          <option value="attraction">🛕 Attractions</option>
+          <option value="accommodation">🏨 Hotels</option>
+        </select>
+      </div>
+      
+      <button class="btn-primary btn-block" onclick="searchNearbyPlaces()">
+        <i class="fas fa-search"></i> Search Now
+      </button>
+    </div>
+  </div>
+</div>
+    
     <!-- Add Place Modal -->
     <div class="modal" id="placeModal" style="display: none;">
         <div class="modal-content">
@@ -171,21 +226,13 @@
             </div>
         </div>
     </div>
-
-    <!-- ✅ Scripts in correct order -->
-    
-    <!-- External Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-    <!-- Core Utilities (FIRST) -->
     <script src="../js/config.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/toast.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/nav.js"></script>
-
-    <!-- Feature Modules (ORDER MATTERS!) -->
     <script src="../js/trip-center-selector.js"></script>
     <script src="../js/comparison.js"></script>
     <script src="../js/advanced-recommendations.js"></script>
@@ -214,6 +261,12 @@
                 }
             }
         };
+        function openNearbySearchModal() {
+  document.getElementById('nearbySearchModal').style.display = 'block'
+}
+function closeNearbySearchModal() {
+  document.getElementById('nearbySearchModal').style.display = 'none'
+}
     </script>
 </body>
 </html>
