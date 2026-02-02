@@ -1,136 +1,139 @@
 const mongoose = require('mongoose')
+const EXPENSE_CATEGORIES = [
+  'accommodation',
+  'food',
+  'transport',
+  'activities',
+  'shopping',
+  'entertainment',
+  'miscellaneous',
+]
+const PAYMENT_METHODS = [
+  'cash',
+  'credit_card',
+  'debit_card',
+  'upi',
+  'wallet',
+  'net_banking',
+  'other',
+]
 
-//Expense Schema 
-let expenseSchema = new mongoose.Schema(
+/**
+ * Expense Schema
+ * Tracks spending during a trip
+ */
+const expenseSchema = new mongoose.Schema(
   {
+    // Reference to parent trip
     tripId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Trip',
-      required: true,
+      required: [true, 'Trip ID is required'],
       index: true,
-    },
-    //User who created / owns the expense
+    },   
+    // User who created the expense
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required'],
+      index: true,
     },
+    // Optional link to an activity
     activityId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Activity',
     },
-
-    //Description of the expense
+    // Expense description
     description: {
       type: String,
-      required: [true, 'Expense description is required'],
+      required: [true, 'Description is required'],
       trim: true,
       minlength: [3, 'Description must be at least 3 characters'],
-      maxlength: [500, 'Description must not exceed 500 characters'],
+      maxlength: [500, 'Description cannot exceed 500 characters'],
     },
-
-    //Expense amount
+    // Expense amount
     amount: {
       type: Number,
       required: [true, 'Amount is required'],
       min: [0.01, 'Amount must be greater than 0'],
     },
-
-    //Expense category
+    // Currency code
+    currency: {
+      type: String,
+      default: 'INR',
+      trim: true,
+      uppercase: true,
+      maxlength: 3,
+    },
+    // Expense category
     category: {
       type: String,
       required: [true, 'Category is required'],
-      enum: [
-        'accommodation',
-        'food',
-        'transport',
-        'activities',
-        'shopping',
-        'entertainment',
-        'miscellaneous',
-      ],
+      enum: {
+        values: EXPENSE_CATEGORIES,
+        message: '{VALUE} is not a valid category'
+      },
+      lowercase: true,
     },
-
-    //Payment method used
+    // Payment method used
     paymentMethod: {
       type: String,
       required: [true, 'Payment method is required'],
-      enum: [
-        'cash',
-        'credit_card',
-        'debit_card',
-        'digital_wallet',
-        'bank_transfer',
-        'other',
-      ],
+      enum: {
+        values: PAYMENT_METHODS,
+        message: '{VALUE} is not a valid payment method'
+      },
+      lowercase: true,
     },
-
-    //Date when the expense occurred
+    // Date of expense
     date: {
       type: Date,
       required: [true, 'Date is required'],
       default: Date.now,
     },
-    location: {
+    // Person who paid
+    paidBy: {
       type: String,
       trim: true,
+      maxlength: [200, 'Paid by cannot exceed 200 characters'],
     },
-    vendor: {
-      type: String,
-      trim: true,
-    },
-
-    // Optional notes about the expense
+    // Additional notes
     notes: {
       type: String,
-      maxlength: [1000, 'Notes must not exceed 1000 characters'],
-    },
-
-    //Optional tags for filtering and grouping
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-
-    // Expense split details
-     // Used when an expense is shared among multiple users
-    splitWith: [
-      {
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-        },
-        amount: Number,
-      },
-    ],
-
-    isReimbursable: {
-      type: Boolean,
-      default: false,
-    },
-    isReimbursed: {
-      type: Boolean,
-      default: false,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
+      trim: true,
+      maxlength: [1000, 'Notes cannot exceed 1000 characters'],
     },
   },
   {
     timestamps: true,
   }
 )
-
+// Indexes for performance
 expenseSchema.index({ tripId: 1, date: -1 })
-
 expenseSchema.index({ userId: 1, category: 1 })
-
 expenseSchema.index({ tripId: 1, category: 1 })
+// Static method: Get total expenses for a trip
+expenseSchema.statics.getTotalByTrip = async function(tripId) {
+  const result = await this.aggregate([
+    { $match: { tripId: mongoose.Types.ObjectId(tripId) } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ])
+  return result.length > 0 ? result[0].total : 0
+}
 
-const Expense = mongoose.model('Expense', expenseSchema)
+// Static method: Get expenses grouped by category
+expenseSchema.statics.getByCategory = async function(tripId) {
+  return this.aggregate([
+    { $match: { tripId: mongoose.Types.ObjectId(tripId) } },
+    {
+      $group: {
+        _id: '$category',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { total: -1 } }
+  ])
+}
 
-module.exports = Expense
-
+module.exports = mongoose.model('Expense', expenseSchema)
