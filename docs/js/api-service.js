@@ -1,19 +1,6 @@
 const apiService = {
   baseURL: window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api',
-  isRefreshing: false,
-  refreshSubscribers: [],
 
-  // Queue requests while token is being refreshed
-  subscribeTokenRefresh(callback) {
-    this.refreshSubscribers.push(callback);
-  },
-
-  onRefreshed(token) {
-    this.refreshSubscribers.forEach(callback => callback(token));
-    this.refreshSubscribers = [];
-  },
-
-  // Refresh the access token using refresh token
   async refreshToken() {
     try {
       const refreshToken = sessionStorage.getItem('refreshToken');
@@ -60,21 +47,23 @@ const apiService = {
   },
 
   async request(endpoint, options = {}) {
-    try{
-    const token = sessionStorage.getItem('accessToken');
-    
-    const config = {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
-    };
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      
+      const config = {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      };
 
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
+      
       if (!response.ok) {
         let errorData;
         const contentType = response.headers.get('content-type');
@@ -93,59 +82,33 @@ const apiService = {
         // Handle 401 Unauthorized - Token expired
         if (response.status === 401) {
           if (errorData.message?.includes('expired') || errorData.message?.includes('Token expired')) {
-            if (!this.isRefreshing) {
-              this.isRefreshing = true;
-              const newToken = await this.refreshToken();
-              this.isRefreshing = false;
-
-              if (newToken) {
-                this.onRefreshed(newToken);
-                config.headers['Authorization'] = `Bearer ${newToken}`;
-                const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
-                
-                if (!retryResponse.ok) {
-                  const retryError = await retryResponse.json().catch(() => ({}));
-                  throw new Error(retryError.message || `HTTP ${retryResponse.status}`);
-                }
-                
-                return await retryResponse.json();
+            // Try to refresh token once
+            const newToken = await this.refreshToken();
+            
+            if (newToken) {
+              // Retry request with new token
+              config.headers['Authorization'] = `Bearer ${newToken}`;
+              const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
+              
+              if (!retryResponse.ok) {
+                const retryError = await retryResponse.json().catch(() => ({}));
+                throw new Error(retryError.message || `HTTP ${retryResponse.status}`);
               }
-            } else {
-              return new Promise((resolve, reject) => {
-                this.subscribeTokenRefresh(async (newToken) => {
-                  try {
-                    config.headers['Authorization'] = `Bearer ${newToken}`;
-                    const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
-                    
-                    if (!retryResponse.ok) {
-                      const retryError = await retryResponse.json().catch(() => ({}));
-                      throw new Error(retryError.message || `HTTP ${retryResponse.status}`);
-                    }
-                    
-                    resolve(await retryResponse.json());
-                  } catch (error) {
-                    reject(error);
-                  }
-                });
-              });
+              
+              return await retryResponse.json();
             }
           } else {
             throw new Error('Unauthorized');
           }
         }
 
-        // IMPROVED 400 BAD REQUEST HANDLING
+        // Handle 400 Bad Request with detailed validation errors
         if (response.status === 400) {
           let errorMessage = 'Validation Error';
           let backendErrors = null;
           
           // Check for errors array (express-validator format)
           if (errorData.errors && Array.isArray(errorData.errors)) {
-            errorData.errors.forEach(err => {
-              const field = err.field || err.path || err.param || 'Unknown field';
-              const message = err.message || err.msg || 'Invalid value';
-            });
-            
             backendErrors = errorData.errors;
             errorMessage = errorData.errors.map(err => {
               const field = err.field || err.path || err.param || 'Field';
@@ -155,16 +118,11 @@ const apiService = {
           } 
           // Check for error object (alternative format)
           else if (errorData.error && typeof errorData.error === 'object') {
-            console.error('VALIDATION ERRORS (Object Format):');
             const errorObj = errorData.error;
             backendErrors = Object.keys(errorObj).map(key => ({
               field: key,
               message: errorObj[key]
             }));
-            
-            backendErrors.forEach(err => {
-              console.error(`${err.field}: ${err.message}`);
-            });
             
             errorMessage = backendErrors.map(err => 
               `${err.field}: ${err.message}`
@@ -172,7 +130,6 @@ const apiService = {
           }
           // Simple error message
           else if (errorData.message) {
-            console.error('ERROR MESSAGE:', errorData.message);
             errorMessage = errorData.message;
           }
           
@@ -186,7 +143,7 @@ const apiService = {
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
-      // Success - log and return
+      // Success
       const data = await response.json();
       return data;
 
@@ -230,21 +187,6 @@ const apiService = {
         sessionStorage.clear();
       }
     },
-
-    async forgotPassword(email) {
-      return await apiService.request('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-    },
-
-    async resetPassword(token, password) {
-      return await apiService.request(`/auth/reset-password/${token}`, {
-        method: 'POST',
-        body: JSON.stringify({ password })
-      });
-    }
-  },
 
   // Trip endpoints
   trips: {
@@ -441,4 +383,5 @@ const apiService = {
     }
   }
 };
+
 window.apiService = apiService;
