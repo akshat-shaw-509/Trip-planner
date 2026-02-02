@@ -1,24 +1,25 @@
-let Trip = require('../models/Trip.model')
+const Trip = require('../models/Trip.model')
 
-let {
+const {
   NotFoundError,
   ValidationError,
-  ForbiddenError,
-  BadRequestError
+  ForbiddenError
 } = require('../utils/errors')
 
-// -------------------- Node Utils --------------------
-let fs = require('fs').promises
-let path = require('path')
+// -------------------- Constants --------------------
+const TRIP_STATUSES = [
+  'planning',
+  'booked',
+  'ongoing',
+  'completed',
+  'cancelled'
+]
 
 /**
  * -------------------- Create Trip --------------------
- * Creates a new trip for a user with basic validation
  */
-let createTrip = async (tripData, userId) => {
-  console.log('Creating trip with data:', JSON.stringify(tripData, null, 2));
-  
-  let {
+const createTrip = async (tripData, userId) => {
+  const {
     title,
     destination,
     description,
@@ -30,17 +31,15 @@ let createTrip = async (tripData, userId) => {
     coverImage
   } = tripData
 
-  // Required fields validation
   if (!title || !destination || !startDate || !endDate) {
     throw ValidationError(
       'Title, destination, start date and end date are required'
     )
   }
 
-  let start = new Date(startDate)
-  let end = new Date(endDate)
+  const start = new Date(startDate)
+  const end = new Date(endDate)
 
-  // Date validity check
   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
     throw ValidationError('Invalid date format')
   }
@@ -49,39 +48,27 @@ let createTrip = async (tripData, userId) => {
     throw ValidationError('End date must be after or equal to start date')
   }
 
-  try {
-    const trip = await Trip.create({
-      title,
-      destination,
-      description: description || '',
-      startDate: start,
-      endDate: end,
-      budget: budget || 0,
-      travelers: travelers || 1,
-      tags: tags || [],
-      coverImage,
-      userId: userId.toString() // ✅ Convert to string for consistency
-    })
-    return trip
-  } catch (error) {
-    console.error('Trip creation error:', error.name, error.message);
-    if (error.errors) {
-      console.error('Validation errors:', error.errors);
-    }
-    throw error
-  }
+  return Trip.create({
+    title,
+    destination,
+    description: description || '',
+    startDate: start,
+    endDate: end,
+    budget: budget || 0,
+    travelers: travelers || 1,
+    tags: tags || [],
+    coverImage,
+    userId: userId.toString()
+  })
 }
 
 /**
- * -------------------- Get Trips By User --------------------
- * Supports:
- * - filtering by status
- * - search by title or destination
- * - pagination
- * - sorting
+ * -------------------- Get Trips By User
+ * Pagination + Sorting + Search (kept)
+ * --------------------
  */
-let getTripsByUser = async (userId, filters = {}) => {
-  let {
+const getTripsByUser = async (userId, filters = {}) => {
+  const {
     status,
     search,
     sortBy = '-createdAt',
@@ -89,23 +76,19 @@ let getTripsByUser = async (userId, filters = {}) => {
     page = 1
   } = filters
 
-  let skip = (page - 1) * limit
-  // ✅ Convert userId to string for consistent comparison
-  let query = { userId: userId.toString() }
+  const skip = (page - 1) * limit
+  const query = { userId: userId.toString() }
 
   if (status) {
     query.status = status
   }
 
   if (search) {
-    let searchRegex = new RegExp(search, 'i')
-    query.$or = [
-      { title: searchRegex },
-      { destination: searchRegex }
-    ]
+    const regex = new RegExp(search, 'i')
+    query.$or = [{ title: regex }, { destination: regex }]
   }
 
-  let [trips, total] = await Promise.all([
+  const [trips, total] = await Promise.all([
     Trip.find(query)
       .sort(sortBy)
       .skip(skip)
@@ -125,34 +108,18 @@ let getTripsByUser = async (userId, filters = {}) => {
 }
 
 /**
- * -------------------- Get Trip By ID --------------------
- * Allows access if:
- * - user is owner OR
- * - trip is public
+ * -------------------- Get Trip By ID (OWNER ONLY)
+ * --------------------
  */
-let getTripById = async (tripId, userId) => {
+const getTripById = async (tripId, userId) => {
   if (!tripId) {
     throw ValidationError('Trip ID is required')
   }
 
-  let trip = await Trip.findById(tripId)
+  const trip = await Trip.findById(tripId)
+  if (!trip) throw NotFoundError('Trip not found')
 
-  if (!trip) {
-    throw NotFoundError('Trip not found')
-  }
-
-  // ✅ FIX: Convert both to strings for comparison
-  const tripUserId = trip.userId.toString()
-  const requestUserId = userId.toString()
-  
-  console.log('🔍 Debug getTripById:')
-  console.log('  - Trip ID:', tripId)
-  console.log('  - Trip userId:', tripUserId)
-  console.log('  - Request userId:', requestUserId)
-  console.log('  - Match?:', tripUserId === requestUserId)
-  console.log('  - Is Public?:', trip.isPublic)
-
-  if (tripUserId !== requestUserId && !trip.isPublic) {
+  if (trip.userId.toString() !== userId.toString()) {
     throw ForbiddenError('You do not have access to this trip')
   }
 
@@ -160,240 +127,89 @@ let getTripById = async (tripId, userId) => {
 }
 
 /**
- * -------------------- Update Trip --------------------
- * Prevents updates to system fields
- * Validates date changes safely
+ * -------------------- Update Trip
+ * --------------------
  */
-let updateTrip = async (tripId, updateData, userId) => {
+const updateTrip = async (tripId, updateData, userId) => {
   if (!tripId) {
     throw ValidationError('Trip ID is required')
   }
 
-  // Block system fields from updates
-  let prohibitedFields = ['userId', '_id', 'createdAt', 'updatedAt']
-  if (prohibitedFields.some(field => field in updateData)) {
+  const blockedFields = ['_id', 'userId', 'createdAt', 'updatedAt']
+  if (blockedFields.some(f => f in updateData)) {
     throw ValidationError('Cannot update system fields')
   }
 
-  // Date validation (partial updates supported)
   if (updateData.startDate || updateData.endDate) {
-    let trip = await Trip.findById(tripId)
-    if (!trip) throw NotFoundError('Trip not found')
+    const existingTrip = await Trip.findById(tripId)
+    if (!existingTrip) throw NotFoundError('Trip not found')
 
-    let startDate = updateData.startDate
+    const start = updateData.startDate
       ? new Date(updateData.startDate)
-      : trip.startDate
+      : existingTrip.startDate
 
-    let endDate = updateData.endDate
+    const end = updateData.endDate
       ? new Date(updateData.endDate)
-      : trip.endDate
+      : existingTrip.endDate
 
-    if (endDate < startDate) {
+    if (end < start) {
       throw ValidationError('End date must be after or equal to start date')
     }
 
-    updateData.startDate = startDate
-    updateData.endDate = endDate
+    updateData.startDate = start
+    updateData.endDate = end
   }
 
-  // ✅ Convert userId to string for query
-  let trip = await Trip.findOneAndUpdate(
+  const trip = await Trip.findOneAndUpdate(
     { _id: tripId, userId: userId.toString() },
     updateData,
     { new: true, runValidators: true }
   )
 
   if (!trip) {
-    throw NotFoundError(
-      'Trip not found or you do not have permission to update it'
-    )
+    throw NotFoundError('Trip not found or access denied')
   }
 
   return trip
 }
 
 /**
- * -------------------- Delete Trip --------------------
- * Hard delete (owner only)
+ * -------------------- Delete Trip
+ * --------------------
  */
-let deleteTrip = async (tripId, userId) => {
-  if (!tripId) {
-    throw ValidationError('Trip ID is required')
-  }
-
-  // ✅ Convert userId to string for query
-  let trip = await Trip.findOneAndDelete({ 
-    _id: tripId, 
-    userId: userId.toString() 
+const deleteTrip = async (tripId, userId) => {
+  const trip = await Trip.findOneAndDelete({
+    _id: tripId,
+    userId: userId.toString()
   })
 
   if (!trip) {
-    throw NotFoundError(
-      'Trip not found or you do not have permission to delete it'
-    )
+    throw NotFoundError('Trip not found or access denied')
   }
 
   return { message: 'Trip deleted successfully' }
 }
 
 /**
- * -------------------- Trip Filters --------------------
+ * -------------------- Update Trip Status
+ * --------------------
  */
-let getUpcomingTrips = async (userId) => {
-  let now = new Date()
-  // ✅ Convert userId to string for query
-  return Trip.find({
-    userId: userId.toString(),
-    startDate: { $gt: now },
-    status: { $ne: 'cancelled' }
-  }).sort('startDate')
-}
-
-let getOngoingTrips = async (userId) => {
-  let now = new Date()
-  // ✅ Convert userId to string for query
-  return Trip.find({
-    userId: userId.toString(),
-    startDate: { $lte: now },
-    endDate: { $gte: now },
-    status: { $nin: ['cancelled', 'completed'] }
-  }).sort('-startDate')
-}
-
-let getPastTrips = async (userId, limit = 10) => {
-  let now = new Date()
-  // ✅ Convert userId to string for query
-  return Trip.find({
-    userId: userId.toString(),
-    $or: [
-      { endDate: { $lt: now } },
-      { status: 'completed' }
-    ]
-  })
-    .sort('-endDate')
-    .limit(limit)
-}
-
-/**
- * -------------------- Update Trip Status --------------------
- */
-let updateTripStatus = async (tripId, status, userId) => {
-  let validStatuses = [
-    'planning',
-    'booked',
-    'ongoing',
-    'completed',
-    'cancelled'
-  ]
-
-  if (!validStatuses.includes(status)) {
+const updateTripStatus = async (tripId, status, userId) => {
+  if (!TRIP_STATUSES.includes(status)) {
     throw ValidationError(
-      `Status must be one of: ${validStatuses.join(', ')}`
+      `Status must be one of: ${TRIP_STATUSES.join(', ')}`
     )
   }
 
-  // ✅ Convert userId to string for query
-  let trip = await Trip.findOneAndUpdate(
+  const trip = await Trip.findOneAndUpdate(
     { _id: tripId, userId: userId.toString() },
     { status },
-    { new: true, runValidators: true }
+    { new: true }
   )
 
   if (!trip) {
-    throw NotFoundError(
-      'Trip not found or you do not have permission to update it'
-    )
+    throw NotFoundError('Trip not found or access denied')
   }
-
-  return trip
-}
-
-/**
- * -------------------- Collaborators (Placeholder) --------------------
- */
-let addCollaborator = async (tripId, collaboratorData, userId) => {
-  let trip = await Trip.findById(tripId)
-  if (!trip) throw NotFoundError('Trip not found')
-
-  // ✅ Convert both to strings for comparison
-  if (trip.userId.toString() !== userId.toString()) {
-    throw ForbiddenError('Only trip owner can add collaborators')
-  }
-
-  return {
-    message: 'Collaborator functionality requires Trip model update'
-  }
-}
-
-let removeCollaborator = async (tripId, collaboratorId, userId) => {
-  let trip = await Trip.findById(tripId)
-  if (!trip) throw NotFoundError('Trip not found')
-
-  // ✅ Convert both to strings for comparison
-  if (trip.userId.toString() !== userId.toString()) {
-    throw ForbiddenError('Only trip owner can remove collaborators')
-  }
-
-  return {
-    message: 'Collaborator functionality requires Trip model update'
-  }
-}
-
-/**
- * -------------------- Banner Upload --------------------
- */
-let uploadBanner = async (tripId, userId, file) => {
-  try {
-    let trip = await Trip.findById(tripId)
-
-    if (!trip) {
-      await fs.unlink(file.path).catch(() => {})
-      throw NotFoundError('Trip not found')
-    }
-
-    // ✅ Convert both to strings for comparison
-    if (trip.userId.toString() !== userId.toString()) {
-      await fs.unlink(file.path).catch(() => {})
-      throw ForbiddenError('Not authorized to update this trip')
-    }
-
-    // Remove old banner if exists
-    if (trip.coverImage?.startsWith('/uploads/')) {
-      let oldPath = path.join(__dirname, '..', trip.coverImage)
-      await fs.unlink(oldPath).catch(() => {})
-    }
-
-    trip.coverImage = `/uploads/banners/${file.filename}`
-    await trip.save()
-
-    return trip
-  } catch (error) {
-    if (file?.path) {
-      await fs.unlink(file.path).catch(() => {})
-    }
-    throw error
-  }
-}
-
-/**
- * -------------------- Remove Banner --------------------
- */
-let removeBanner = async (tripId, userId) => {
-  let trip = await Trip.findById(tripId)
-  if (!trip) throw NotFoundError('Trip not found')
-
-  // ✅ Convert both to strings for comparison
-  if (trip.userId.toString() !== userId.toString()) {
-    throw ForbiddenError('Not authorized to update this trip')
-  }
-
-  if (trip.coverImage?.startsWith('/uploads/')) {
-    let oldPath = path.join(__dirname, '..', trip.coverImage)
-    await fs.unlink(oldPath).catch(() => {})
-  }
-
-  trip.coverImage = null
-  await trip.save()
 
   return trip
 }
@@ -404,12 +220,5 @@ module.exports = {
   getTripById,
   updateTrip,
   deleteTrip,
-  getUpcomingTrips,
-  getOngoingTrips,
-  getPastTrips,
-  updateTripStatus,
-  addCollaborator,
-  removeCollaborator,
-  uploadBanner,
-  removeBanner
+  updateTripStatus
 }
