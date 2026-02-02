@@ -1,21 +1,20 @@
 const mongoose = require('mongoose')
-//User Preference Schema
- //Stores personalized preferences and interaction statistics for a us
-let userPreferenceSchema = new mongoose.Schema(
+/**
+ * UserPreference Schema
+ * Stores user's personalized preferences for recommendations
+ */
+const userPreferenceSchema = new mongoose.Schema(
   {
-    //Reference to the user
-    //One-to-one relationship
+    // Reference to user (one-to-one relationship)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required'],
       unique: true,
-      index: true
+      index: true,
     },
-
-    //Category-based preference weights
-     //Higher number = stronger preference
-
+    // Category preference weights
+    // Higher number = stronger preference
     categoryPreferences: {
       type: Map,
       of: Number,
@@ -24,119 +23,138 @@ let userPreferenceSchema = new mongoose.Schema(
         ['attraction', 0],
         ['accommodation', 0],
         ['transport', 0],
-        ['other', 0]
-      ])
+        ['shopping', 0],
+        ['entertainment', 0],
+        ['other', 0],
+      ]),
     },
-
-    //List of user’s favorite places
-    favoritePlaceIds: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Place'
-      }
-    ],
-    //Recently searched queries
-    //Used for recommendations and personalization
-    recentSearches: [
-      {
-        query: String,
-        category: String,
-        location: {
-          type: { type: String, enum: ['Point'], default: 'Point' },
-          coordinates: [Number]
-        },
-        timestamp: { type: Date, default: Date.now }
-      }
-    ],
-
-    //User price preference profile
-    pricePreference: {
-      min: { type: Number, default: 0 },
-      max: { type: Number, default: 5 },
-      avg: { type: Number, default: 2.5 }
+    // Top 3 preferred categories (pre-computed)
+    topCategories: {
+      type: [String],
+      default: [],
     },
-
-    //Minimum acceptable rating for recommendations
+    // Minimum acceptable rating for recommendations
     ratingThreshold: {
       type: Number,
       default: 3.0,
-      min: 0,
-      max: 5
+      min: [0, 'Rating threshold cannot be less than 0'],
+      max: [5, 'Rating threshold cannot exceed 5'],
     },
-
-    //Usage statistics
-    stats: {
-      totalPlacesAdded: { type: Number, default: 0 },
-      totalFavorites: { type: Number, default: 0 },
-      totalTrips: { type: Number, default: 0 }
-    }
+    // Recent search history (last 10 searches)
+    searchHistory: [
+      {
+        query: {
+          type: String,
+          trim: true,
+        },
+        category: {
+          type: String,
+          trim: true,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true }
+    toJSON: { virtuals: true },
   }
 )
 
-//Update category preference weight
-//Used when user interacts with a category
-userPreferenceSchema.methods.updateCategoryPreference = function (
-  category,
-  weight = 1
-) {
-  let current = this.categoryPreferences.get(category) || 0
+// Pre-save hook: Limit search history to 10 items
+userPreferenceSchema.pre('save', function (next) {
+  if (this.searchHistory && this.searchHistory.length > 10) {
+    this.searchHistory = this.searchHistory.slice(-10)
+  }
+  next()
+})
+
+// Instance method: Update category preference
+userPreferenceSchema.methods.updateCategoryPreference = function (category, weight = 1) {
+  const current = this.categoryPreferences.get(category) || 0
   this.categoryPreferences.set(category, current + weight)
+  
+  // Recalculate top categories
+  this.topCategories = this.getTopCategories()
+  
   return this.save()
 }
 
-//Get top preferred categories
+// Instance method: Get top N categories
 userPreferenceSchema.methods.getTopCategories = function (limit = 3) {
-  let entries = Array.from(this.categoryPreferences.entries())
+  const entries = Array.from(this.categoryPreferences.entries())
   return entries
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([category]) => category)
 }
 
-//Track when a new place is added by the user
- //Updates category weight and price preference average
+// Instance method: Track place addition
 userPreferenceSchema.methods.trackPlaceAdded = async function (place) {
-  this.stats.totalPlacesAdded += 1
   // Stronger weight for explicit place addition
   await this.updateCategoryPreference(place.category, 2)
-  // Update rolling average for price preference
-  if (place.priceLevel) {
-    let current = this.pricePreference.avg
-    let total = this.stats.totalPlacesAdded
-    this.pricePreference.avg =
-      (current * (total - 1) + place.priceLevel) / total
+  return this
+}
+
+// Instance method: Track favorite
+userPreferenceSchema.methods.trackFavorite = async function (category) {
+  // Higher weight for favorite action
+  await this.updateCategoryPreference(category, 3)
+  return this
+}
+
+// Instance method: Add to search history
+userPreferenceSchema.methods.addSearchToHistory = function (query, category = null) {
+  this.searchHistory.push({
+    query,
+    category,
+    timestamp: new Date(),
+  })
+  
+  // Keep only last 10 searches
+  if (this.searchHistory.length > 10) {
+    this.searchHistory = this.searchHistory.slice(-10)
   }
+  
   return this.save()
 }
 
-//Track when a place is marked as favorite
-userPreferenceSchema.methods.trackFavorite = async function (
-  placeId,
-  category
-) {
-  if (!this.favoritePlaceIds.includes(placeId)) {
-    this.favoritePlaceIds.push(placeId)
-    this.stats.totalFavorites += 1
-    // Higher weight for favorite action
-    await this.updateCategoryPreference(category, 3)
-  }
-
-  return this.save()
-}
-//Get existing preferences or create new ones for a user
+// Static method: Get or create preferences for a user
 userPreferenceSchema.statics.getOrCreate = async function (userId) {
   let pref = await this.findOne({ userId })
+  
   if (!pref) {
     pref = await this.create({ userId })
   }
+  
   return pref
 }
 
-//Create and export UserPreference model
-let UserPreference = mongoose.model('UserPreference', userPreferenceSchema)
-module.exports = UserPreference
+// Static method: Reset preferences to default
+userPreferenceSchema.statics.resetForUser = async function (userId) {
+  await this.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        categoryPreferences: new Map([
+          ['restaurant', 0],
+          ['attraction', 0],
+          ['accommodation', 0],
+          ['transport', 0],
+          ['shopping', 0],
+          ['entertainment', 0],
+          ['other', 0],
+        ]),
+        topCategories: [],
+        ratingThreshold: 3.0,
+        searchHistory: [],
+      },
+    },
+    { upsert: true, new: true }
+  )
+}
 
+module.exports = mongoose.model('UserPreference', userPreferenceSchema)
