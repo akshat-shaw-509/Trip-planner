@@ -3,15 +3,6 @@ const User = require('../models/User.model')
 const config = require('../config/env')
 const { UnauthorizedError } = require('../utils/errors')
 
-//ADD TOKEN CACHE
-const NodeCache = require('node-cache')
-const tokenCache = new NodeCache({ 
-  stdTTL: 300, // Cache for 5 minutes
-  checkperiod: 60, // Cleanup expired entries every minute
-  useClones: false // Better performance, we don't modify cached data
-})
-// Extract Bearer token from Authorization header
- //Expected format: Authorization: Bearer <token>
 const getTokenFromHeader = (req) => {
   const authHeader = req.headers.authorization
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null
@@ -34,12 +25,6 @@ const authenticate = async (req, res, next) => {
     if (!token) {
       throw UnauthorizedError('No token provided')
     }
-    // CHECK CACHE FIRST
-    const cachedUser = tokenCache.get(token)
-    if (cachedUser) {
-      req.user = cachedUser
-      return next()
-    }
     // Verify token using JWT secret
     const decoded = jwt.verify(token, config.jwt.secret)
     const user = await User.findById(decoded.id)
@@ -58,7 +43,6 @@ const authenticate = async (req, res, next) => {
       _id: user._id,           
       id: user._id.toString()  
     }
-    tokenCache.set(token, userWithId)
     req.user = userWithId
     next()
   } catch (error) {
@@ -90,11 +74,6 @@ const optionalAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req)
     if (!token) return next()
-    const cachedUser = tokenCache.get(token)
-    if (cachedUser) {
-      req.user = cachedUser
-      return next()
-    }
     const decoded = jwt.verify(token, config.jwt.secret)
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
@@ -106,7 +85,6 @@ const optionalAuth = async (req, res, next) => {
         _id: user._id,
         id: user._id.toString()
       }
-      tokenCache.set(token, userWithId)
       req.user = userWithId
     }
   } catch (error) {
@@ -114,19 +92,11 @@ const optionalAuth = async (req, res, next) => {
   }
   next()
 }
-
-const invalidateUserCache = (userId) => {
-  // Since we cache by token, we can't directly invalidate by userId
-  // Option 1: Clear entire cache
-  tokenCache.flushAll()
-  // Option 2: Track userId->token mapping
-  // This would require additional logic in authenticate()
-}
 module.exports = {
   authenticate,
-  optionalAuth,
-  invalidateUserCache
+  optionalAuth
 }
+
 
 
 
