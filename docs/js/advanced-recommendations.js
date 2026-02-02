@@ -1,12 +1,13 @@
+/* ====================== STATE ====================== */
 const advancedRecState = {
   options: {
-    radius: 10, 
-    minRating: 3.0, 
-    maxResults: 50, 
+    radius: 10,
+    minRating: 3.0,
+    maxResults: 50,
     sortBy: 'score',
     viewMode: 'grid',
-    showHiddenGems: false, 
-    budgetFriendly: false, 
+    showHiddenGems: false,
+    budgetFriendly: false,
     topRatedOnly: false,
     nearbyOnly: false
   },
@@ -26,7 +27,6 @@ if (!window.filterState) {
     filteredResults: []
   };
 }
-
 const filterState = window.filterState;
 
 if (!window.recommendationsState) {
@@ -39,48 +39,49 @@ if (!window.recommendationsState) {
     tripData: null
   };
 }
-
 const recommendationsState = window.recommendationsState;
-let userPreferences = null
 
-//Load user preferences
+let userPreferences = null;
+
+/* ====================== PREFERENCES ====================== */
 async function loadUserPreferences() {
   try {
-    const res = await apiService.preferences.get()
-    userPreferences = res.data || null
-    if (userPreferences) {
-      applyUserPreferences()
-    }
+    const res = await apiService.preferences.get();
+    userPreferences = res.data || null;
+    if (userPreferences) applyUserPreferences();
   } catch (err) {
-    console.error('Failed to load preferences:', err)
+    console.error('Failed to load preferences:', err);
   }
 }
 
-//Apply user preferences 
 function applyUserPreferences() {
-  if (!userPreferences) return
-  // Apply rating threshold
-  if (userPreferences.ratingThreshold) {
-    const ratingSlider = document.getElementById('ratingSlider')
-    if (ratingSlider) {
-      ratingSlider.value = userPreferences.ratingThreshold
-      document.getElementById('ratingValue').textContent = 
-        `${userPreferences.ratingThreshold.toFixed(1)} ⭐`
-      advancedRecState.options.minRating = userPreferences.ratingThreshold
+  if (!userPreferences) return;
+
+  if (userPreferences.ratingThreshold != null) {
+    const ratingSlider = document.getElementById('ratingSlider');
+    const ratingValue = document.getElementById('ratingValue');
+
+    if (ratingSlider && ratingValue) {
+      ratingSlider.value = String(userPreferences.ratingThreshold);
+      ratingValue.textContent = `${Number(userPreferences.ratingThreshold).toFixed(1)} ⭐`;
+      advancedRecState.options.minRating = Number(userPreferences.ratingThreshold);
     }
   }
-  // Show preferred categories
-  if (userPreferences.topCategories && userPreferences.topCategories.length > 0) {
-    showPreferenceBanner(userPreferences)
+
+  if (Array.isArray(userPreferences.topCategories) && userPreferences.topCategories.length > 0) {
+    showPreferenceBanner(userPreferences);
   }
 }
 
-//Show preference banner
 function showPreferenceBanner(prefs) {
-  const container = document.querySelector('.recommendations-section')
-  if (!container) return
-  const banner = document.createElement('div')
-  banner.className = 'preference-banner'
+  const container = document.querySelector('.recommendations-section');
+  if (!container) return;
+
+  // prevent duplicates if init runs again
+  container.querySelector('.preference-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.className = 'preference-banner';
   banner.innerHTML = `
     <div class="preference-info">
       <i class="fas fa-user-check"></i>
@@ -92,65 +93,64 @@ function showPreferenceBanner(prefs) {
     <button class="btn-manage-preferences" onclick="openPreferencesPanel()">
       <i class="fas fa-cog"></i> Manage
     </button>
-  `
-  container.insertBefore(banner, container.firstChild)
+  `;
+  container.insertBefore(banner, container.firstChild);
 }
 
-//Track search automatically
 async function trackUserSearch(query, category = null) {
   try {
     await apiService.preferences.trackSearch({
       query,
       category,
       location: recommendationsState.tripData?.destination
-    })
+    });
   } catch (err) {
-    console.error('Failed to track search:', err)
+    console.error('Failed to track search:', err);
   }
 }
 
-//Open preferences management panel
 function openPreferencesPanel() {
-  const modal = document.createElement('div')
-  modal.className = 'modal active'
-  modal.id = 'preferencesModal'
+  // prevent duplicates
+  document.getElementById('preferencesModal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'preferencesModal';
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
         <h3><i class="fas fa-sliders-h"></i> Your Preferences</h3>
         <button class="modal-close" onclick="closePreferencesPanel()">&times;</button>
       </div>
-      
+
       <div class="modal-body">
         <div class="form-group">
           <label>Minimum Rating Threshold</label>
-          <input type="range" id="prefRatingSlider" min="0" max="5" step="0.5" 
-                 value="${userPreferences?.ratingThreshold || 3.0}">
-          <span id="prefRatingValue">${(userPreferences?.ratingThreshold || 3.0).toFixed(1)} ⭐</span>
+          <input type="range" id="prefRatingSlider" min="0" max="5" step="0.5"
+                 value="${userPreferences?.ratingThreshold ?? 3.0}">
+          <span id="prefRatingValue">${Number(userPreferences?.ratingThreshold ?? 3.0).toFixed(1)} ⭐</span>
         </div>
-        
-        ${userPreferences?.topCategories?.length > 0 ? `
+
+        ${(userPreferences?.topCategories?.length > 0) ? `
           <div class="preference-stats">
             <h4>Your Top Categories</h4>
             <div class="category-tags">
-              ${userPreferences.topCategories.map(cat => `
-                <span class="category-tag">${cat}</span>
-              `).join('')}
+              ${userPreferences.topCategories.map(cat => `<span class="category-tag">${cat}</span>`).join('')}
             </div>
           </div>
         ` : ''}
-        
-        ${userPreferences?.searchHistory?.length > 0 ? `
+
+        ${(userPreferences?.searchHistory?.length > 0) ? `
           <div class="preference-stats">
             <h4>Recent Searches</h4>
             <ul class="search-history">
               ${userPreferences.searchHistory.slice(0, 5).map(search => `
-                <li>${search.query || search.category}</li>
+                <li>${search.query || search.category || ''}</li>
               `).join('')}
             </ul>
           </div>
         ` : ''}
-        
+
         <div class="preference-actions">
           <button class="btn-secondary" onclick="resetUserPreferences()">
             <i class="fas fa-undo"></i> Reset to Default
@@ -161,74 +161,53 @@ function openPreferencesPanel() {
         </div>
       </div>
     </div>
-  `
-  document.body.appendChild(modal)
-  // Add slider listener
-  document.getElementById('prefRatingSlider').oninput = (e) => {
-    const value = parseFloat(e.target.value)
-    document.getElementById('prefRatingValue').textContent = `${value.toFixed(1)} ⭐`
+  `;
+  document.body.appendChild(modal);
+
+  const slider = document.getElementById('prefRatingSlider');
+  const valueEl = document.getElementById('prefRatingValue');
+  if (slider && valueEl) {
+    slider.oninput = (e) => {
+      const value = Number(e.target.value);
+      valueEl.textContent = `${value.toFixed(1)} ⭐`;
+    };
   }
 }
 
-//Save user preferences
 async function saveUserPreferences() {
   try {
-    const threshold = parseFloat(document.getElementById('prefRatingSlider').value)
-    await apiService.preferences.updateRatingThreshold(threshold)
-    showToast('Preferences saved!', 'success')
-    closePreferencesPanel()
-    // Reload preferences and recommendations
-    await loadUserPreferences()
-    await loadRecommendations()
+    const threshold = Number(document.getElementById('prefRatingSlider')?.value);
+    await apiService.preferences.updateRatingThreshold(threshold);
+    showToast('Preferences saved!', 'success');
+    closePreferencesPanel();
+    await loadUserPreferences();
+    await loadRecommendations();
   } catch (err) {
-    console.error('Failed to save preferences:', err)
-    showToast('Failed to save preferences', 'error')
+    console.error('Failed to save preferences:', err);
+    showToast('Failed to save preferences', 'error');
   }
 }
 
-//Reset preferences
 async function resetUserPreferences() {
-  if (!confirm('Reset all preferences to default?')) return
+  if (!confirm('Reset all preferences to default?')) return;
   try {
-    await apiService.preferences.resetPreferences()
-    showToast('Preferences reset!', 'success')
-    closePreferencesPanel()
-    userPreferences = null
-    await loadUserPreferences()
-    await loadRecommendations()
+    await apiService.preferences.resetPreferences();
+    showToast('Preferences reset!', 'success');
+    closePreferencesPanel();
+    userPreferences = null;
+    await loadUserPreferences();
+    await loadRecommendations();
   } catch (err) {
-    console.error('Failed to reset preferences:', err)
-    showToast('Failed to reset preferences', 'error')
+    console.error('Failed to reset preferences:', err);
+    showToast('Failed to reset preferences', 'error');
   }
 }
 
-//Close preferences panel
 function closePreferencesPanel() {
-  document.getElementById('preferencesModal')?.remove()
+  document.getElementById('preferencesModal')?.remove();
 }
-// Update initRecommendations to load preferences first
-async function initRecommendations(tripId, tripData) {
-  recommendationsState.currentTripId = tripId
-  recommendationsState.tripData = tripData
-  // Load user preferences first
-  await loadUserPreferences()
-  renderAdvancedControls()
-  attachAdvancedListeners()
-  loadSavedPreferences()
-  await loadRecommendations()
-}
-// Update category filter to track searches
-document.querySelectorAll('.category-filter-btn').forEach(btn => {
-  btn.addEventListener('click', async function() {
-    const category = this.dataset.category
-    //Track this search
-    if (category !== 'all') {
-      await trackUserSearch(category, category)
-    }
-    
-  })
-})
-// ---------- STORAGE ----------
+
+/* ====================== STORAGE ====================== */
 function saveSavedPreferences() {
   try {
     sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
@@ -240,90 +219,94 @@ function saveSavedPreferences() {
 function loadSavedPreferences() {
   try {
     const saved = sessionStorage.getItem('savedPlaces');
-    if (saved) {
-      advancedRecState.savedPlaces = new Set(JSON.parse(saved));
-    }
+    if (saved) advancedRecState.savedPlaces = new Set(JSON.parse(saved));
   } catch (err) {
     console.error('Error loading preferences:', err);
   }
 }
 
+/* ====================== INIT ====================== */
+let advancedListenersAttached = false;
+
+async function initRecommendations(tripId, tripData) {
+  recommendationsState.currentTripId = tripId;
+  recommendationsState.tripData = tripData;
+
+  loadSavedPreferences();
+  await loadUserPreferences();
+
+  renderAdvancedControls();
+  attachAdvancedListenersOnce();
+
+  await loadRecommendations();
+}
+
 window.initRecommendations = initRecommendations;
 
-// ---------- LOAD ----------
+/* ====================== LOAD ====================== */
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
-    
+
     const activeBtn = document.querySelector('.category-filter-btn.active');
-    if (activeBtn) {
-      activeBtn.classList.add('loading');
-    }
+    activeBtn?.classList.add('loading');
+
     const params = {
       radius: (advancedRecState.options.radius * 1000) || 10000,
       limit: advancedRecState.options.maxResults || 50
     };
-
-    if (options.category && options.category !== 'all') {
-      params.category = options.category;
-    }
+    if (options.category && options.category !== 'all') params.category = options.category;
 
     const res = await apiService.recommendations.getForTrip(
       recommendationsState.currentTripId,
       params
     );
-    
+
     const responseData = res.data || {};
-    let places = Array.isArray(responseData) ? responseData : responseData.places || [];
+    let places = Array.isArray(responseData) ? responseData : (responseData.places || []);
 
     places = places.map(place => {
       let lat = 0, lon = 0;
-      
+
       if (place.location?.coordinates) {
         lon = place.location.coordinates[0];
         lat = place.location.coordinates[1];
-      } else if (place.lat && place.lon) {
+      } else if (place.lat != null && place.lon != null) {
         lat = place.lat;
         lon = place.lon;
-      } else if (place.location?.lat && place.location?.lon) {
+      } else if (place.location?.lat != null && place.location?.lon != null) {
         lat = place.location.lat;
         lon = place.location.lon;
-      } else if (place.coordinates) {
+      } else if (Array.isArray(place.coordinates)) {
         lon = place.coordinates[0];
         lat = place.coordinates[1];
       }
 
-      const validLat = parseFloat(lat);
-      const validLon = parseFloat(lon);
-      
-      return {
-        ...place,
-        lat: validLat || 0,
-        lon: validLon || 0
-      };
+      const validLat = Number(lat);
+      const validLon = Number(lon);
+
+      return { ...place, lat: validLat || 0, lon: validLon || 0 };
     });
 
-    const validPlaces = places.filter(p => 
-      p.lat !== 0 && 
-      p.lon !== 0 && 
-      !isNaN(p.lat) && 
-      !isNaN(p.lon) &&
-      p.lat >= -90 && 
-      p.lat <= 90 && 
-      p.lon >= -180 && 
-      p.lon <= 180
+    const validPlaces = places.filter(p =>
+      p.lat !== 0 &&
+      p.lon !== 0 &&
+      !Number.isNaN(p.lat) &&
+      !Number.isNaN(p.lon) &&
+      p.lat >= -90 && p.lat <= 90 &&
+      p.lon >= -180 && p.lon <= 180
     );
 
     filterState.allRecommendations = [...validPlaces];
     filterState.filteredResults = [...validPlaces];
     recommendationsState.recommendations = [...validPlaces];
-    displayRecommendations();
-    
+
+    // apply current quick filters/sorting immediately (includes minRating)
+    applyQuickFilters();
+
     setTimeout(() => {
-      if (typeof updateMapWithRecommendations === 'function') {
-        updateMapWithRecommendations();
-      }
+      if (typeof updateMapWithRecommendations === 'function') updateMapWithRecommendations();
     }, 500);
 
   } catch (err) {
@@ -331,17 +314,13 @@ async function loadRecommendations(options = {}) {
     showRecommendationsError();
   } finally {
     recommendationsState.isLoading = false;
-    
-    const loadingBtn = document.querySelector('.category-filter-btn.loading');
-    if (loadingBtn) {
-      loadingBtn.classList.remove('loading');
-    }
+    document.querySelector('.category-filter-btn.loading')?.classList.remove('loading');
   }
 }
 
 window.loadRecommendations = loadRecommendations;
 
-// ---------- DISPLAY ----------
+/* ====================== DISPLAY ====================== */
 function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
@@ -365,44 +344,34 @@ function displayRecommendations() {
     const card = container.children[index];
     if (!card) return;
 
-    const addBtn = card.querySelector('.btn-add-to-trip');
-    if (addBtn) {
-      addBtn.onclick = (e) => {
-        e.stopPropagation();
-        addRecommendationToTrip(rec);
-      };
-    }
+    card.querySelector('.btn-add-to-trip')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addRecommendationToTrip(rec);
+    });
 
-    const detailsBtn = card.querySelector('.btn-view-details');
-    if (detailsBtn) {
-      detailsBtn.onclick = (e) => {
-        e.stopPropagation();
-        showRecommendationDetails(rec);
-      };
-    }
+    card.querySelector('.btn-view-details')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showRecommendationDetails(rec);
+    });
 
-    const checkbox = card.querySelector('.rec-card-compare-checkbox');
-    if (checkbox) {
-      checkbox.onclick = (e) => {
-        e.stopPropagation();
-        handleCompareCheckbox(rec, card);
-      };
-    }
+    card.querySelector('.rec-card-compare-checkbox')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleCompareCheckbox(rec, card);
+    });
   });
 
   addQualityBadges();
 }
+window.displayRecommendations = displayRecommendations;
 
-// Uses comparison panel if available, otherwise fallback
 function handleCompareCheckbox(rec, card) {
-  // ✅ Use the comparison panel if available
   if (typeof window.handleCompareCheckboxClick === 'function') {
     window.handleCompareCheckboxClick(rec, card);
     return;
   }
 
   const checkIcon = card.querySelector('.rec-card-compare-checkbox i');
-  
+
   if (card.classList.contains('comparing')) {
     card.classList.remove('comparing');
     if (checkIcon) checkIcon.style.display = 'none';
@@ -414,16 +383,14 @@ function handleCompareCheckbox(rec, card) {
     advancedRecState.selectedForBulk.add(rec.name);
     showToast('Added to selection', 'success');
   }
-  
+
   updateBulkActionsBar();
 }
 
-window.displayRecommendations = displayRecommendations;
-
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
-  const lat = parseFloat(rec.lat) || 0;
-  const lon = parseFloat(rec.lon) || 0;
+  const lat = Number(rec.lat) || 0;
+  const lon = Number(rec.lon) || 0;
 
   const reasonsHTML = (rec.reasons || []).map(reason => `
     <span class="reason-tag">
@@ -433,13 +400,13 @@ function createRecommendationCard(rec) {
   `).join('');
 
   return `
-    <div class="recommendation-card" 
-         data-place-id="${rec._id || rec.externalId || rec.name}" 
-         data-category="${rec.category}" 
-         data-lat="${lat}" 
+    <div class="recommendation-card"
+         data-place-id="${rec._id || rec.externalId || rec.name}"
+         data-category="${rec.category}"
+         data-lat="${lat}"
          data-lon="${lon}"
          data-name="${escapeHtml(rec.name)}">
-      
+
       <div class="rec-card-compare-checkbox" title="Select for comparison">
         <i class="fas fa-check" style="display: none;"></i>
       </div>
@@ -447,10 +414,10 @@ function createRecommendationCard(rec) {
       <div class="rec-header">
         <div class="rec-title">
           <h3 class="rec-name">${escapeHtml(rec.name)}</h3>
-          ${rec.city || rec.country ? `
+          ${(rec.city || rec.country) ? `
             <div class="rec-location-info">
               <i class="fas fa-map-marker-alt"></i>
-              ${rec.city ? escapeHtml(rec.city) : ''}${rec.city && rec.country ? ', ' : ''}${rec.country ? escapeHtml(rec.country) : ''}
+              ${rec.city ? escapeHtml(rec.city) : ''}${(rec.city && rec.country) ? ', ' : ''}${rec.country ? escapeHtml(rec.country) : ''}
             </div>
           ` : ''}
           <span class="rec-category">
@@ -460,25 +427,25 @@ function createRecommendationCard(rec) {
         </div>
         <div class="rec-score">
           <i class="fas fa-star"></i>
-          <span class="rec-rating">${(rec.recommendationScore || rec.rating || 0).toFixed(1)}</span>
+          <span class="rec-rating">${Number(rec.recommendationScore || rec.rating || 0).toFixed(1)}</span>
         </div>
       </div>
 
       <div class="rec-meta">
         <div class="rec-rating-display">
           <i class="fas fa-star"></i>
-          ${(rec.rating || 0).toFixed(1)}
+          ${Number(rec.rating || 0).toFixed(1)}
         </div>
         ${rec.distanceFromCenter ? `
           <div class="rec-distance">
             <i class="fas fa-map-marker-alt"></i>
-            ${rec.distanceFromCenter.toFixed(1)} km away
+            ${Number(rec.distanceFromCenter).toFixed(1)} km away
           </div>
         ` : ''}
         ${rec.priceLevel ? `
           <div class="rec-price">
             <i class="fas fa-dollar-sign"></i>
-            ${'₹'.repeat(rec.priceLevel)}
+            ${'₹'.repeat(Number(rec.priceLevel))}
           </div>
         ` : ''}
       </div>
@@ -496,7 +463,7 @@ function createRecommendationCard(rec) {
         </div>
       ` : ''}
 
-      ${rec.address && rec.address !== 'undefined' ? `
+      ${(rec.address && rec.address !== 'undefined') ? `
         <div class="rec-address">
           <i class="fas fa-map-pin"></i>
           ${escapeHtml(rec.address)}
@@ -515,77 +482,70 @@ function createRecommendationCard(rec) {
   `;
 }
 
-// ---------- CONTROLS ----------
+/* ====================== CONTROLS (FIXED) ====================== */
 function renderAdvancedControls() {
   const container = document.querySelector('.recommendations-section');
   if (!container) return;
 
+  // prevent duplicates if init runs again
+  container.querySelector('.rec-category-filters')?.remove();
+  container.querySelector('.rec-controls-panel')?.remove();
+  container.querySelector('#bulkActionsBar')?.remove();
+
   const controlsHTML = `
     <div class="rec-category-filters">
-      <h3>
-        <i class="fas fa-filter"></i>
-        Filter by Category
-      </h3>
+      <h3><i class="fas fa-filter"></i> Filter by Category</h3>
       <div class="category-filter-buttons">
         <button class="category-filter-btn active" data-category="all">
-          <i class="fas fa-th"></i>
-          All Categories
+          <i class="fas fa-th"></i> All Categories
         </button>
         <button class="category-filter-btn" data-category="restaurant">
-          <i class="fas fa-utensils"></i>
-          Restaurants
+          <i class="fas fa-utensils"></i> Restaurants
         </button>
         <button class="category-filter-btn" data-category="attraction">
-          <i class="fas fa-landmark"></i>
-          Attractions
+          <i class="fas fa-landmark"></i> Attractions
         </button>
         <button class="category-filter-btn" data-category="accommodation">
-          <i class="fas fa-bed"></i>
-          Hotels
+          <i class="fas fa-bed"></i> Hotels
         </button>
       </div>
     </div>
 
     <div class="rec-controls-panel">
       <div class="rec-controls-header">
-        <h3>
-          <i class="fas fa-sliders-h"></i>
-          Recommendation Options
-        </h3>
+        <h3><i class="fas fa-sliders-h"></i> Recommendation Options</h3>
         <button class="rec-controls-toggle" id="recControlsToggle">
           <i class="fas fa-chevron-down"></i>
         </button>
       </div>
-      
+
       <div class="rec-controls-body" id="recControlsBody">
         <div class="control-group">
           <label class="control-label">
-            Search Radius
-            <span class="control-value" id="radiusValue">10 km</span>
+            Search Radius <span class="control-value" id="radiusValue">${advancedRecState.options.radius} km</span>
           </label>
-          <input type="range" class="range-slider" id="radiusSlider" 
-                min="1" max="50" value="10" step="1">
+          <input type="range" class="range-slider" id="radiusSlider"
+                 min="1" max="50" value="${advancedRecState.options.radius}" step="1">
         </div>
 
         <div class="control-group">
           <label class="control-label">
-            Minimum Rating
-            <span class="control-value" id="ratingValue">3.0 ⭐</span>
+            Minimum Rating <span class="control-value" id="ratingValue">${advancedRecState.options.minRating.toFixed(1)} ⭐</span>
           </label>
-          <input type="range" class="range-slider" id="ratingSlider" 
-                min="0" max="5" value="3" step="0.5">
+          <input type="range" class="range-slider" id="ratingSlider"
+                 min="0" max="5" value="${advancedRecState.options.minRating}" step="0.5">
         </div>
 
         <div class="control-group">
           <label class="control-label">Sort By</label>
           <div class="sort-options">
-            <button class="sort-btn active" data-sort="score">
+            <button class="sort-btn ${advancedRecState.options.sortBy === 'score' ? 'active' : ''}" data-sort="score">
               <i class="fas fa-star"></i> Best Match
             </button>
-            <button class="sort-btn" data-sort="rating">
+            <button class="sort-btn ${advancedRecState.options.sortBy === 'rating' ? 'active' : ''}" data-sort="rating">
               <i class="fas fa-trophy"></i> Highest Rated
             </button>
-            <button class="sort-btn" data-sort="distance">
+            <button class="sort-btn ${advancedRecState.options.sortBy === 'distance' ? 'active' : ''}" data-sort="distance">
               <i class="fas fa-location-arrow"></i> Nearest
             </button>
           </div>
@@ -594,10 +554,10 @@ function renderAdvancedControls() {
         <div class="control-group">
           <label class="control-label">Quick Filters</label>
           <div class="sort-options">
-            <button class="quick-action-btn" id="hiddenGemsBtn">
+            <button class="quick-action-btn ${advancedRecState.options.showHiddenGems ? 'active' : ''}" id="hiddenGemsBtn">
               <i class="fas fa-gem"></i> Hidden Gems
             </button>
-            <button class="quick-action-btn" id="topRatedBtn">
+            <button class="quick-action-btn ${advancedRecState.options.topRatedOnly ? 'active' : ''}" id="topRatedBtn">
               <i class="fas fa-award"></i> Top Rated Only
             </button>
           </div>
@@ -605,7 +565,6 @@ function renderAdvancedControls() {
       </div>
     </div>
 
-    <!-- Bulk actions -->
     <div class="bulk-actions-bar" id="bulkActionsBar">
       <span class="bulk-count" id="bulkCount">0 selected</span>
       <div class="bulk-actions">
@@ -620,84 +579,98 @@ function renderAdvancedControls() {
   `;
 
   const grid = document.getElementById('recommendationsGrid');
-  if (grid) {
-    grid.insertAdjacentHTML('beforebegin', controlsHTML);
-  }
+  if (grid) grid.insertAdjacentHTML('beforebegin', controlsHTML);
 }
-  const toggle = document.getElementById('recControlsToggle');
-  const body = document.getElementById('recControlsBody');
-  if (toggle && body) {
-    toggle.onclick = () => {
-      body.classList.toggle('hidden');
-      toggle.classList.toggle('collapsed');
-    };
-  }
 
-  const radiusSlider = document.getElementById('radiusSlider');
-  const radiusValue = document.getElementById('radiusValue');
-  if (radiusSlider) {
-    radiusSlider.oninput = (e) => {
-      const value = e.target.value;
-      if (radiusValue) radiusValue.textContent = `${value} km`;
-      advancedRecState.options.radius = parseInt(value);
+function attachAdvancedListenersOnce() {
+  if (advancedListenersAttached) return;
+  advancedListenersAttached = true;
+
+  // Toggle panel
+  document.addEventListener('click', (e) => {
+    if (e.target?.closest?.('#recControlsToggle')) {
+      const body = document.getElementById('recControlsBody');
+      const toggle = document.getElementById('recControlsToggle');
+      body?.classList.toggle('hidden');
+      toggle?.classList.toggle('collapsed');
+    }
+  });
+
+  // Sliders (event delegation is overkill; direct is fine because controls exist after render)
+  document.addEventListener('input', (e) => {
+    if (e.target?.id === 'radiusSlider') {
+      const value = Number(e.target.value);
+      document.getElementById('radiusValue') && (document.getElementById('radiusValue').textContent = `${value} km`);
+      advancedRecState.options.radius = value;
       debouncedReload();
-    };
-  }
+    }
 
-  const ratingSlider = document.getElementById('ratingSlider');
-  const ratingValue = document.getElementById('ratingValue');
-  if (ratingSlider) {
-    ratingSlider.oninput = (e) => {
-      const value = parseFloat(e.target.value);
-      if (ratingValue) ratingValue.textContent = value === 0 ? 'Any' : `${value.toFixed(1)} ⭐`;
+    if (e.target?.id === 'ratingSlider') {
+      const value = Number(e.target.value);
+      const el = document.getElementById('ratingValue');
+      if (el) el.textContent = value === 0 ? 'Any' : `${value.toFixed(1)} ⭐`;
       advancedRecState.options.minRating = value;
       debouncedFilter();
-    };
-  }
+    }
+  });
 
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.onclick = () => {
+  // Buttons
+  document.addEventListener('click', async (e) => {
+    const sortBtn = e.target?.closest?.('.sort-btn');
+    if (sortBtn) {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      advancedRecState.options.sortBy = btn.dataset.sort;
+      sortBtn.classList.add('active');
+      advancedRecState.options.sortBy = sortBtn.dataset.sort;
       applySorting();
-    };
-  });
+      return;
+    }
 
-  document.getElementById('hiddenGemsBtn')?.addEventListener('click', function() {
-    this.classList.toggle('active');
-    advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
-    applyQuickFilters();
-  });
+    const hiddenBtn = e.target?.closest?.('#hiddenGemsBtn');
+    if (hiddenBtn) {
+      hiddenBtn.classList.toggle('active');
+      advancedRecState.options.showHiddenGems = !advancedRecState.options.showHiddenGems;
+      applyQuickFilters();
+      return;
+    }
 
-  document.getElementById('topRatedBtn')?.addEventListener('click', function() {
-    this.classList.toggle('active');
-    advancedRecState.options.topRatedOnly = !advancedRecState.options.topRatedOnly;
-    applyQuickFilters();
+    const topBtn = e.target?.closest?.('#topRatedBtn');
+    if (topBtn) {
+      topBtn.classList.toggle('active');
+      advancedRecState.options.topRatedOnly = !advancedRecState.options.topRatedOnly;
+      applyQuickFilters();
+      return;
+    }
+
+    const catBtn = e.target?.closest?.('.category-filter-btn');
+    if (catBtn) {
+      document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+      catBtn.classList.add('active');
+
+      const category = catBtn.dataset.category;
+
+      if (category !== 'all') await trackUserSearch(category, category);
+      await loadRecommendations({ category });
+    }
   });
 }
 
-// ---------- DEBOUNCE ----------
+/* ====================== DEBOUNCE ====================== */
 let reloadTimeout;
 function debouncedReload() {
   clearTimeout(reloadTimeout);
-  reloadTimeout = setTimeout(() => {
-    loadRecommendations();
-  }, 500);
+  reloadTimeout = setTimeout(() => loadRecommendations(), 500);
 }
 
 let filterTimeout;
 function debouncedFilter() {
   clearTimeout(filterTimeout);
-  filterTimeout = setTimeout(() => {
-    applyQuickFilters();
-  }, 300);
+  filterTimeout = setTimeout(() => applyQuickFilters(), 300);
 }
 
-// ---------- SORT / FILTER ----------
+/* ====================== SORT / FILTER ====================== */
 function applySorting() {
   let results = [...filterState.filteredResults];
-  
+
   switch (advancedRecState.options.sortBy) {
     case 'rating':
       results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -734,7 +707,7 @@ function applyQuickFilters() {
   applySorting();
 }
 
-// ---------- BADGES ----------
+/* ====================== BADGES ====================== */
 function addQualityBadges() {
   const cards = document.querySelectorAll('.recommendation-card');
 
@@ -745,9 +718,9 @@ function addQualityBadges() {
     card.querySelectorAll('.quality-badge, .save-for-later').forEach(b => b.remove());
 
     let badge = null;
-    if (rec.rating >= 4.7) {
+    if ((rec.rating || 0) >= 4.7) {
       badge = '<div class="quality-badge top-rated"><i class="fas fa-crown"></i> Top Rated</div>';
-    } else if (rec.rating >= 4.0 && rec.distanceFromCenter > 5) {
+    } else if ((rec.rating || 0) >= 4.0 && (rec.distanceFromCenter || 0) > 5) {
       badge = '<div class="quality-badge hidden-gem"><i class="fas fa-gem"></i> Hidden Gem</div>';
     }
 
@@ -755,7 +728,7 @@ function addQualityBadges() {
 
     const isSaved = advancedRecState.savedPlaces.has(rec.name);
     const saveBtn = `
-      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${rec.name}', event)">
+      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${escapeHtml(rec.name)}', event)">
         <i class="fas fa-heart"></i>
       </div>
     `;
@@ -763,34 +736,29 @@ function addQualityBadges() {
   });
 }
 
-// ====================== BULK ACTIONS BAR ======================
+/* ====================== BULK BAR ====================== */
 function updateBulkActionsBar() {
   const bar = document.getElementById('bulkActionsBar');
   const count = document.getElementById('bulkCount');
   if (!bar || !count) return;
 
   const selected = advancedRecState.selectedForBulk.size;
-
   if (selected > 0) {
     bar.classList.add('show');
     count.textContent = `${selected} selected`;
   } else {
     bar.classList.remove('show');
+    count.textContent = `0 selected`;
   }
 }
 
-// ---------- ADD TO TRIP ----------
+/* ====================== ADD TO TRIP ====================== */
 async function addRecommendationToTrip(rec) {
   try {
-    if (!rec.lat || !rec.lon) {
-      showToast('Missing location data', 'error');
-      return;
-    }
+    const lat = Number(rec.lat);
+    const lon = Number(rec.lon);
 
-    const lat = parseFloat(rec.lat);
-    const lon = parseFloat(rec.lon);
-
-    if (isNaN(lat) || isNaN(lon) || lat === 0 || lon === 0) {
+    if (!lat || !lon || Number.isNaN(lat) || Number.isNaN(lon)) {
       showToast('Invalid location data', 'error');
       return;
     }
@@ -798,90 +766,68 @@ async function addRecommendationToTrip(rec) {
     const placeData = {
       name: rec.name,
       category: (rec.category && rec.category !== 'undefined') ? rec.category.toLowerCase() : 'attraction',
-      location: {
-        type: 'Point',
-        coordinates: [lon, lat]
-      },
+      location: { type: 'Point', coordinates: [lon, lat] },
       address: rec.address || '',
-      rating: parseFloat(rec.rating) || 0,
-      priceLevel: parseInt(rec.priceLevel) || 0,
+      rating: Number(rec.rating) || 0,
+      priceLevel: Number.parseInt(rec.priceLevel) || 0,
       description: rec.description || '',
-      notes: rec.reasons && rec.reasons.length > 0
-        ? `${rec.reasons.map(r => `• ${r}`).join('\n')}`
-        : ''
+      notes: (rec.reasons && rec.reasons.length > 0) ? rec.reasons.map(r => `• ${r}`).join('\n') : ''
     };
 
     await apiService.places.create(recommendationsState.currentTripId, placeData);
     showToast('✅ Place added to your trip!', 'success');
 
-    // Remove from recommendations
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
     filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
     recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
 
-    // Remove from selection if it was selected
     advancedRecState.selectedForBulk.delete(rec.name);
 
     displayRecommendations();
     updateBulkActionsBar();
 
-    if (typeof loadPlaces === 'function') {
-      await loadPlaces();
-    }
-
-    if (typeof updateMapWithRecommendations === 'function') {
-      updateMapWithRecommendations();
-    }
+    if (typeof loadPlaces === 'function') await loadPlaces();
+    if (typeof updateMapWithRecommendations === 'function') updateMapWithRecommendations();
 
   } catch (err) {
     console.error('Error adding place:', err);
     showToast('Failed to add place', 'error');
   }
 }
-
 window.addRecommendationToTrip = addRecommendationToTrip;
 
-// ====================== BULK ACTIONS ======================
-window.bulkAddToTrip = async function() {
+/* ====================== BULK ACTIONS ====================== */
+window.bulkAddToTrip = async function () {
   const selected = Array.from(advancedRecState.selectedForBulk);
-  if (selected.length === 0) {
-    showToast('No places selected', 'warning');
-    return;
-  }
+  if (selected.length === 0) return showToast('No places selected', 'warning');
 
   showToast(`Adding ${selected.length} places...`, 'info');
 
   let addedCount = 0;
   for (const placeName of selected) {
     const rec = recommendationsState.recommendations.find(r => r.name === placeName);
-    if (rec) {
-      try {
-        await addRecommendationToTrip(rec);
-        addedCount++;
-      } catch (err) {
-        console.error('Error adding place:', err);
-      }
-    }
+    if (!rec) continue;
+    await addRecommendationToTrip(rec);
+    addedCount++;
   }
 
   if (addedCount > 0) {
     showToast(`✅ Added ${addedCount} place(s) to your trip!`, 'success');
-    clearBulkSelection();
+    window.clearBulkSelection();
   }
 };
 
-window.clearBulkSelection = function() {
+window.clearBulkSelection = function () {
   advancedRecState.selectedForBulk.clear();
   document.querySelectorAll('.recommendation-card.comparing').forEach(card => {
     card.classList.remove('comparing');
     const checkbox = card.querySelector('.rec-card-compare-checkbox i');
     if (checkbox) checkbox.style.display = 'none';
   });
-  
   updateBulkActionsBar();
 };
 
-// ====================== DETAILS MODAL ======================
+/* ====================== DETAILS MODAL ====================== */
 function showRecommendationDetails(rec) {
   const modal = document.createElement('div');
   modal.className = 'modal active';
@@ -894,11 +840,11 @@ function showRecommendationDetails(rec) {
       </div>
       <div class="modal-body">
         <p><strong>Category:</strong> ${escapeHtml(rec.category)}</p>
-        <p><strong>Rating:</strong> ${(rec.rating || 0).toFixed(1)} / 5.0</p>
-        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${rec.distanceFromCenter.toFixed(2)} km</p>` : ''}
+        <p><strong>Rating:</strong> ${Number(rec.rating || 0).toFixed(1)} / 5.0</p>
+        ${rec.distanceFromCenter ? `<p><strong>Distance:</strong> ${Number(rec.distanceFromCenter).toFixed(2)} km</p>` : ''}
         ${rec.address ? `<p><strong>Address:</strong> ${escapeHtml(rec.address)}</p>` : ''}
         ${rec.description ? `<p>${escapeHtml(rec.description)}</p>` : ''}
-        <p><strong>Coordinates:</strong> ${rec.lat.toFixed(4)}, ${rec.lon.toFixed(4)}</p>
+        <p><strong>Coordinates:</strong> ${Number(rec.lat).toFixed(4)}, ${Number(rec.lon).toFixed(4)}</p>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
@@ -908,17 +854,17 @@ function showRecommendationDetails(rec) {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
 }
 
-window.addRecommendationToTripFromModal = async function(rec) {
+window.addRecommendationToTripFromModal = async function (rec) {
   await addRecommendationToTrip(rec);
   document.querySelector('.modal')?.remove();
 };
 
-// ====================== SAVE FOR LATER ======================
-window.toggleSaveForLater = function(placeName, event) {
+/* ====================== SAVE FOR LATER ====================== */
+window.toggleSaveForLater = function (placeName, event) {
   event.stopPropagation();
   if (advancedRecState.savedPlaces.has(placeName)) {
     advancedRecState.savedPlaces.delete(placeName);
@@ -931,14 +877,14 @@ window.toggleSaveForLater = function(placeName, event) {
   addQualityBadges();
 };
 
-// ====================== UI HELPERS ======================
+/* ====================== UI HELPERS ====================== */
 function showRecommendationsLoading() {
   const container = document.getElementById('recommendationsGrid');
   if (container) {
     container.innerHTML = `
       <div class="recommendations-loading">
         <div class="loading-spinner"></div>
-        <p>🤖 AI is finding personalized recommendations...</p>
+        <p>AI is finding personalized recommendations...</p>
       </div>
     `;
   }
@@ -969,17 +915,18 @@ function getCategoryIcon(category) {
     entertainment: 'film',
     other: 'map-marker-alt'
   };
-  return icons[category?.toLowerCase()] || 'map-marker-alt';
+  return icons[String(category || '').toLowerCase()] || 'map-marker-alt';
 }
 
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = String(text);
   return div.innerHTML;
 }
 
-window.openPreferencesPanel = openPreferencesPanel
-window.closePreferencesPanel = closePreferencesPanel
-window.saveUserPreferences = saveUserPreferences
-window.resetUserPreferences = resetUserPreferences
+/* ====================== EXPORTS ====================== */
+window.openPreferencesPanel = openPreferencesPanel;
+window.closePreferencesPanel = closePreferencesPanel;
+window.saveUserPreferences = saveUserPreferences;
+window.resetUserPreferences = resetUserPreferences;
