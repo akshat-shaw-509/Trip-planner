@@ -1,4 +1,3 @@
-
 // routes/recommendation.routes.js
 let express = require('express');
 let router = express.Router();
@@ -10,7 +9,6 @@ router.use(authenticate);
 
 // Recommendation routes
 router.get('/trips/:tripId/recommendations', recommendationController.getRecommendations);
-router.get('/trips/:tripId/day-plans', recommendationController.getDayPlans);
 
 // User preference routes
 router.get('/preferences', recommendationController.getUserPreferences);
