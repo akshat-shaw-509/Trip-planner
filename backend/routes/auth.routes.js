@@ -1,5 +1,5 @@
 let express = require('express')
-let rateLimit = require('express-rate-limit'
+let rateLimit = require('express-rate-limit')
 let router = express.Router()
 let authController = require('../controllers/auth.controller')
 let { authenticate } = require('../middleware/auth.middleware')
