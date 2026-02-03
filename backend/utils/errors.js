@@ -1,45 +1,58 @@
-
-let createAppError = (message, statusCode) => {
-  let error = new Error(message)
-  error.statusCode = statusCode
-  error.status = statusCode.toString().startsWith('4') ? 'fail' : 'error'
-  error.isOperational = true
-  Error.captureStackTrace(error, createAppError)
-  return error
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message)
+    this.statusCode = statusCode
+    this.status = statusCode.toString().startsWith('4') ? 'fail' : 'error'
+    this.isOperational = true
+    Error.captureStackTrace(this, this.constructor)
+  }
 }
 
-let ValidationError = (message = 'Validation failed', errors = null) => {
-  const error = createAppError(message, 400)
-  error.errors = errors
-  throw error
+class ValidationError extends AppError {
+  constructor(message = 'Validation failed', errors = null) {
+    super(message, 400)
+    this.errors = errors
+  }
 }
 
-let TooManyRequestsError = (message = 'Too many requests') => {
-  throw createAppError(message, 429)
+class TooManyRequestsError extends AppError {
+  constructor(message = 'Too many requests') {
+    super(message, 429)
+  }
 }
 
-let UnauthorizedError = (message = 'Unauthorized') => {
-  throw createAppError(message, 401)
+class UnauthorizedError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(message, 401)
+  }
 }
 
-let ForbiddenError = (message = 'Forbidden') => {
-  throw createAppError(message, 403)
+class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden') {
+    super(message, 403)
+  }
 }
 
-let NotFoundError = (message = 'Resource not found') => {
-  throw createAppError(message, 404)
+class NotFoundError extends AppError {
+  constructor(message = 'Resource not found') {
+    super(message, 404)
+  }
 }
 
-let ConflictError = (message = 'Conflict') => {
-  throw createAppError(message, 409)
+class ConflictError extends AppError {
+  constructor(message = 'Conflict') {
+    super(message, 409)
+  }
 }
 
-let BadRequestError = (message = 'Bad Request') => {
-  throw createAppError(message, 400)
+class BadRequestError extends AppError {
+  constructor(message = 'Bad Request') {
+    super(message, 400)
+  }
 }
-
 
 module.exports = {
+  AppError,
   ValidationError,
   TooManyRequestsError,
   UnauthorizedError,
