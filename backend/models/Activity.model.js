@@ -10,37 +10,39 @@ const ACTIVITY_TYPES = [
   'other',
 ]
 const ACTIVITY_STATUS = ['planned', 'in_progress', 'completed', 'cancelled']
-//Activity Schema 
+
 const activitySchema = new mongoose.Schema(
   {
     tripId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Trip',
+      required: [true, 'Trip ID is required'],
+      index: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: [true, 'User ID is required'],
       index: true,
     },
-    //Optional reference to a saved place
     placeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Place',
     },
-    //Activity title
-   title: {
+    title: {
       type: String,
       required: [true, 'Title is required'],
       trim: true,
       minlength: [3, 'Title must be at least 3 characters'],
       maxlength: [200, 'Title cannot exceed 200 characters'],
     },
-    //Optional activity description
     description: {
       type: String,
       trim: true,
       maxlength: [2000, 'Description cannot exceed 2000 characters'],
       default: '',
     },
-    //Type of activity
-     type: {
+    type: {
       type: String,
       enum: {
         values: ACTIVITY_TYPES,
@@ -49,13 +51,10 @@ const activitySchema = new mongoose.Schema(
       required: [true, 'Activity type is required'],
       default: 'other',
     },
-    //Activity start time
     startTime: {
       type: Date,
       required: [true, 'Start time is required'],
     },
-    //Activity end time
-     //Must always be after startTime
     endTime: {
       type: Date,
       validate: {
@@ -65,7 +64,6 @@ const activitySchema = new mongoose.Schema(
         message: 'End time must be after start time',
       },
     },
-    //Current status of the activity
     status: {
       type: String,
       enum: {
@@ -75,13 +73,11 @@ const activitySchema = new mongoose.Schema(
       default: 'planned',
       index: true,
     },
-    //Location details
     location: {
       type: String,
       trim: true,
       maxlength: [500, 'Location cannot exceed 500 characters'],
     },
-    //Cost details
     cost: {
       type: Number,
       min: [0, 'Cost cannot be negative'],
@@ -94,7 +90,6 @@ const activitySchema = new mongoose.Schema(
       uppercase: true,
       maxlength: 3,
     },
-    //Additional notes
     notes: {
       type: String,
       trim: true,
@@ -108,6 +103,7 @@ const activitySchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 )
+
 // Indexes for better query performance
 activitySchema.index({ tripId: 1, startTime: 1 })
 activitySchema.index({ userId: 1, status: 1 })
@@ -118,6 +114,7 @@ activitySchema.virtual('duration').get(function () {
   if (!this.startTime || !this.endTime) return null
   return Math.floor((this.endTime - this.startTime) / (1000 * 60))
 })
+
 // Pre-save hook: Validate date logic
 activitySchema.pre('save', function(next) {
   if (this.endTime && this.endTime <= this.startTime) {
