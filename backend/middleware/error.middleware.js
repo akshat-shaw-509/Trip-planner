@@ -63,7 +63,7 @@ const errorHandler = (err, req, res, next) => {
 };
 
 // 404 handler
-const notFound = (req, res, next) => {
+const notFoundHandler = (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
   res.status(404);
   next(error);
@@ -72,5 +72,5 @@ const notFound = (req, res, next) => {
 module.exports = {
   asyncHandler,
   errorHandler,
-  notFound
+  notFoundHandler
 };
