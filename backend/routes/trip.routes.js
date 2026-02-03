@@ -1,11 +1,11 @@
-let express = require('express')
-let router = express.Router()
-let tripController = require('../controllers/trip.controller')
-let { authenticate } = require('../middleware/auth.middleware')
-let { validateTrip, validateTripUpdate } = require('../middleware/trip.validation.middleware')
-let { uploadBanner } = require('../middleware/upload.middleware')
+const express = require('express')
+const router = express.Router()
 
-// All routes require authentication
+const tripController = require('../controllers/trip.controller')
+const { authenticate } = require('../middleware/auth.middleware')
+const { validateTrip, validateTripUpdate } = require('../middleware/trip.validation.middleware')
+const { uploadBanner } = require('../middleware/upload.middleware')
+
 // All routes require authentication
 router.use(authenticate)
 
