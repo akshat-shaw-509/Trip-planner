@@ -6,24 +6,16 @@ let { validateTrip, validateTripUpdate } = require('../middleware/trip.validatio
 let { uploadBanner } = require('../middleware/upload.middleware')
 
 // All routes require authentication
+// All routes require authentication
 router.use(authenticate)
 
 // Trip CRUD
-router.post('/', ...validateTrip, tripController.createTrip)
+router.post('/', validateTrip, tripController.createTrip)
 router.get('/', tripController.getUserTrips)
 router.get('/:tripId', tripController.getTripById)
-router.put('/:tripId', ...validateTripUpdate, tripController.updateTrip)
+router.put('/:tripId', validateTripUpdate, tripController.updateTrip)
 router.delete('/:tripId', tripController.deleteTrip)
 router.patch('/:tripId/status', tripController.updateTripStatus)
-router.post(
-  '/',
-  (req, res, next) => {
-    console.log('🧪 route middleware reached, next =', typeof next);
-    next();
-  },
-  validateTrip,
-  tripController.createTrip
-);
 
 // Banner upload routes
 router.post('/:tripId/banner', uploadBanner.single('image'), tripController.uploadBanner)
