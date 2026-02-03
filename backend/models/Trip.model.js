@@ -135,12 +135,12 @@ tripSchema.index({ userId: 1, createdAt: -1 })
 tripSchema.index({ userId: 1, status: 1 })
 tripSchema.index({ userId: 1, startDate: 1 })
 // Pre-save validation hook
-tripSchema.pre('save', function (next) {
-  // Validate date range
+tripSchema.pre('save', function () {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    return next(new Error('End date must be after start date'))
+    const err = new Error('End date must be after start date')
+    err.name = 'ValidationError'
+    throw err
   }
-  next()
 })
 // Virtual: Calculate trip duration in days
 tripSchema.virtual('duration').get(function () {
@@ -197,4 +197,5 @@ tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
 }
 
 module.exports = mongoose.model('Trip', tripSchema)
+
 
