@@ -19,11 +19,6 @@ const recommendationRoutes = require('./routes/recommendation.routes')
 const { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
 
 const app = express()
-app.use((req, res, next) => {
-  console.log('➡️ Incoming:', req.method, req.originalUrl)
-  console.log('➡️ next type:', typeof next)
-  next()
-})
 
 /* =========================
    1. Trust proxy
