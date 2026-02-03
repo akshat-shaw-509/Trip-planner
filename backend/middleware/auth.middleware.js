@@ -9,94 +9,63 @@ const getTokenFromHeader = (req) => {
   return authHeader.split(' ')[1]
 }
 
-//Authentication Middleware 
-
-/**
- * Authenticate user (OPTIMIZED VERSION)
- * - Requires a valid JWT token
- * - Ensures user exists and is active
- * - Attaches user object to req.user
- * - Uses caching to reduce database queries
- */
 const authenticate = async (req, res, next) => {
   try {
-    // Extract token from request header
     const token = getTokenFromHeader(req)
     if (!token) {
-      throw UnauthorizedError('No token provided')
+      throw new UnauthorizedError('No token provided')
     }
-    // Verify token using JWT secret
+
     const decoded = jwt.verify(token, config.jwt.secret)
+
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
       .lean()
 
     if (!user) {
-      throw UnauthorizedError('User not found')
+      throw new UnauthorizedError('User not found')
     }
-    // Block inactive users
+
     if (!user.isActive) {
-      throw UnauthorizedError('User account is inactive')
+      throw new UnauthorizedError('User account is inactive')
     }
-    const userWithId = {
+
+    req.user = {
       ...user,
-      _id: user._id,           
-      id: user._id.toString()  
+      _id: user._id,
+      id: user._id.toString()
     }
-    req.user = userWithId
+
     next()
   } catch (error) {
-    // Token expired
     if (error.name === 'TokenExpiredError') {
-      return next(UnauthorizedError('Token expired'))
+      return next(new UnauthorizedError('Token expired'))
     }
-    // Invalid token
+
     if (error.name === 'JsonWebTokenError') {
-      return next(UnauthorizedError('Invalid token'))
+      return next(new UnauthorizedError('Invalid token'))
     }
-    // Custom application errors
+
     if (error.statusCode) {
       return next(error)
     }
-    // Fallback authentication error
-    next(UnauthorizedError('Authentication failed'))
+
+    return next(new UnauthorizedError('Authentication failed'))
   }
 }
-
-/**
- * Optional authentication (NON-STRICT)
- * - Does NOT throw error if token is missing or invalid
- * - Attaches req.user only if token is valid
- * - Useful for public routes with enhanced features for logged-in users
- */
 
 const optionalAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req)
     if (!token) return next()
+
     const decoded = jwt.verify(token, config.jwt.secret)
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
       .lean()
 
     if (user && user.isActive) {
-      const userWithId = {
+      req.user = {
         ...user,
         _id: user._id,
         id: user._id.toString()
-      }
-      req.user = userWithId
-    }
-  } catch (error) {
-    // Silently ignore token errors in optional auth
-  }
-  next()
-}
-module.exports = {
-  authenticate,
-  optionalAuth
-}
-
-
-
-
