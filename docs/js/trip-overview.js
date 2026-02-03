@@ -1,4 +1,5 @@
 let currentTrip = null
+
 const initTripOverview = async () => {
   try {
     // Ensure authHandler is available
@@ -8,6 +9,7 @@ const initTripOverview = async () => {
       return
     }
     if (!authHandler.requireAuth()) return
+    
     // Get trip ID from URL
     const params = new URLSearchParams(window.location.search)
     const tripId = params.get('id')
@@ -17,6 +19,7 @@ const initTripOverview = async () => {
       setTimeout(() => window.location.href = 'trips.html', 2000)
       return
     }
+    
     await loadTripOverview(tripId)
     initLogout()
     initBannerUpload()
@@ -24,6 +27,7 @@ const initTripOverview = async () => {
     showToast?.('Failed to initialize page', 'error')
   }
 }
+
 // Fetch & display trip overview
 const loadTripOverview = async (tripId) => {
   try {
@@ -40,6 +44,7 @@ const loadTripOverview = async (tripId) => {
     setTimeout(() => window.location.href = 'trips.html', 2000)
   }
 }
+
 // Default SVG banner
 const getDefaultBanner = (destination) => {
   const text = destination || 'My Trip'
@@ -59,6 +64,7 @@ const getDefaultBanner = (destination) => {
 const displayTripOverview = () => {
   if (!currentTrip) return
   const trip = currentTrip
+  
   // ---------- Banner ----------
   const bannerImg = document.querySelector('.trip-banner img')
   if (bannerImg && bannerImg.dataset.locked !== 'true') {
@@ -75,23 +81,27 @@ const displayTripOverview = () => {
       bannerImg.src = getDefaultBanner(trip.destination)
     }
   }
+  
   // Title
   const titleEl = document.querySelector('.trip-title')
   if (titleEl) titleEl.textContent = trip.title || 'Untitled Trip'
+  
   // Dates
   const datesEl = document.getElementById('tripDates')
   if (datesEl) datesEl.textContent = formatDateRange(trip)
+  
   // Location
-  const locationText =
-    `${trip.destination || 'Unknown'}${trip.country ? ', ' + trip.country : ''}`
+  const locationText = `${trip.destination || 'Unknown'}${trip.country ? ', ' + trip.country : ''}`
   const locationEl = document.getElementById('tripLocation')
   if (locationEl) locationEl.textContent = locationText
-  //Duration
+  
+  // Duration
   const duration = getDuration(trip)
   const durationEl = document.querySelector('.schedule-card .stat-value')
   if (durationEl) {
     durationEl.textContent = `${duration} ${duration === 1 ? 'Day' : 'Days'}`
   }
+  
   // Budget
   if (trip.budget) {
     const budgetEl = document.querySelector('.budget-card .stat-value')
@@ -100,155 +110,30 @@ const displayTripOverview = () => {
     }
   }
 }
+
 // Load additional trip statistics
 const loadTripStats = async () => {
   try {
     const res = await apiService.places.getByTrip(currentTrip._id)
     const count = Array.isArray(res?.data) ? res.data.length :
                   Array.isArray(res) ? res.length : 0
+    
     const valueEl = document.querySelector('.places-card .stat-value')
     const labelEl = document.querySelector('.places-card .stat-label')
+    
     if (valueEl) valueEl.textContent = count
     if (labelEl) labelEl.textContent = count === 1 ? 'Place' : 'Places'
   } catch (err) {
     console.error('Error loading stats:', err)
   }
 }
-// Banner Upload
+
+// ========== BANNER UPLOAD (MERGED - KEEPING LATEST VERSION WITH REMOVE BUTTON) ==========
 const initBannerUpload = () => {
   const container = document.querySelector('.trip-banner')
   if (!container) return
+  
   // Upload button
-  let uploadBtn = container.querySelector('.banner-upload-btn')
-  if (!uploadBtn) {
-    uploadBtn = document.createElement('button')
-    uploadBtn.className = 'banner-upload-btn'
-    uploadBtn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
-    container.appendChild(uploadBtn)
-  }
-  // Hidden file input
-  let fileInput = document.getElementById('bannerFileInput')
-  if (!fileInput) {
-    fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.accept = 'image/jpeg,image/png,image/webp'
-    fileInput.id = 'bannerFileInput'
-    fileInput.style.display = 'none'
-    container.appendChild(fileInput)
-  }
-
-  uploadBtn.onclick = e => {
-    e.stopPropagation()
-    fileInput.click()
-  }
-
-  fileInput.onchange = async e => {
-    const file = e.target.files[0]
-    if (!file || !validateBannerImage(file)) return
-    previewBanner(file)
-    await uploadBanner(file)
-  }
-}
-// Instant banner preview (UX polish)
-const previewBanner = (file) => {
-  const img = document.querySelector('.trip-banner img')
-  if (!img) return
-  const url = URL.createObjectURL(file)
-  img.dataset.locked = 'true'
-  img.src = url
-  img.onload = () => URL.revokeObjectURL(url)
-}
-// Validate banner image
-const validateBannerImage = (file) => {
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp']
-  const maxSize = 5 * 1024 * 1024
-  if (!validTypes.includes(file.type)) {
-    showToast?.('Invalid image format', 'error')
-    return false
-  }
-  if (file.size > maxSize) {
-    showToast?.('Image must be under 5MB', 'error')
-    return false
-  }
-  return true
-}
-// Upload banner to backend
-const uploadBanner = async (file) => {
-  try {
-    const btn = document.querySelector('.banner-upload-btn')
-    btn.disabled = true
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
-    const formData = new FormData()
-    formData.append('image', file)
-    const token = sessionStorage.getItem('accessToken')
-    const res = await fetch(`${apiService.baseURL}/trips/${currentTrip._id}/banner`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
-    })
-
-    const data = await res.json()
-    if (!res.ok || !data.success) throw new Error(data.message)
-    currentTrip.coverImage = data.data.coverImage
-    displayTripOverview()
-    showToast?.('Banner saved!', 'success')
-  } catch (err) {
-    console.error(err)
-    showToast?.('Failed to upload banner', 'error')
-    displayTripOverview()
-  } finally {
-    const btn = document.querySelector('.banner-upload-btn')
-    const input = document.getElementById('bannerFileInput')
-    if (btn) {
-      btn.disabled = false
-      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
-    }
-    if (input) input.value = ''
-  }
-}
-
-//Remove trip banner
-const removeBanner = async () => {
-  if (!confirm('Are you sure you want to remove the banner? It will revert to the default.')) {
-    return
-  }
-  try {
-    const btn = document.querySelector('.banner-upload-btn')
-    const removeBannerBtn = document.querySelector('.banner-remove-btn') 
-    if (btn) {
-      btn.disabled = true
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...'
-    }
-    if (removeBannerBtn) {
-      removeBannerBtn.disabled = true
-    }
-    await apiService.trips.removeBanner(currentTrip._id)
-    currentTrip.coverImage = null
-    const bannerImg = document.querySelector('.trip-banner img')
-    if (bannerImg) {
-      bannerImg.dataset.locked = 'true'
-      bannerImg.src = getDefaultBanner(currentTrip.destination)
-    }
-    showToast?.('Banner removed successfully!', 'success')
-  } catch (err) {
-    console.error('Remove banner error:', err)
-    showToast?.('Failed to remove banner', 'error')
-  } finally {
-    const btn = document.querySelector('.banner-upload-btn')
-    const removeBannerBtn = document.querySelector('.banner-remove-btn')
-    if (btn) {
-      btn.disabled = false
-      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
-    }
-    if (removeBannerBtn) {
-      removeBannerBtn.disabled = false
-    }
-  }
-}
-
-const initBannerUpload = () => {
-  const container = document.querySelector('.trip-banner')
-  if (!container) return
   let uploadBtn = container.querySelector('.banner-upload-btn')
   if (!uploadBtn) {
     uploadBtn = document.createElement('button')
@@ -285,6 +170,7 @@ const initBannerUpload = () => {
     `
     container.appendChild(removeBtn)
   }
+  
   // Hidden file input
   let fileInput = document.getElementById('bannerFileInput')
   if (!fileInput) {
@@ -295,21 +181,134 @@ const initBannerUpload = () => {
     fileInput.style.display = 'none'
     container.appendChild(fileInput)
   }
+  
   // Event listeners
   uploadBtn.onclick = e => {
     e.stopPropagation()
     fileInput.click()
   }
-  //Remove button click
+  
+  // Remove button click
   removeBtn.onclick = e => {
     e.stopPropagation()
     removeBanner()
   }
+  
   fileInput.onchange = async e => {
     const file = e.target.files[0]
     if (!file || !validateBannerImage(file)) return
     previewBanner(file)
     await uploadBanner(file)
+  }
+}
+
+// Instant banner preview (UX polish)
+const previewBanner = (file) => {
+  const img = document.querySelector('.trip-banner img')
+  if (!img) return
+  
+  const url = URL.createObjectURL(file)
+  img.dataset.locked = 'true'
+  img.src = url
+  img.onload = () => URL.revokeObjectURL(url)
+}
+
+// Validate banner image
+const validateBannerImage = (file) => {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+  const maxSize = 5 * 1024 * 1024
+  
+  if (!validTypes.includes(file.type)) {
+    showToast?.('Invalid image format', 'error')
+    return false
+  }
+  if (file.size > maxSize) {
+    showToast?.('Image must be under 5MB', 'error')
+    return false
+  }
+  return true
+}
+
+// Upload banner to backend
+const uploadBanner = async (file) => {
+  try {
+    const btn = document.querySelector('.banner-upload-btn')
+    btn.disabled = true
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
+    
+    const formData = new FormData()
+    formData.append('image', file)
+    
+    const token = sessionStorage.getItem('accessToken')
+    const res = await fetch(`${apiService.baseURL}/trips/${currentTrip._id}/banner`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message)
+    
+    currentTrip.coverImage = data.data.coverImage
+    displayTripOverview()
+    showToast?.('Banner saved!', 'success')
+  } catch (err) {
+    console.error(err)
+    showToast?.('Failed to upload banner', 'error')
+    displayTripOverview()
+  } finally {
+    const btn = document.querySelector('.banner-upload-btn')
+    const input = document.getElementById('bannerFileInput')
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
+    }
+    if (input) input.value = ''
+  }
+}
+
+// Remove trip banner
+const removeBanner = async () => {
+  if (!confirm('Are you sure you want to remove the banner? It will revert to the default.')) {
+    return
+  }
+  
+  try {
+    const btn = document.querySelector('.banner-upload-btn')
+    const removeBannerBtn = document.querySelector('.banner-remove-btn') 
+    
+    if (btn) {
+      btn.disabled = true
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...'
+    }
+    if (removeBannerBtn) {
+      removeBannerBtn.disabled = true
+    }
+    
+    await apiService.trips.removeBanner(currentTrip._id)
+    
+    currentTrip.coverImage = null
+    const bannerImg = document.querySelector('.trip-banner img')
+    if (bannerImg) {
+      bannerImg.dataset.locked = 'true'
+      bannerImg.src = getDefaultBanner(currentTrip.destination)
+    }
+    
+    showToast?.('Banner removed successfully!', 'success')
+  } catch (err) {
+    console.error('Remove banner error:', err)
+    showToast?.('Failed to remove banner', 'error')
+  } finally {
+    const btn = document.querySelector('.banner-upload-btn')
+    const removeBannerBtn = document.querySelector('.banner-remove-btn')
+    
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = '<i class="fas fa-camera"></i><span>Change Banner</span>'
+    }
+    if (removeBannerBtn) {
+      removeBannerBtn.disabled = false
+    }
   }
 }
 
@@ -351,6 +350,7 @@ const getDuration = (trip) => {
   const days = Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / 86400000)
   return Math.max(days, 1)
 }
+
 const navigateTo = (section) => {
   const routes = {
     budget: './budget.html',
