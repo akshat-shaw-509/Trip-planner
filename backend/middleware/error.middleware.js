@@ -7,6 +7,9 @@ const notFoundHandler = (req, res, next) => {
 }
 
 const errorHandler = (err, req, res, next) => {
+  console.log('🔥 ERROR HANDLER HIT')
+  console.log('🔥 err type:', typeof err)
+  console.log('🔥 err instanceof Error:', err instanceof Error)
   if (err.name === 'ValidationError' && err.errors) {
     console.error('Validation Errors:');
     Object.keys(err.errors).forEach(key => {
@@ -84,3 +87,4 @@ module.exports = {
   errorHandler,
   asyncHandler
 }
+
