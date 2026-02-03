@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken')
 const User = require('../models/User.model')
 const config = require('../config/env')
 const { UnauthorizedError } = require('../utils/errors')
+const { asyncHandler } = require('./error.middleware')
 
 const getTokenFromHeader = (req) => {
   const authHeader = req.headers.authorization
@@ -9,60 +10,54 @@ const getTokenFromHeader = (req) => {
   return authHeader.split(' ')[1]
 }
 
-// Strict authentication
-const authenticate = async (req, res, next) => {
-  console.log('🔐 authenticate hit');
-  console.log('🔐 next type:', typeof next);
-  try {
-    const token = getTokenFromHeader(req)
-    if (!token) {
-      throw new UnauthorizedError('No token provided')
-    }
-
-    const decoded = jwt.verify(token, config.jwt.secret)
-
-    const user = await User.findById(decoded.id)
-      .select('name email role isActive isVerified profilePicture')
-      .lean()
-
-    if (!user) {
-      throw new UnauthorizedError('User not found')
-    }
-
-    if (!user.isActive) {
-      throw new UnauthorizedError('User account is inactive')
-    }
-
-    req.user = {
-      ...user,
-      _id: user._id,
-      id: user._id.toString()
-    }
-
-    next()
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return next(new UnauthorizedError('Token expired'))
-    }
-
-    if (error.name === 'JsonWebTokenError') {
-      return next(new UnauthorizedError('Invalid token'))
-    }
-
-    if (error.statusCode) {
-      return next(error)
-    }
-
-    return next(new UnauthorizedError('Authentication failed'))
+// ==============================
+// Strict authentication (FIXED)
+// ==============================
+const authenticate = asyncHandler(async (req, res, next) => {
+  const token = getTokenFromHeader(req)
+  if (!token) {
+    throw new UnauthorizedError('No token provided')
   }
-}
 
-// Optional authentication
-const optionalAuth = async (req, res, next) => {
+  let decoded
   try {
-    const token = getTokenFromHeader(req)
-    if (!token) return next()
+    decoded = jwt.verify(token, config.jwt.secret)
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Token expired')
+    }
+    throw new UnauthorizedError('Invalid token')
+  }
 
+  const user = await User.findById(decoded.id)
+    .select('name email role isActive isVerified profilePicture')
+    .lean()
+
+  if (!user) {
+    throw new UnauthorizedError('User not found')
+  }
+
+  if (!user.isActive) {
+    throw new UnauthorizedError('User account is inactive')
+  }
+
+  req.user = {
+    ...user,
+    _id: user._id,
+    id: user._id.toString()
+  }
+
+  next()
+})
+
+// ==============================
+// Optional authentication
+// ==============================
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  const token = getTokenFromHeader(req)
+  if (!token) return next()
+
+  try {
     const decoded = jwt.verify(token, config.jwt.secret)
 
     const user = await User.findById(decoded.id)
@@ -81,10 +76,9 @@ const optionalAuth = async (req, res, next) => {
   }
 
   next()
-}
+})
 
 module.exports = {
   authenticate,
   optionalAuth
 }
-
