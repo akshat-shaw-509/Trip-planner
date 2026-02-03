@@ -64,7 +64,7 @@ const errorHandler = (err, req, res, next) => {
 
 // 404 handler
 const notFoundHandler = (req, res, next) => {
- const error = new Error(`Not Found - ${req.originalUrl}`);
+  const error = new Error(`Not Found - ${req.originalUrl}`);
   res.status(404);
   next(error);
 };
@@ -74,4 +74,3 @@ module.exports = {
   errorHandler,
   notFoundHandler
 };
-
