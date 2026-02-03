@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken')
 const User = require('../models/User.model')
 const config = require('../config/env')
 const { UnauthorizedError } = require('../utils/errors')
-const { asyncHandler } = require('./error.middleware')
 
 const getTokenFromHeader = (req) => {
   const authHeader = req.headers.authorization
@@ -13,70 +12,76 @@ const getTokenFromHeader = (req) => {
 // ==============================
 // Strict authentication (FIXED)
 // ==============================
-const authenticate = asyncHandler(async (req, res, next) => {
-  const token = getTokenFromHeader(req)
-  if (!token) {
-    throw new UnauthorizedError('No token provided')
-  }
-
-  let decoded
+const authenticate = async (req, res, next) => {
   try {
-    decoded = jwt.verify(token, config.jwt.secret)
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      throw new UnauthorizedError('Token expired')
+    const token = getTokenFromHeader(req)
+    if (!token) {
+      throw new UnauthorizedError('No token provided')
     }
-    throw new UnauthorizedError('Invalid token')
-  }
 
-  const user = await User.findById(decoded.id)
-    .select('name email role isActive isVerified profilePicture')
-    .lean()
-
-  if (!user) {
-    throw new UnauthorizedError('User not found')
-  }
-
-  if (!user.isActive) {
-    throw new UnauthorizedError('User account is inactive')
-  }
-
-  req.user = {
-    ...user,
-    _id: user._id,
-    id: user._id.toString()
-  }
-
-  next()
-})
-
-// ==============================
-// Optional authentication
-// ==============================
-const optionalAuth = asyncHandler(async (req, res, next) => {
-  const token = getTokenFromHeader(req)
-  if (!token) return next()
-
-  try {
-    const decoded = jwt.verify(token, config.jwt.secret)
+    let decoded
+    try {
+      decoded = jwt.verify(token, config.jwt.secret)
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedError('Token expired')
+      }
+      throw new UnauthorizedError('Invalid token')
+    }
 
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
       .lean()
 
-    if (user && user.isActive) {
-      req.user = {
-        ...user,
-        _id: user._id,
-        id: user._id.toString()
-      }
+    if (!user) {
+      throw new UnauthorizedError('User not found')
     }
-  } catch (_) {
-    // silently ignore errors
-  }
 
-  next()
-})
+    if (!user.isActive) {
+      throw new UnauthorizedError('User account is inactive')
+    }
+
+    req.user = {
+      ...user,
+      _id: user._id,
+      id: user._id.toString()
+    }
+
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
+// ==============================
+// Optional authentication
+// ==============================
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = getTokenFromHeader(req)
+    if (!token) return next()
+
+    try {
+      const decoded = jwt.verify(token, config.jwt.secret)
+      const user = await User.findById(decoded.id)
+        .select('name email role isActive isVerified profilePicture')
+        .lean()
+
+      if (user && user.isActive) {
+        req.user = {
+          ...user,
+          _id: user._id,
+          id: user._id.toString()
+        }
+      }
+    } catch (_) {
+      // silently ignore errors
+    }
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
 
 module.exports = {
   authenticate,
