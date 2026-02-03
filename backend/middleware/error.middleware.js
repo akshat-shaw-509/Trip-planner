@@ -7,6 +7,10 @@ const notFoundHandler = (req, res, next) => {
 }
 
 const errorHandler = (err, req, res, next) => {
+  console.log('🔥 ERROR HANDLER HIT');
+  console.log('🔥 Error:', err);
+  console.log('🔥 Error type:', typeof err);
+  console.log('🔥 Stack:', err?.stack);
   // Log validation errors for debugging
   if (err.name === 'ValidationError' && err.errors) {
     console.error('Validation Errors:');
@@ -92,3 +96,4 @@ module.exports = {
   errorHandler,
   asyncHandler
 }
+
