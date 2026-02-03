@@ -128,7 +128,7 @@ const loadTripStats = async () => {
   }
 }
 
-// ========== BANNER UPLOAD (MERGED - KEEPING LATEST VERSION WITH REMOVE BUTTON) ==========
+// ========== BANNER UPLOAD - SINGLE DECLARATION ==========
 const initBannerUpload = () => {
   const container = document.querySelector('.trip-banner')
   if (!container) return
