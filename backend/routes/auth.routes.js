@@ -20,6 +20,22 @@ let authLimiter = rateLimit({
 router.post('/login', validateLogin, authLimiter, authController.login)
 router.post('/register', validateRegister, authLimiter, authController.register)
 
+// Google OAuth - Client ID
+router.get('/google-client-id', (req, res) => {
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(500).json({
+      success: false,
+      message: 'Google Client ID not configured'
+    })
+  }
+
+  res.json({
+    success: true,
+    clientId: process.env.GOOGLE_CLIENT_ID
+  })
+})
+
+
 // Google OAuth
 router.post('/google', authController.googleLogin)
 
