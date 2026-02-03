@@ -11,6 +11,8 @@ const getTokenFromHeader = (req) => {
 
 // Strict authentication
 const authenticate = async (req, res, next) => {
+  console.log('🔐 authenticate hit');
+  console.log('🔐 next type:', typeof next);
   try {
     const token = getTokenFromHeader(req)
     if (!token) {
@@ -85,3 +87,4 @@ module.exports = {
   authenticate,
   optionalAuth
 }
+
