@@ -102,6 +102,35 @@ app.use('/api/expenses', expenseRoutes)
 app.use('/api/uploads', uploadRoutes)
 app.use('/api/recommendations', recommendationRoutes)
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Planora API is running',
+    version: '1.0.0',
+    documentation: 'https://github.com/akshat-shaw-509/Trip-planner',
+    endpoints: {
+      auth: '/api/auth',
+      trips: '/api/trips',
+      places: '/api/places',
+      activities: '/api/activities',
+      expenses: '/api/expenses',
+      uploads: '/api/uploads',
+      recommendations: '/api/recommendations',
+      health: '/api/health'
+    }
+  })
+})
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
+
 /* =========================
    9. Error handling
 */
