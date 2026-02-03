@@ -78,7 +78,7 @@ const errorHandler = (err, req, res, next) => {
  //Wraps async route handlers to automatically catch errors
 const asyncHandler = (fn) => {
   return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next)
+    fn(req, res, next).catch(next)
   }
 }
 
@@ -87,4 +87,5 @@ module.exports = {
   errorHandler,
   asyncHandler
 }
+
 
