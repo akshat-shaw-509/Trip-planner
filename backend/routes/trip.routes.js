@@ -12,7 +12,7 @@ router.use(authenticate)
 router.post('/', ...validateTrip, tripController.createTrip)
 router.get('/', tripController.getUserTrips)
 router.get('/:tripId', tripController.getTripById)
-router.put('/:tripId', validateTripUpdate, tripController.updateTrip)
+router.put('/:tripId', ...validateTripUpdate, tripController.updateTrip)
 router.delete('/:tripId', tripController.deleteTrip)
 router.patch('/:tripId/status', tripController.updateTripStatus)
 
