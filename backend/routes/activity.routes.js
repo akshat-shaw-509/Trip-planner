@@ -1,4 +1,4 @@
-
+// ✅ activity.routes.js — fixed
 let express = require('express')
 let router = express.Router()
 let activityController = require('../controllers/activity.controller')
@@ -8,85 +8,43 @@ let {
   validateActivityUpdate 
 } = require('../middleware/activity.validation.middleware')
 
-// All routes require authentication
 router.use(authenticate)
 
 router.post(
   '/trips/:tripId/activities',
   validateActivity,
-  async (req, res, next) => {
-    try {
-      await activityController.createActivity(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.createActivity
 )
 
 router.get(
   '/trips/:tripId/activities',
-  async (req, res, next) => {
-    try {
-      await activityController.getActivitiesByTrip(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.getActivitiesByTrip
 )
 
 router.get(
   '/trips/:tripId/activities/by-date',
-  async (req, res, next) => {
-    try {
-      await activityController.getActivitiesByDate(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.getActivitiesByDate
 )
 
 router.get(
   '/:activityId',
-  async (req, res, next) => {
-    try {
-      await activityController.getActivityById(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.getActivityById
 )
 
 router.put(
   '/:activityId',
   validateActivityUpdate,
-  async (req, res, next) => {
-    try {
-      await activityController.updateActivity(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.updateActivity
 )
 
 router.patch(
   '/:activityId/status',
-  async (req, res, next) => {
-    try {
-      await activityController.updateActivityStatus(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.updateActivityStatus
 )
 
 router.delete(
   '/:activityId',
-  async (req, res, next) => {
-    try {
-      await activityController.deleteActivity(req, res)
-    } catch (error) {
-      next(error)
-    }
-  }
+  activityController.deleteActivity
 )
+
 module.exports = router
