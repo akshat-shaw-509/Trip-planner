@@ -5,7 +5,7 @@ const tripController = require('../controllers/trip.controller')
 const { authenticate } = require('../middleware/auth.middleware')
 const { validateTrip, validateTripUpdate } = require('../middleware/trip.validation.middleware')
 const { uploadBanner } = require('../middleware/upload.middleware')
-
+console.log('AUTHENTICATE TYPE:', typeof authenticate)
 // All routes require authentication
 router.use(authenticate)
 
