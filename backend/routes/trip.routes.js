@@ -9,7 +9,7 @@ let { uploadBanner } = require('../middleware/upload.middleware')
 router.use(authenticate)
 
 // Trip CRUD
-router.post('/', validateTrip, tripController.createTrip)
+router.post('/', ...validateTrip, tripController.createTrip)
 router.get('/', tripController.getUserTrips)
 router.get('/:tripId', tripController.getTripById)
 router.put('/:tripId', validateTripUpdate, tripController.updateTrip)
