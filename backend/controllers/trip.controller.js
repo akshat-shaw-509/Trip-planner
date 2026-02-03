@@ -60,7 +60,7 @@ const deleteTrip = asyncHandler(async (req, res) => {
 // PATCH /api/trips/:tripId/status
 const updateTripStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  if (!status) throw ValidationError('Status is required');
+  if (!status) throw new ValidationError('Status is required');
   
   const trip = await tripService.updateTripStatus(req.params.tripId, status, req.user._id);
   return sendSuccess(res, 200, trip, 'Trip status updated successfully');
@@ -69,7 +69,7 @@ const updateTripStatus = asyncHandler(async (req, res) => {
 // Upload trip banner image
 // POST /api/trips/:tripId/banner
 const uploadBanner = asyncHandler(async (req, res) => {
-  if (!req.file) throw ValidationError('No image file provided');
+  if (!req.file) throw new ValidationError('No image file provided');
   
   const updatedTrip = await tripService.uploadBanner(req.params.tripId, req.user._id, req.file);
   return sendSuccess(res, 200, {
@@ -98,3 +98,4 @@ module.exports = {
   uploadBanner,
   removeBanner
 };
+
