@@ -32,7 +32,7 @@ const createTrip = async (tripData, userId) => {
   } = tripData
 
   if (!title || !destination || !startDate || !endDate) {
-    throw ValidationError(
+    throw new ValidationError(
       'Title, destination, start date and end date are required'
     )
   }
@@ -41,11 +41,11 @@ const createTrip = async (tripData, userId) => {
   const end = new Date(endDate)
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw ValidationError('Invalid date format')
+    throw new ValidationError('Invalid date format')
   }
 
   if (end < start) {
-    throw ValidationError('End date must be after or equal to start date')
+    throw new ValidationError('End date must be after or equal to start date')
   }
 
   return Trip.create({
@@ -113,14 +113,14 @@ const getTripsByUser = async (userId, filters = {}) => {
  */
 const getTripById = async (tripId, userId) => {
   if (!tripId) {
-    throw ValidationError('Trip ID is required')
+    throw new ValidationError('Trip ID is required')
   }
 
   const trip = await Trip.findById(tripId)
-  if (!trip) throw NotFoundError('Trip not found')
+  if (!trip) throw new NotFoundError('Trip not found')
 
   if (trip.userId.toString() !== userId.toString()) {
-    throw ForbiddenError('You do not have access to this trip')
+    throw new ForbiddenError('You do not have access to this trip')
   }
 
   return trip
@@ -132,17 +132,17 @@ const getTripById = async (tripId, userId) => {
  */
 const updateTrip = async (tripId, updateData, userId) => {
   if (!tripId) {
-    throw ValidationError('Trip ID is required')
+    throw new ValidationError('Trip ID is required')
   }
 
   const blockedFields = ['_id', 'userId', 'createdAt', 'updatedAt']
   if (blockedFields.some(f => f in updateData)) {
-    throw ValidationError('Cannot update system fields')
+    throw new ValidationError('Cannot update system fields')
   }
 
   if (updateData.startDate || updateData.endDate) {
     const existingTrip = await Trip.findById(tripId)
-    if (!existingTrip) throw NotFoundError('Trip not found')
+    if (!existingTrip) throw new NotFoundError('Trip not found')
 
     const start = updateData.startDate
       ? new Date(updateData.startDate)
@@ -153,7 +153,7 @@ const updateTrip = async (tripId, updateData, userId) => {
       : existingTrip.endDate
 
     if (end < start) {
-      throw ValidationError('End date must be after or equal to start date')
+      throw new ValidationError('End date must be after or equal to start date')
     }
 
     updateData.startDate = start
@@ -167,7 +167,7 @@ const updateTrip = async (tripId, updateData, userId) => {
   )
 
   if (!trip) {
-    throw NotFoundError('Trip not found or access denied')
+    throw new NotFoundError('Trip not found or access denied')
   }
 
   return trip
@@ -184,7 +184,7 @@ const deleteTrip = async (tripId, userId) => {
   })
 
   if (!trip) {
-    throw NotFoundError('Trip not found or access denied')
+    throw new NotFoundError('Trip not found or access denied')
   }
 
   return { message: 'Trip deleted successfully' }
@@ -196,7 +196,7 @@ const deleteTrip = async (tripId, userId) => {
  */
 const updateTripStatus = async (tripId, status, userId) => {
   if (!TRIP_STATUSES.includes(status)) {
-    throw ValidationError(
+    throw new ValidationError(
       `Status must be one of: ${TRIP_STATUSES.join(', ')}`
     )
   }
@@ -208,7 +208,7 @@ const updateTripStatus = async (tripId, status, userId) => {
   )
 
   if (!trip) {
-    throw NotFoundError('Trip not found or access denied')
+    throw new NotFoundError('Trip not found or access denied')
   }
 
   return trip
