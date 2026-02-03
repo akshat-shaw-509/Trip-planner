@@ -7,15 +7,20 @@ const notFoundHandler = (req, res, next) => {
 }
 
 const errorHandler = (err, req, res, next) => {
-  console.log('🔥 ERROR HANDLER HIT')
-  console.log('🔥 err type:', typeof err)
-  console.log('🔥 err instanceof Error:', err instanceof Error)
+  // Log validation errors for debugging
   if (err.name === 'ValidationError' && err.errors) {
     console.error('Validation Errors:');
     Object.keys(err.errors).forEach(key => {
-      console.error(` ${key}:`, err.errors[key].message);
+      console.error(`  ${key}:`, err.errors[key].message);
     });
+  } else if (err.statusCode >= 500) {
+    // Only log server errors
+    console.error('Server Error:', err.message);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(err.stack);
+    }
   }
+  
   let statusCode = err.statusCode || 500
   let message = err.message || 'Internal Server Error'
 
@@ -87,5 +92,3 @@ module.exports = {
   errorHandler,
   asyncHandler
 }
-
-
