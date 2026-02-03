@@ -9,6 +9,7 @@ const getTokenFromHeader = (req) => {
   return authHeader.split(' ')[1]
 }
 
+// Strict authentication
 const authenticate = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req)
@@ -54,12 +55,14 @@ const authenticate = async (req, res, next) => {
   }
 }
 
+// Optional authentication
 const optionalAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req)
     if (!token) return next()
 
     const decoded = jwt.verify(token, config.jwt.secret)
+
     const user = await User.findById(decoded.id)
       .select('name email role isActive isVerified profilePicture')
       .lean()
@@ -69,3 +72,17 @@ const optionalAuth = async (req, res, next) => {
         ...user,
         _id: user._id,
         id: user._id.toString()
+      }
+    }
+  } catch (_) {
+    // silently ignore errors
+  }
+
+  next()
+}
+
+module.exports = {
+  authenticate,
+  optionalAuth
+}
+
