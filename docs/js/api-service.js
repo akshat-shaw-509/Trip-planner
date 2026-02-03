@@ -207,7 +207,8 @@ const apiService = {
   trips: {
     async getAll(filters = {}) {
       const params = new URLSearchParams(filters);
-      return await apiService.request(`/trips?${params}`);
+      const query = params.toString();
+      return await apiService.request(`/trips${query ? '?' + query : ''}`);
     },
 
     async getById(id) {
@@ -245,7 +246,8 @@ const apiService = {
   places: {
     async getByTrip(tripId, filters = {}) {
       const params = new URLSearchParams(filters);
-      return await apiService.request(`/trips/${tripId}/places?${params}`);
+      const query = params.toString();
+      return await apiService.request(`/trips/${tripId}/places${query ? '?' + query : ''}`);
     },
 
     async create(tripId, data) {
@@ -283,7 +285,8 @@ const apiService = {
 
     async searchNearby(tripId, options = {}) {
       const params = new URLSearchParams(options);
-      return await apiService.request(`/trips/${tripId}/places/nearby?${params}`);
+      const query = params.toString();
+      return await apiService.request(`/trips/${tripId}/places/nearby${query ? '?' + query : ''}`);
     }
   },
 
@@ -425,7 +428,8 @@ const apiService = {
   recommendations: {
     async getForTrip(tripId, options = {}) {
       const params = new URLSearchParams(options);
-      return await apiService.request(`/trips/${tripId}/recommendations?${params}`);
+      const query = params.toString();
+      return await apiService.request(`/trips/${tripId}/recommendations${query ? '?' + query : ''}`);
     }
   }
 };
