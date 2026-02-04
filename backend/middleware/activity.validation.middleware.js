@@ -1,5 +1,7 @@
+// Validate activity creation
 const validateActivity = (req, res, next) => {
   const { title, startTime, endTime, date } = req.body;
+
   // Title is required
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
     return res.status(400).json({
@@ -7,6 +9,7 @@ const validateActivity = (req, res, next) => {
       message: 'Title is required'
     });
   }
+
   // Start time is required
   if (!startTime) {
     return res.status(400).json({
@@ -14,6 +17,7 @@ const validateActivity = (req, res, next) => {
       message: 'Start time is required'
     });
   }
+
   // End time is required
   if (!endTime) {
     return res.status(400).json({
@@ -21,6 +25,7 @@ const validateActivity = (req, res, next) => {
       message: 'End time is required'
     });
   }
+
   // Validate time logic: end time must be after start time
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -56,13 +61,15 @@ const validateActivity = (req, res, next) => {
       });
     }
   }
+
   next();
 };
 
-//Validate activity update
- //Only validates fields that are being updated
+// Validate activity update
+// Only validates fields that are being updated
 const validateActivityUpdate = (req, res, next) => {
   const { title, startTime, endTime, date } = req.body;
+
   // Title validation
   if (title !== undefined) {
     if (typeof title !== 'string' || title.trim().length === 0) {
@@ -72,16 +79,19 @@ const validateActivityUpdate = (req, res, next) => {
       });
     }
   }
+
   // Time validation
   if (startTime && endTime) {
     const start = new Date(startTime);
     const end = new Date(endTime);
+
     if (isNaN(start.getTime())) {
       return res.status(400).json({
         success: false,
         message: 'Invalid start time format'
       });
     }
+
     if (isNaN(end.getTime())) {
       return res.status(400).json({
         success: false,
@@ -128,11 +138,11 @@ const validateActivityUpdate = (req, res, next) => {
       });
     }
   }
+
   next();
 };
+
 module.exports = {
   validateActivity,
   validateActivityUpdate
-}
-
-
+};
