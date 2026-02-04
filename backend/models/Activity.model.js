@@ -65,7 +65,7 @@ const activitySchema = new mongoose.Schema(
     },
     message: 'End time must be after start time',
   },
-}
+},
     status: {
       type: String,
       enum: {
@@ -125,5 +125,6 @@ activitySchema.pre('save', function () {
 })
 
 module.exports = mongoose.model('Activity', activitySchema)
+
 
 
