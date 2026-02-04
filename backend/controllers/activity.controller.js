@@ -21,7 +21,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 
 // Create a new activity for a trip
 // POST /api/activities/trips/:tripId/activities
-const createActivity = asyncHandler(async (req, res, next) => {
+const createActivity = asyncHandler(async (req, res) => {
   const activity = await activityService.createActivity(
     req.params.tripId,
     req.body,
@@ -32,7 +32,7 @@ const createActivity = asyncHandler(async (req, res, next) => {
 
 // Get all activities for a trip
 // GET /api/activities/trips/:tripId/activities
-const getActivitiesByTrip = asyncHandler(async (req, res, next) => {
+const getActivitiesByTrip = asyncHandler(async (req, res) => {
   const activities = await activityService.getActivitiesByTrip(
     req.params.tripId,
     req.user.id
@@ -42,7 +42,7 @@ const getActivitiesByTrip = asyncHandler(async (req, res, next) => {
 
 // Get a single activity by ID
 // GET /api/activities/:activityId
-const getActivityById = asyncHandler(async (req, res, next) => {
+const getActivityById = asyncHandler(async (req, res) => {
   const activity = await activityService.getActivityById(
     req.params.activityId,
     req.user.id
@@ -52,7 +52,7 @@ const getActivityById = asyncHandler(async (req, res, next) => {
 
 // Update an activity
 // PUT /api/activities/:activityId
-const updateActivity = asyncHandler(async (req, res, next) => {
+const updateActivity = asyncHandler(async (req, res) => {
   const activity = await activityService.updateActivity(
     req.params.activityId,
     req.body,
@@ -63,7 +63,7 @@ const updateActivity = asyncHandler(async (req, res, next) => {
 
 // Delete an activity
 // DELETE /api/activities/:activityId
-const deleteActivity = asyncHandler(async (req, res, next) => {
+const deleteActivity = asyncHandler(async (req, res) => {
   const result = await activityService.deleteActivity(
     req.params.activityId,
     req.user.id
@@ -73,7 +73,7 @@ const deleteActivity = asyncHandler(async (req, res, next) => {
 
 // Get activities for a specific date
 // GET /api/activities/trips/:tripId/activities/by-date?date=YYYY-MM-DD
-const getActivitiesByDate = asyncHandler(async (req, res, next) => {
+const getActivitiesByDate = asyncHandler(async (req, res) => {
   const { date } = req.query;
   if (!date) return sendError(res, 400, 'Date query parameter required');
   
@@ -87,7 +87,7 @@ const getActivitiesByDate = asyncHandler(async (req, res, next) => {
 
 // Update activity status
 // PATCH /api/activities/:activityId/status
-const updateActivityStatus = asyncHandler(async (req, res, next) => {
+const updateActivityStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!status) return sendError(res, 400, 'Status required');
   
