@@ -56,14 +56,16 @@ const activitySchema = new mongoose.Schema(
       required: [true, 'Start time is required'],
     },
     endTime: {
-      type: Date,
-      validate: {
-        validator: function (value) {
-          return !value || value > this.startTime
-        },
-        message: 'End time must be after start time',
-      },
+  type: Date,
+  validate: {
+    validator: function (value) {
+      // If either value is missing, skip validation
+      if (!value || !this.startTime) return true
+      return value > this.startTime
     },
+    message: 'End time must be after start time',
+  },
+}
     status: {
       type: String,
       enum: {
@@ -123,4 +125,5 @@ activitySchema.pre('save', function () {
 })
 
 module.exports = mongoose.model('Activity', activitySchema)
+
 
