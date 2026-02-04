@@ -226,18 +226,15 @@ function loadSavedPreferences() {
 }
 
 /* ====================== INIT ====================== */
-let advancedListenersAttached = false;
-
 async function initRecommendations(tripId, tripData) {
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;
 
   loadSavedPreferences();
-  await loadUserPreferences();
+  // Preferences feature disabled intentionally
 
   renderAdvancedControls();
   attachAdvancedListenersOnce();
-
   await loadRecommendations();
 }
 
