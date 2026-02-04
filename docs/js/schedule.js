@@ -381,7 +381,6 @@
 
     // Save activity
     async function saveActivity() {
-        console.log('Sending activity data:', activityData);
         let title = document.getElementById('activityTitle').value.trim()
         let description = document.getElementById('activityDescription').value.trim()
         let startTime = document.getElementById('activityStartTime').value
@@ -404,6 +403,7 @@
             visitStatus: 'planned',
             notes: notes || ''
         }
+        console.log('Sending activity data:', activityData);
         try {
             const api = window.apiService || apiService
             if (currentActivityId) {
