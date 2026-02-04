@@ -1,50 +1,58 @@
-// ✅ activity.routes.js — fixed
-let express = require('express')
-let router = express.Router()
-let activityController = require('../controllers/activity.controller')
-let { authenticate } = require('../middleware/auth.middleware')
-let { 
+// ✅ activity.routes.js — FIXED
+const express = require('express');
+const router = express.Router();
+const activityController = require('../controllers/activity.controller');
+const { authenticate } = require('../middleware/auth.middleware');
+const { 
   validateActivity, 
   validateActivityUpdate 
-} = require('../middleware/activity.validation.middleware')
+} = require('../middleware/activity.validation.middleware');
 
-router.use(authenticate)
+// Apply authentication to all routes
+router.use(authenticate);
 
+// Create activity - validateActivity is middleware, createActivity is the final handler
 router.post(
   '/trips/:tripId/activities',
   validateActivity,
   activityController.createActivity
-)
+);
 
+// Get all activities for a trip
 router.get(
   '/trips/:tripId/activities',
   activityController.getActivitiesByTrip
-)
+);
 
+// Get activities by date
 router.get(
   '/trips/:tripId/activities/by-date',
   activityController.getActivitiesByDate
-)
+);
 
+// Get single activity
 router.get(
   '/:activityId',
   activityController.getActivityById
-)
+);
 
+// Update activity
 router.put(
   '/:activityId',
   validateActivityUpdate,
   activityController.updateActivity
-)
+);
 
+// Update activity status
 router.patch(
   '/:activityId/status',
   activityController.updateActivityStatus
-)
+);
 
+// Delete activity
 router.delete(
   '/:activityId',
   activityController.deleteActivity
-)
+);
 
-module.exports = router
+module.exports = router;
