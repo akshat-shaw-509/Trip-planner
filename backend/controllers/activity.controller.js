@@ -14,13 +14,14 @@ const sendError = (res, statusCode, message) => {
   return res.status(statusCode).json({ success: false, message });
 };
 
-// Async wrapper so rejected promises go to Express error middleware
-const asyncHandler = (fn) => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next); // recommended pattern [web:12]
+// Async wrapper - ensures errors are passed to Express error middleware
+const asyncHandler = (fn) => (req, res, next) => {
+  return Promise.resolve(fn(req, res, next)).catch(next);
+};
 
 // Create a new activity for a trip
-// POST /api/trips/:tripId/activities
-const createActivity = asyncHandler(async (req, res) => {
+// POST /api/activities/trips/:tripId/activities
+const createActivity = asyncHandler(async (req, res, next) => {
   const activity = await activityService.createActivity(
     req.params.tripId,
     req.body,
@@ -30,8 +31,8 @@ const createActivity = asyncHandler(async (req, res) => {
 });
 
 // Get all activities for a trip
-// GET /api/trips/:tripId/activities
-const getActivitiesByTrip = asyncHandler(async (req, res) => {
+// GET /api/activities/trips/:tripId/activities
+const getActivitiesByTrip = asyncHandler(async (req, res, next) => {
   const activities = await activityService.getActivitiesByTrip(
     req.params.tripId,
     req.user.id
@@ -41,7 +42,7 @@ const getActivitiesByTrip = asyncHandler(async (req, res) => {
 
 // Get a single activity by ID
 // GET /api/activities/:activityId
-const getActivityById = asyncHandler(async (req, res) => {
+const getActivityById = asyncHandler(async (req, res, next) => {
   const activity = await activityService.getActivityById(
     req.params.activityId,
     req.user.id
@@ -51,7 +52,7 @@ const getActivityById = asyncHandler(async (req, res) => {
 
 // Update an activity
 // PUT /api/activities/:activityId
-const updateActivity = asyncHandler(async (req, res) => {
+const updateActivity = asyncHandler(async (req, res, next) => {
   const activity = await activityService.updateActivity(
     req.params.activityId,
     req.body,
@@ -62,7 +63,7 @@ const updateActivity = asyncHandler(async (req, res) => {
 
 // Delete an activity
 // DELETE /api/activities/:activityId
-const deleteActivity = asyncHandler(async (req, res) => {
+const deleteActivity = asyncHandler(async (req, res, next) => {
   const result = await activityService.deleteActivity(
     req.params.activityId,
     req.user.id
@@ -71,11 +72,11 @@ const deleteActivity = asyncHandler(async (req, res) => {
 });
 
 // Get activities for a specific date
-// GET /api/trips/:tripId/activities/by-date?date=YYYY-MM-DD
-const getActivitiesByDate = asyncHandler(async (req, res) => {
+// GET /api/activities/trips/:tripId/activities/by-date?date=YYYY-MM-DD
+const getActivitiesByDate = asyncHandler(async (req, res, next) => {
   const { date } = req.query;
   if (!date) return sendError(res, 400, 'Date query parameter required');
-
+  
   const activities = await activityService.getActivitiesByDate(
     req.params.tripId,
     date,
@@ -86,10 +87,10 @@ const getActivitiesByDate = asyncHandler(async (req, res) => {
 
 // Update activity status
 // PATCH /api/activities/:activityId/status
-const updateActivityStatus = asyncHandler(async (req, res) => {
+const updateActivityStatus = asyncHandler(async (req, res, next) => {
   const { status } = req.body;
   if (!status) return sendError(res, 400, 'Status required');
-
+  
   const activity = await activityService.updateActivityStatus(
     req.params.activityId,
     status,
