@@ -18,37 +18,41 @@ const validateActivity = (req, res, next) => {
     });
   }
 
-  // End time is required
-  if (!endTime) {
-    return res.status(400).json({
-      success: false,
-      message: 'End time is required'
-    });
-  }
+  // End time is optional (removed required check since frontend doesn't always send it)
+  // Validate time logic only if end time is provided
+  if (endTime) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-  // Validate time logic: end time must be after start time
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid start time format'
+      });
+    }
 
-  if (isNaN(start.getTime())) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid start time format'
-    });
-  }
+    if (isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid end time format'
+      });
+    }
 
-  if (isNaN(end.getTime())) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid end time format'
-    });
-  }
-
-  if (start >= end) {
-    return res.status(400).json({
-      success: false,
-      message: 'End time must be after start time'
-    });
+    if (start >= end) {
+      return res.status(400).json({
+        success: false,
+        message: 'End time must be after start time'
+      });
+    }
+  } else {
+    // Just validate startTime format
+    const start = new Date(startTime);
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid start time format'
+      });
+    }
   }
 
   // Date validation
