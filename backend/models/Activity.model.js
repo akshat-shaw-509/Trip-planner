@@ -116,11 +116,11 @@ activitySchema.virtual('duration').get(function () {
 })
 
 // Pre-save hook: Validate date logic
-activitySchema.pre('save', function(next) {
+activitySchema.pre('save', function () {
   if (this.endTime && this.endTime <= this.startTime) {
-    return next(new Error('End time must be after start time'))
+    throw new Error('End time must be after start time')
   }
-  next()
 })
 
 module.exports = mongoose.model('Activity', activitySchema)
+
