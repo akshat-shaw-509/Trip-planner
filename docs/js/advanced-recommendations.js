@@ -12,10 +12,8 @@ const advancedRecState = {
     nearbyOnly: false
   },
   savedPlaces: new Set(),
-  selectedForBulk: new Set(),
-  filterPanelOpen: false // NEW: Track filter panel state
+  selectedForBulk: new Set()
 };
-
 if (!window.filterState) {
   window.filterState = {
     activeFilters: {
@@ -44,166 +42,67 @@ const recommendationsState = window.recommendationsState;
 
 let userPreferences = null;
 
-/* ====================== FILTER TOGGLE ====================== */
-function toggleFilterPanel() {
-  const filterPanel = document.querySelector('.recommendation-controls');
-  const toggleBtn = document.getElementById('filterToggleBtn');
-  
-  if (!filterPanel) return;
-  
-  advancedRecState.filterPanelOpen = !advancedRecState.filterPanelOpen;
-  
-  if (advancedRecState.filterPanelOpen) {
-    filterPanel.classList.add('active');
-    toggleBtn?.classList.add('active');
-  } else {
-    filterPanel.classList.remove('active');
-    toggleBtn?.classList.remove('active');
-  }
-}
-
-window.toggleFilterPanel = toggleFilterPanel;
-
 /* ====================== RENDER CONTROLS ====================== */
 function renderAdvancedControls() {
-  const section = document.querySelector('.recommendations-section');
-  if (!section) return;
+  const modalContent = document.getElementById('filterModalContent');
+  if (!modalContent) return;
 
-  // Remove existing controls
-  section.querySelector('.recommendation-controls-wrapper')?.remove();
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'recommendation-controls-wrapper';
-  wrapper.innerHTML = `
-    <!-- Filter Toggle Button (Mobile/Desktop) -->
-    <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
-      <i class="fas fa-sliders-h"></i>
-      <span>Filters</span>
-      <span class="filter-count-badge" id="activeFilterCount" style="display: none;">0</span>
-    </button>
-
-    <!-- Filter Panel (Hidden by default on mobile) -->
+  modalContent.innerHTML = `
     <div class="recommendation-controls">
-      <div class="controls-header">
-        <h3><i class="fas fa-filter"></i> Filters</h3>
-        <button class="filter-close-btn" onclick="toggleFilterPanel()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
 
-      <!-- Category Filter -->
       <div class="controls-section">
         <label class="section-title">Category</label>
         <div class="category-buttons">
-          <button class="category-btn active" data-category="all">
-            <i class="fas fa-th"></i> All
-          </button>
-          <button class="category-btn" data-category="restaurant">
-            <i class="fas fa-utensils"></i> Restaurants
-          </button>
-          <button class="category-btn" data-category="attraction">
-            <i class="fas fa-landmark"></i> Attractions
-          </button>
-          <button class="category-btn" data-category="accommodation">
-            <i class="fas fa-bed"></i> Hotels
-          </button>
+          <button class="category-btn active" data-category="all">All</button>
+          <button class="category-btn" data-category="restaurant">Restaurants</button>
+          <button class="category-btn" data-category="attraction">Attractions</button>
+          <button class="category-btn" data-category="accommodation">Hotels</button>
         </div>
       </div>
 
-      <!-- Rating Filter -->
       <div class="controls-section">
         <label class="section-title">
           Minimum Rating: <span id="ratingValue">3.0 ⭐</span>
         </label>
-        <input
-          type="range"
-          id="ratingSlider"
-          class="rating-slider"
-          min="0"
-          max="5"
-          step="0.5"
-          value="3.0"
-        />
+        <input type="range" id="ratingSlider" min="0" max="5" step="0.5" value="3.0" />
       </div>
 
-      <!-- Distance Filter -->
       <div class="controls-section">
         <label class="section-title">
           Search Radius: <span id="radiusValue">10 km</span>
         </label>
-        <input
-          type="range"
-          id="radiusSlider"
-          class="rating-slider"
-          min="1"
-          max="50"
-          step="1"
-          value="10"
-        />
+        <input type="range" id="radiusSlider" min="1" max="50" step="1" value="10" />
       </div>
 
-      <!-- Sort Options -->
       <div class="controls-section">
         <label class="section-title">Sort By</label>
         <div class="sort-buttons">
-          <button class="sort-btn active" data-sort="score">
-            <i class="fas fa-star"></i> Best Match
-          </button>
-          <button class="sort-btn" data-sort="rating">
-            <i class="fas fa-award"></i> Rating
-          </button>
-          <button class="sort-btn" data-sort="distance">
-            <i class="fas fa-map-marker-alt"></i> Distance
-          </button>
+          <button class="sort-btn active" data-sort="score">Best Match</button>
+          <button class="sort-btn" data-sort="rating">Rating</button>
+          <button class="sort-btn" data-sort="distance">Distance</button>
         </div>
       </div>
 
-      <!-- Quick Filters -->
       <div class="controls-section">
         <label class="section-title">Quick Filters</label>
         <div class="quick-filters">
-          <button class="quick-filter-btn" data-filter="hiddenGems">
-            <i class="fas fa-gem"></i> Hidden Gems
-          </button>
-          <button class="quick-filter-btn" data-filter="topRated">
-            <i class="fas fa-crown"></i> Top Rated
-          </button>
+          <button class="quick-filter-btn" data-filter="hiddenGems">Hidden Gems</button>
+          <button class="quick-filter-btn" data-filter="topRated">Top Rated</button>
         </div>
       </div>
 
-      <!-- Apply/Reset Buttons -->
       <div class="filter-actions">
-        <button class="btn-reset-filters" onclick="resetFilters()">
-          <i class="fas fa-undo"></i> Reset All
-        </button>
-        <button class="btn-apply-filters" onclick="applyFiltersAndClose()">
-          <i class="fas fa-check"></i> Apply Filters
-        </button>
+        <button class="btn-reset-filters" onclick="resetFilters()">Reset All</button>
+        <button class="btn-apply-filters" onclick="applyFiltersAndClose()">Apply Filters</button>
       </div>
-    </div>
 
-    <!-- Recommendations Grid -->
-    <div class="recommendations-content">
-      <div class="recommendations-header">
-        <h3 id="resultsCount">0 Recommendations</h3>
-      </div>
-      <div class="recommendations-grid" id="recommendationsGrid">
-        <!-- Cards will be inserted here -->
-      </div>
     </div>
   `;
-
-  const headerSection = section.querySelector('.section-header');
-  if (headerSection) {
-    headerSection.after(wrapper);
-  } else {
-    section.appendChild(wrapper);
-  }
 }
 
 function applyFiltersAndClose() {
   applyQuickFilters();
-  toggleFilterPanel();
+  document.getElementById('filterModal').style.display = 'none';
   showToast('Filters applied!', 'success');
 }
 
@@ -734,9 +633,8 @@ async function initRecommendations(tripId, tripData) {
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;
 
+  renderAdvancedControls();   // ✅ ADD THIS LINE
   loadSavedPreferences();
-
-  renderAdvancedControls();
   attachAdvancedListenersOnce();
   await loadRecommendations();
 }
