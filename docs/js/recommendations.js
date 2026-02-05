@@ -117,7 +117,10 @@ function createRecommendationCard(rec) {
     `).join('');
 
     return `
-        <div class="recommendation-card">
+        <div class="recommendation-card"
+     data-lat="${rec.lat}"
+     data-lon="${rec.lon}"
+     data-category="${rec.category}">
             <div class="rec-header">
                 <div class="rec-title">
                     <h3>${escapeHtml(rec.name)}</h3>
