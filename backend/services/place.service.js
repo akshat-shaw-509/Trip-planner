@@ -26,7 +26,8 @@ let createPlace = async (tripId, placeData, userId) => {
 
   return Place.create({
     ...placeData,
-    tripId
+    tripId,
+    userId
   })
 }
 
