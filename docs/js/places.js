@@ -339,6 +339,10 @@ function updateRecommendedMarkers() {
     return;
   }
 
+  console.log('=== updateRecommendedMarkers called ===');
+  console.log('filterState:', window.filterState);
+  console.log('recommendationsState:', window.recommendationsState);
+
   // Clear existing recommendation markers
   markers.forEach(m => {
     try {
@@ -351,14 +355,19 @@ function updateRecommendedMarkers() {
 
   // Get recommendations from global state
   const recommendations =
-  window.filterState?.filteredResults?.length
-    ? window.filterState.filteredResults
-    : window.recommendationsState?.recommendations || [];
+    window.filterState?.filteredResults?.length
+      ? window.filterState.filteredResults
+      : window.recommendationsState?.recommendations || [];
 
-  console.log('Updating map with recommendations:', recommendations.length);
+  console.log('Recommendations to display:', recommendations.length);
+  
+  if (recommendations.length > 0) {
+    console.log('First recommendation:', recommendations[0]);
+  }
 
   if (!recommendations || recommendations.length === 0) {
     console.warn('No recommendations to display on map');
+    showToast('No recommendations found. Try adjusting your filters.', 'info');
     return;
   }
 
