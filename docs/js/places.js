@@ -60,27 +60,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('cancelBtn')?.addEventListener('click', closePlaceModal);
   document.getElementById('placeForm')?.addEventListener('submit', handlePlaceSubmit);
   document.getElementById('toggleMapBtn')?.addEventListener('click', toggleMap);
-  document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
+document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
+
+/* ================= FILTER MODAL ================= */
+
 document.getElementById('openFilterBtn')?.addEventListener('click', () => {
-  document.getElementById('filterModal').style.display = 'block';
+  document.getElementById('filterModal').classList.add('active');
 });
-});
-// 🔥 Filter modal close handlers
+
 document.getElementById('closeFilterModal')?.addEventListener('click', () => {
-  document.getElementById('filterModal').style.display = 'none';
+  document.getElementById('filterModal').classList.remove('active');
 });
 
 document.getElementById('closeFilterFooter')?.addEventListener('click', () => {
-  document.getElementById('filterModal').style.display = 'none';
+  document.getElementById('filterModal').classList.remove('active');
 });
 
-// Close when clicking backdrop
 document.getElementById('filterModal')?.addEventListener('click', (e) => {
   if (e.target.id === 'filterModal') {
-    e.target.style.display = 'none';
+    e.target.classList.remove('active');
   }
 });
-
 //Trip Context
 async function loadTripContext() {
   try {
