@@ -5,12 +5,14 @@ const geoapifyService = require('./geoapify.service')
 const { calculateDistance } = require('../utils/helpers')
 
 /**
- * Main recommendation service
- * Fetches AI recommendations for a trip
+ * Main recommendation service with enhanced filtering
+ * Fetches AI recommendations for a trip with comprehensive options
  */
 const getRecommendations = async (tripId, options = {}) => {
   try {
     const Trip = require('../models/Trip.model')
+    const UserPreference = require('../models/UserPreference.model')
+    
     const trip = await Trip.findById(tripId)
 
     if (!trip) {
@@ -48,7 +50,56 @@ const getRecommendations = async (tripId, options = {}) => {
     }
 
     /**
-     * STEP 2: Determine categories
+     * STEP 2: Load user preferences
+     */
+    let userPreferences = null
+    try {
+      const prefs = await UserPreference.findOne({ userId: trip.userId })
+      if (prefs) {
+        userPreferences = {
+          topCategories: prefs.topCategories || [],
+          categoryWeights: prefs.categoryPreferences,
+          ratingThreshold: prefs.ratingThreshold || 3.5
+        }
+      }
+    } catch (err) {
+      console.log('Could not load user preferences:', err.message)
+    }
+
+    /**
+     * STEP 3: Parse and prepare recommendation options
+     */
+    const recommendationOptions = {
+      // Base trip context
+      budget: trip.budget,
+      duration: trip.duration,
+      peopleCount: trip.travelers,
+      currency: trip.currency || 'INR',
+      centerLocation,
+
+      // Filtering options from query params
+      minRating: parseFloat(options.minRating) || userPreferences?.ratingThreshold || 3.5,
+      maxRadius: parseFloat(options.radius) || 10, // km
+      
+      // Sorting
+      sortBy: options.sortBy || 'bestMatch', // bestMatch, rating, distance
+      
+      // Quick filters
+      showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
+      topRatedOnly: options.topRated === 'true' || options.topRated === true,
+      
+      // Price range
+      priceRange: options.minPrice || options.maxPrice ? {
+        min: parseInt(options.minPrice) || 1,
+        max: parseInt(options.maxPrice) || 5
+      } : null,
+
+      // User preferences
+      userPreferences
+    }
+
+    /**
+     * STEP 4: Determine categories
      */
     const categories =
       options.category && options.category !== 'all'
@@ -56,7 +107,7 @@ const getRecommendations = async (tripId, options = {}) => {
         : ['restaurant', 'attraction', 'accommodation']
 
     /**
-     * STEP 3: Fetch AI recommendations
+     * STEP 5: Fetch AI recommendations with enhanced options
      */
     let allPlaces = []
 
@@ -64,18 +115,13 @@ const getRecommendations = async (tripId, options = {}) => {
       const result = await groqService.getAIRecommendations(
         category,
         trip.destination,
-        {
-          budget: trip.budget,
-          duration: trip.duration,
-          peopleCount: trip.peopleCount,
-          centerLocation
-        }
+        recommendationOptions
       )
 
       if (!result?.places?.length) continue
 
       /**
-       * STEP 4: Distance validation only (no re-geocoding)
+       * STEP 6: Distance validation only (no re-geocoding)
        */
       const validPlaces = result.places.filter(place => {
         if (!place.location?.coordinates) return false
@@ -88,7 +134,7 @@ const getRecommendations = async (tripId, options = {}) => {
           lon
         )
 
-        return distance <= 50
+        return distance <= recommendationOptions.maxRadius
       })
 
       allPlaces.push(...validPlaces)
@@ -98,24 +144,43 @@ const getRecommendations = async (tripId, options = {}) => {
       return {
         places: [],
         centerLocation,
-        message: `No recommendations found for ${trip.destination}`
+        message: `No recommendations found matching your criteria`,
+        appliedFilters: recommendationOptions
       }
     }
 
     /**
-     * STEP 5: Score & rank
+     * STEP 7: Apply final sorting if needed
      */
-    allPlaces = groqService.scoreAndRankPlaces(allPlaces, centerLocation)
+    if (options.sortBy === 'rating') {
+      allPlaces.sort((a, b) => b.rating - a.rating)
+    } else if (options.sortBy === 'distance') {
+      allPlaces.sort((a, b) => {
+        const distA = a.distanceFromCenter || Infinity
+        const distB = b.distanceFromCenter || Infinity
+        return distA - distB
+      })
+    }
+    // bestMatch is already sorted by groqService
 
     /**
-     * STEP 6: Apply limit
+     * STEP 8: Apply limit
      */
     const limit = options.limit || 50
 
     return {
       places: allPlaces.slice(0, limit),
       centerLocation,
-      message: `Found ${Math.min(allPlaces.length, limit)} recommendations`
+      message: `Found ${Math.min(allPlaces.length, limit)} recommendations`,
+      appliedFilters: {
+        category: options.category || 'all',
+        minRating: recommendationOptions.minRating,
+        maxRadius: recommendationOptions.maxRadius,
+        sortBy: recommendationOptions.sortBy,
+        hiddenGems: recommendationOptions.showHiddenGems,
+        topRatedOnly: recommendationOptions.topRatedOnly,
+        priceRange: recommendationOptions.priceRange
+      }
     }
   } catch (error) {
     throw error
