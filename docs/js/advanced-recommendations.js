@@ -233,97 +233,170 @@ function attachAdvancedListenersOnce() {
 }
 
 /* ====================== LOAD RECOMMENDATIONS ====================== */
+/* ====================== DISPLAY RECOMMENDATIONS ====================== */
+function displayRecommendations() {
+  const container = document.getElementById('recommendationsGrid');
+  if (!container) return;
+
+  const recs = filterState.filteredResults;
+
+  if (!recs || recs.length === 0) {
+    container.innerHTML = `
+      <div class="recommendations-empty">
+        <i class="fas fa-lightbulb"></i>
+        <h3>No recommendations match your filters</h3>
+        <p>Try adjusting your filters or search radius</p>
+        <button class="btn-primary" onclick="resetFilters()">
+          <i class="fas fa-redo"></i> Reset Filters
+        </button>
+      </div>
+    `;
+    recommendationsState.isLoading = false;
+    return;
+  }
+
+  container.innerHTML = recs.map((rec, index) => {
+    const icon = getCategoryIcon(rec.category);
+    const rating = rec.rating || 0;
+    const distance = rec.distanceFromCenter ? `${rec.distanceFromCenter.toFixed(1)} km away` : '';
+    
+    return `
+      <div class="recommendation-card" data-name="${escapeAttr(rec.name)}" data-index="${index}">
+        <div class="rec-card-header">
+          <div class="rec-card-icon">
+            <i class="fas fa-${icon}"></i>
+          </div>
+          <div class="rec-card-compare-checkbox" onclick="handleCompareCheckboxClick(${JSON.stringify(rec).replace(/"/g, '&quot;')}, this.closest('.recommendation-card'))">
+            <i class="fas fa-check" style="display: none;"></i>
+          </div>
+        </div>
+
+        <div class="rec-card-body">
+          <h4 class="rec-card-title">${escapeHtml(rec.name)}</h4>
+          
+          <div class="rec-card-meta">
+            <span class="rec-category">
+              <i class="fas fa-tag"></i>
+              ${escapeHtml(rec.category)}
+            </span>
+            ${rating > 0 ? `
+              <span class="rec-rating">
+                <i class="fas fa-star"></i>
+                ${rating.toFixed(1)}
+              </span>
+            ` : ''}
+          </div>
+
+          ${distance ? `
+            <div class="rec-card-distance">
+              <i class="fas fa-map-marker-alt"></i>
+              ${distance}
+            </div>
+          ` : ''}
+
+          ${rec.description ? `
+            <p class="rec-card-description">${escapeHtml(rec.description.substring(0, 120))}${rec.description.length > 120 ? '...' : ''}</p>
+          ` : ''}
+
+          ${rec.address ? `
+            <p class="rec-card-address">
+              <i class="fas fa-location-dot"></i>
+              ${escapeHtml(rec.address)}
+            </p>
+          ` : ''}
+        </div>
+
+        <div class="rec-card-footer">
+          <button class="btn-view-details" onclick="showRecommendationDetails(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+            <i class="fas fa-info-circle"></i>
+            Details
+          </button>
+          <button class="btn-add-to-trip" onclick="addRecommendationToTrip(${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+            <i class="fas fa-plus"></i>
+            Add to Trip
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  recommendationsState.isLoading = false;
+  addQualityBadges();
+  
+  // Update map with new recommendations
+  if (typeof updateMapWithRecommendations === 'function') {
+    updateMapWithRecommendations();
+  }
+}
+
+/* ====================== UPDATED LOAD RECOMMENDATIONS ====================== */
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
 
     const opts = { ...advancedRecState.options, ...options };
+    
+    // Get active category filter
+    const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'all';
 
     const response = await apiService.recommendations.getForTrip(
       recommendationsState.currentTripId,
       {
         radius: opts.radius,
         minRating: opts.minRating,
-        maxResults: opts.maxResults
+        maxResults: opts.maxResults,
+        category: activeCategory,
+        sortBy: opts.sortBy,
+        hiddenGems: opts.showHiddenGems,
+        topRated: opts.topRatedOnly
       }
     );
 
-    const data = response.data || response;
-    const recs = Array.isArray(data.places) ? data.places : [];
-recommendationsState.recommendations = recs;
-filterState.allRecommendations = recs;
-filterState.filteredResults = recs;
-console.log('AI RECS LOADED:', recs.length, recs[0]);
+    console.log('API Response:', response);
 
-    recommendationsState.recommendations = recs;
-    filterState.allRecommendations = recs;
-    filterState.filteredResults = recs;
+    // Handle response structure
+    let places = [];
+    if (response.success && response.data) {
+      // Backend returns: { success: true, data: { places: [...], centerLocation: {...} } }
+      places = response.data.places || [];
+    } else if (response.places) {
+      // Alternative structure
+      places = response.places;
+    }
 
+    console.log('Extracted places:', places);
+
+    // Normalize the data structure
+    const normalizedPlaces = places.map(place => ({
+      name: place.name || 'Unnamed',
+      category: place.category || 'other',
+      lat: place.location?.coordinates?.[1] || 0,
+      lon: place.location?.coordinates?.[0] || 0,
+      rating: place.rating || 0,
+      priceLevel: place.priceLevel || 0,
+      description: place.description || '',
+      address: place.address || '',
+      distanceFromCenter: place.distanceFromCenter || 0,
+      recommendationScore: place.recommendationScore || 0
+    }));
+
+    filterState.allRecommendations = normalizedPlaces;
+    filterState.filteredResults = [...normalizedPlaces];
+    recommendationsState.recommendations = normalizedPlaces;
     applyQuickFilters();
 
+    recommendationsState.isLoading = false;
+
   } catch (err) {
-    console.error('Load recommendations error:', err);
+    console.error('Error loading recommendations:', err);
     showRecommendationsError();
-  } finally {
     recommendationsState.isLoading = false;
   }
 }
 
-function displayRecommendations() {
-  const container = document.getElementById('recommendationsGrid');
-  const resultsCount = document.getElementById('resultsCount');
-
-  if (!container) return;
-
-  const recs = filterState.filteredResults || [];
-
-  if (resultsCount) {
-    resultsCount.textContent = `${recs.length} Recommendation${recs.length !== 1 ? 's' : ''}`;
-  }
-
-  if (recs.length === 0) {
-    container.innerHTML = `
-      <div class="recommendations-empty">
-        <i class="fas fa-search"></i>
-        <h3>No recommendations found</h3>
-        <p>Try adjusting your filters or search radius</p>
-        <button class="btn-primary" onclick="resetFilters()">
-          <i class="fas fa-undo"></i> Reset Filters
-        </button>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
-
-  recs.forEach((rec) => {
-    const card = container.querySelector(`[data-rec-name="${escapeAttr(rec.name)}"]`);
-    if (!card) return;
-
-    // Add to trip button
-    card.querySelector('.btn-add-to-trip')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      addRecommendationToTrip(rec);
-    });
-
-    // Compare checkbox
-    card.querySelector('.rec-card-compare-checkbox')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (typeof window.handleCompareCheckboxClick === 'function') {
-        window.handleCompareCheckboxClick(rec, card);
-      }
-    });
-
-    // Card click for details
-    card.addEventListener('click', () => {
-      showRecommendationDetails(rec);
-    });
-  });
-
-  addQualityBadges();
-}
+// Make sure this is exposed globally
+window.loadRecommendations = loadRecommendations;
 
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
@@ -444,7 +517,7 @@ function addQualityBadges() {
   const cards = document.querySelectorAll('.recommendation-card');
 
   cards.forEach((card, index) => {
-    const rec = recommendationsState.recommendations[index];
+    const rec = filterState.filteredResults[index];
     if (!rec) return;
 
     card.querySelectorAll('.quality-badge, .save-for-later').forEach(b => b.remove());
