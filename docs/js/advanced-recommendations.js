@@ -1,3 +1,9 @@
+// ==================== IMMEDIATE INITIALIZATION ====================
+// Define the global function IMMEDIATELY (not in DOMContentLoaded)
+// so places.js can find it when it loads
+
+console.log('[Recommendations] Script loading...');
+
 // ==================== STATE MANAGEMENT ====================
 window.recommendationState = {
   currentFilters: {
@@ -14,32 +20,52 @@ window.recommendationState = {
   recommendations: [],
   centerLocation: null,
   tripId: null,
-  tripData: null
+  tripData: null,
+  initialized: false
 };
 
 /**
  * Main initialization function called from places.js
- * This is the entry point
+ * This is exposed IMMEDIATELY when script loads
  */
 window.initRecommendations = async function(tripId, tripData) {
-  console.log('Initializing recommendations for trip:', tripId);
+  console.log('[Recommendations] initRecommendations called with tripId:', tripId);
+  
+  if (!tripId) {
+    console.error('[Recommendations] No trip ID provided!');
+    return;
+  }
   
   window.recommendationState.tripId = tripId;
   window.recommendationState.tripData = tripData;
   
-  initRecommendationControls();
-  await loadRecommendations();
-  
-  console.log('Recommendations initialized successfully');
+  try {
+    initRecommendationControls();
+    await loadRecommendations();
+    window.recommendationState.initialized = true;
+    console.log('[Recommendations] Initialization complete');
+  } catch (error) {
+    console.error('[Recommendations] Initialization failed:', error);
+  }
 };
+
+console.log('[Recommendations] initRecommendations function defined and ready');
 
 /**
  * Initialize recommendation control UI
  */
 function initRecommendationControls() {
+  console.log('[Recommendations] Initializing controls...');
+  
   const section = document.querySelector('.recommendations-section');
   if (!section) {
-    console.warn('Recommendations section not found');
+    console.warn('[Recommendations] Recommendations section not found in DOM');
+    return;
+  }
+
+  // Check if controls already exist
+  if (document.querySelector('.recommendation-controls')) {
+    console.log('[Recommendations] Controls already exist, skipping...');
     return;
   }
 
@@ -176,6 +202,9 @@ function initRecommendationControls() {
   if (sectionHeader) {
     sectionHeader.insertAdjacentHTML('afterend', controlsHTML);
     attachFilterListeners();
+    console.log('[Recommendations] Controls inserted and listeners attached');
+  } else {
+    console.warn('[Recommendations] Section header not found');
   }
 }
 
@@ -258,15 +287,17 @@ function attachFilterListeners() {
 async function loadRecommendations() {
   const tripId = window.recommendationState.tripId;
   
+  console.log('[Recommendations] loadRecommendations called, tripId:', tripId);
+  
   if (!tripId) {
-    console.error('No trip ID available in recommendation state');
-    showErrorState('No trip ID found');
+    console.error('[Recommendations] No trip ID available in recommendation state');
+    showErrorState('No trip ID found. Please reload the page.');
     return;
   }
 
   const grid = document.getElementById('recommendationsGrid');
   if (!grid) {
-    console.warn('Recommendations grid not found');
+    console.warn('[Recommendations] Recommendations grid not found in DOM');
     return;
   }
 
@@ -297,9 +328,11 @@ async function loadRecommendations() {
     if (filters.minPrice) params.minPrice = filters.minPrice;
     if (filters.maxPrice) params.maxPrice = filters.maxPrice;
 
-    console.log('Fetching recommendations with params:', params);
+    console.log('[Recommendations] Fetching with params:', params);
 
     const response = await apiService.recommendations.getForTrip(tripId, params);
+
+    console.log('[Recommendations] Response received:', response);
 
     window.recommendationState.recommendations = response.data.places || [];
     window.recommendationState.centerLocation = response.data.centerLocation;
@@ -312,13 +345,13 @@ async function loadRecommendations() {
     }
 
   } catch (error) {
-    console.error('Failed to load recommendations:', error);
+    console.error('[Recommendations] Load error:', error);
     grid.innerHTML = `
       <div class="error-state">
         <i class="fas fa-exclamation-circle"></i>
         <h3>Failed to Load Recommendations</h3>
-        <p>${error.message || 'Unknown error'}</p>
-        <button class="btn-retry" onclick="loadRecommendations()">
+        <p>${error.message || 'Unknown error occurred'}</p>
+        <button class="btn-retry" onclick="window.initRecommendations('${tripId}', window.recommendationState.tripData)">
           <i class="fas fa-redo"></i> Try Again
         </button>
       </div>
@@ -350,6 +383,7 @@ function displayRecommendations(places) {
     return;
   }
 
+  console.log('[Recommendations] Displaying', places.length, 'places');
   grid.innerHTML = places.map(place => createRecommendationCard(place)).join('');
 }
 
@@ -438,6 +472,7 @@ function createRecommendationCard(place) {
  * Apply current filters and reload recommendations
  */
 window.applyFilters = function() {
+  console.log('[Recommendations] Applying filters...');
   loadRecommendations();
 };
 
@@ -445,6 +480,8 @@ window.applyFilters = function() {
  * Reset all filters to default
  */
 window.resetFilters = function() {
+  console.log('[Recommendations] Resetting filters...');
+  
   // Reset state
   window.recommendationState.currentFilters = {
     category: 'all',
@@ -550,8 +587,10 @@ window.handleCompareClick = function(event, button) {
 window.addRecommendationToTrip = async function(place) {
   const tripId = window.recommendationState.tripId;
   
+  console.log('[Recommendations] Adding place to trip:', place.name);
+  
   if (!tripId) {
-    console.error('No trip ID available');
+    console.error('[Recommendations] No trip ID available');
     if (typeof showToast === 'function') {
       showToast('Trip ID not found', 'error');
     }
@@ -580,7 +619,7 @@ window.addRecommendationToTrip = async function(place) {
       loadPlaces();
     }
   } catch (error) {
-    console.error('Failed to add place:', error);
+    console.error('[Recommendations] Failed to add place:', error);
     if (typeof showToast === 'function') {
       showToast('Failed to add place', 'error');
     }
@@ -644,4 +683,11 @@ function showErrorState(message) {
   }
 }
 
-console.log('Advanced recommendations module loaded');
+console.log('[Recommendations] Module loaded successfully. Functions available:', {
+  initRecommendations: typeof window.initRecommendations,
+  applyFilters: typeof window.applyFilters,
+  resetFilters: typeof window.resetFilters,
+  handleCompareClick: typeof window.handleCompareClick,
+  addRecommendationToTrip: typeof window.addRecommendationToTrip,
+  showRecommendationDetails: typeof window.showRecommendationDetails
+});
