@@ -64,6 +64,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 document.getElementById('openFilterBtn')?.addEventListener('click', () => {
   document.getElementById('filterModal').style.display = 'block';
 });
+});
+// 🔥 Filter modal close handlers
+document.getElementById('closeFilterModal')?.addEventListener('click', () => {
+  document.getElementById('filterModal').style.display = 'none';
+});
+
+document.getElementById('closeFilterFooter')?.addEventListener('click', () => {
+  document.getElementById('filterModal').style.display = 'none';
+});
+
+// Close when clicking backdrop
+document.getElementById('filterModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'filterModal') {
+    e.target.style.display = 'none';
+  }
+});
+
 //Trip Context
 async function loadTripContext() {
   try {
