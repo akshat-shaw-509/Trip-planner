@@ -330,6 +330,7 @@ function displayRecommendations() {
 }
 
 /* ====================== UPDATED LOAD RECOMMENDATIONS ====================== */
+/* ====================== UPDATED LOAD RECOMMENDATIONS ====================== */
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
@@ -354,42 +355,111 @@ async function loadRecommendations(options = {}) {
     );
 
     console.log('API Response:', response);
+    console.log('Response structure:', {
+      hasSuccess: 'success' in response,
+      hasData: 'data' in response,
+      hasPlaces: 'places' in response,
+      dataType: typeof response.data,
+      dataKeys: response.data ? Object.keys(response.data) : null
+    });
 
-    // Handle response structure
+    // Handle response structure - multiple possible formats
     let places = [];
+    
     if (response.success && response.data) {
-      // Backend returns: { success: true, data: { places: [...], centerLocation: {...} } }
-      places = response.data.places || [];
-    } else if (response.places) {
-      // Alternative structure
+      // Format 1: { success: true, data: { places: [...], centerLocation: {...} } }
+      if (Array.isArray(response.data.places)) {
+        places = response.data.places;
+      }
+      // Format 2: { success: true, data: [...] }
+      else if (Array.isArray(response.data)) {
+        places = response.data;
+      }
+    } 
+    // Format 3: { data: [...] }
+    else if (response.data && Array.isArray(response.data)) {
+      places = response.data;
+    }
+    // Format 4: { places: [...] }
+    else if (response.places && Array.isArray(response.places)) {
       places = response.places;
+    }
+    // Format 5: Direct array
+    else if (Array.isArray(response)) {
+      places = response;
     }
 
     console.log('Extracted places:', places);
+    console.log('Number of places:', places.length);
+
+    if (!Array.isArray(places) || places.length === 0) {
+      console.warn('No places found in response');
+      filterState.allRecommendations = [];
+      filterState.filteredResults = [];
+      recommendationsState.recommendations = [];
+      displayRecommendations();
+      recommendationsState.isLoading = false;
+      return;
+    }
+
+    // Log first place structure
+    if (places.length > 0) {
+      console.log('First place structure:', places[0]);
+      console.log('First place location:', places[0].location);
+    }
 
     // Normalize the data structure
-    const normalizedPlaces = places.map(place => ({
-      name: place.name || 'Unnamed',
-      category: place.category || 'other',
-      lat: place.location?.coordinates?.[1] || 0,
-      lon: place.location?.coordinates?.[0] || 0,
-      rating: place.rating || 0,
-      priceLevel: place.priceLevel || 0,
-      description: place.description || '',
-      address: place.address || '',
-      distanceFromCenter: place.distanceFromCenter || 0,
-      recommendationScore: place.recommendationScore || 0
-    }));
+    const normalizedPlaces = places.map(place => {
+      // Handle different coordinate formats
+      let lat = 0, lon = 0;
+      
+      if (place.lat && place.lon) {
+        lat = Number(place.lat);
+        lon = Number(place.lon);
+      } else if (place.location?.coordinates) {
+        // GeoJSON format: [longitude, latitude]
+        lon = Number(place.location.coordinates[0]);
+        lat = Number(place.location.coordinates[1]);
+      } else if (place.location?.lat && place.location?.lon) {
+        lat = Number(place.location.lat);
+        lon = Number(place.location.lon);
+      }
+
+      return {
+        name: place.name || 'Unnamed',
+        category: place.category || 'other',
+        lat: lat,
+        lon: lon,
+        rating: Number(place.rating) || 0,
+        priceLevel: Number(place.priceLevel) || 0,
+        description: place.description || '',
+        address: place.address || '',
+        distanceFromCenter: Number(place.distanceFromCenter) || 0,
+        recommendationScore: Number(place.recommendationScore) || 0,
+        location: place.location || { type: 'Point', coordinates: [lon, lat] }
+      };
+    });
+
+    console.log('Normalized places:', normalizedPlaces.length);
+    console.log('First normalized place:', normalizedPlaces[0]);
 
     filterState.allRecommendations = normalizedPlaces;
     filterState.filteredResults = [...normalizedPlaces];
     recommendationsState.recommendations = normalizedPlaces;
+    
     applyQuickFilters();
 
     recommendationsState.isLoading = false;
 
+    // Update the map after loading
+    if (typeof window.updateMapWithRecommendations === 'function') {
+      console.log('Calling updateMapWithRecommendations');
+      window.updateMapWithRecommendations();
+    }
+
   } catch (err) {
     console.error('Error loading recommendations:', err);
+    console.error('Error stack:', err.stack);
     showRecommendationsError();
     recommendationsState.isLoading = false;
   }
