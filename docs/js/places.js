@@ -81,6 +81,7 @@ document.getElementById('filterModal')?.addEventListener('click', (e) => {
     e.target.classList.remove('active');
   }
 });
+});
 //Trip Context
 async function loadTripContext() {
   try {
