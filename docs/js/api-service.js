@@ -443,6 +443,7 @@ const apiService = {
     // CORRECTED ENDPOINT PATH - matches your backend route structure
     return await apiService.request(`/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`);
   }
+  }
 }
 
 window.apiService = apiService;
