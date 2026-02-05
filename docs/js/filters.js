@@ -1,244 +1,295 @@
-/*let filterState = {
-  activeFilters: {
-    categories: [],
-    minRating: 0,
-    maxDistance: 999,
-    priceLevel: null
-  },
-  // Original recommendation list (never mutated)
-  allRecommendations: [],
-  // Results after filtering + re-ranking
-  filteredResults: []
-};
+<!DOCTYPE html>
+<html lang="en">
 
-function initFilters(recommendations) {
-  filterState.allRecommendations = [...recommendations];
-  filterState.filteredResults = [...recommendations];
-  renderFilterUI();
-  attachFilterListeners();
-  updateFilteredRecommendations();
-}
-function renderFilterUI() {
-  const container = document.getElementById('recommendationsGrid');
-  if (!container) return;
-  const html = `
-    <div class="smart-filters-container">
-      <div class="filters-header">
-        <h3>
-          <i class="fas fa-filter"></i>
-          Smart Filters
-          <span class="active-filters-badge" id="activeFilterCount" style="display:none">0</span>
-        </h3>
-        <button class="filter-reset-btn" id="filterResetBtn" style="display:none">
-          <i class="fas fa-redo"></i> Reset
-        </button>
-      </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Places to Visit - Planora</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="../css/nav.css">
+    <link rel="stylesheet" href="../css/places.css">
+    <link rel="stylesheet" href="../css/recommendations.css">
+    <link rel="stylesheet" href="../css/advanced-recommendations.css">
+    <link rel="stylesheet" href="../css/comparison.css">
+    <link rel="stylesheet" href="../css/trip-center-selector.css">
+</head>
 
-      <div class="filter-chips-grid">
-        <div class="filter-chip" data-filter="rating" data-value="4">
-          <i class="fas fa-star"></i> Highly Rated (4+)
+<body>
+    <!-- Navigation -->
+    <nav id="mainNav">
+        <div class="logo">
+            <img src="../Svg/Logo.png" alt="Planora">
         </div>
-        <div class="filter-chip" data-filter="distance" data-value="2">
-          <i class="fas fa-map-marker-alt"></i> Within 2km
+        <div class="nav-center">
+            <a href="../index.html">Home</a>
+            <a href="./trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
+            </div>
         </div>
-        <div class="filter-chip" data-filter="distance" data-value="5">
-          <i class="fas fa-walking"></i> Within 5km
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
         </div>
-        <div class="filter-chip" data-filter="category" data-value="restaurant">
-          <i class="fas fa-utensils"></i> Restaurants
-        </div>
-        <div class="filter-chip" data-filter="category" data-value="attraction">
-          <i class="fas fa-landmark"></i> Attractions
-        </div>
-        <div class="filter-chip" data-filter="category" data-value="accommodation">
-          <i class="fas fa-bed"></i> Hotels
-        </div>
-        <div class="filter-chip" data-filter="price" data-value="1">
-          <i class="fas fa-dollar-sign"></i> Budget
-        </div>
-        <div class="filter-chip" data-filter="price" data-value="3">
-          <i class="fas fa-dollar-sign"></i> Mid-range
-        </div>
-      </div>
+    </nav>
 
-      <div class="filter-results-count">
-        <i class="fas fa-info-circle"></i>
-        Showing <strong id="filterCount">${filterState.allRecommendations.length}</strong> places
-      </div>
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="./trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Places</span>
     </div>
-  `;
-  container.insertAdjacentHTML('beforebegin', html);
-}
 
-// Events
-function attachFilterListeners() {
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => handleFilterToggle(chip));
-  });
-  document
-    .getElementById('filterResetBtn')
-    ?.addEventListener('click', resetAllFilters);
-}
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-map-marked-alt"></i> Places to Visit</h1>
+            <p id="tripInfo">Loading trip details...</p>
+        </div>
+    </div>
 
-// Filters
-function handleFilterToggle(chip) {
-  const type = chip.dataset.filter;
-  const value = chip.dataset.value;
-  chip.classList.toggle('active');
-  switch (type) {
-    case 'category':
-      toggleArrayValue(filterState.activeFilters.categories, value);
-      break;
-    case 'rating':
-      filterState.activeFilters.minRating = chip.classList.contains('active')
-        ? parseFloat(value)
-        : 0;
-      break;
+    <!-- AI Recommendations Section -->
+    <div class="recommendations-section">
+        <div class="section-header">
+            <div>
+                <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
+                <p>Personalized suggestions based on your destination</p>
+            </div>
 
-    case 'distance':
-      filterState.activeFilters.maxDistance = chip.classList.contains('active')
-        ? parseFloat(value)
-        : 999;
-      // Only allow one distance chip at a time
-      if (chip.classList.contains('active')) {
-        deactivateOtherChips('distance', chip);
-      }
-      break;
-    case 'price':
-      filterState.activeFilters.priceLevel = chip.classList.contains('active')
-        ? parseInt(value)
-        : null;
-      // Only allow one price chip at a time
-      if (chip.classList.contains('active')) {
-        deactivateOtherChips('price', chip);
-      }
-      break;
-  }
-  updateFilteredRecommendations();
-  updateFilterUI();
-}
-// Toggle value inside array-based filters
-function toggleArrayValue(arr, value) {
-  const index = arr.indexOf(value);
-  index > -1 ? arr.splice(index, 1) : arr.push(value);
-}
-// Deactivate conflicting chips
-function deactivateOtherChips(type, activeChip) {
-  document.querySelectorAll(`.filter-chip[data-filter="${type}"]`).forEach(chip => {
-    if (chip !== activeChip) chip.classList.remove('active');
-  });
-}
+            <div class="header-actions">
+                <button class="btn-filter" id="openFilterBtn">
+                    <i class="fas fa-sliders-h"></i> Filters
+                </button>
 
-//Filtering + Ranking
-function updateFilteredRecommendations() {
-  let results = filterState.allRecommendations.filter(rec => {
-    // Category filter
-    if (
-      filterState.activeFilters.categories.length &&
-      !filterState.activeFilters.categories.includes(rec.category)
-    ) {
-      return false;
-    }
-    // Rating filter
-    if (rec.rating < filterState.activeFilters.minRating) return false;
-    // Distance filter
-    if (rec.distanceFromCenter > filterState.activeFilters.maxDistance) return false;
-    // Price filter (allow +-1 tolerance)
-    if (filterState.activeFilters.priceLevel !== null) {
-      const diff = Math.abs((rec.priceLevel || 2) - filterState.activeFilters.priceLevel);
-      if (diff > 1) return false;
-    }
-    return true;
-  });
-  // Apply score bonuses for better ranking
-  results = results.map(rec => {
-    let bonus = 0;
-    if (filterState.activeFilters.categories.includes(rec.category)) bonus += 2;
-    if (filterState.activeFilters.minRating && rec.rating >= 4.5) bonus += 1;
-    if (filterState.activeFilters.maxDistance < 999 && rec.distanceFromCenter < 1)
-      bonus += 1.5;
-    return {
-      ...rec,
-      adjustedScore: rec.recommendationScore + bonus
-    };
-  });
-  results.sort((a, b) => b.adjustedScore - a.adjustedScore);
-  filterState.filteredResults = results;
-  displayFilteredRecommendations();
-}
-// Rendering Results
-function displayFilteredRecommendations() {
-  const container = document.getElementById('recommendationsGrid');
-  if (!container) return;
-  if (!filterState.filteredResults.length) {
-    container.innerHTML = `
-      <div class="recommendations-empty">
-        <i class="fas fa-filter"></i>
-        <h3>No matches found</h3>
-        <p>Try adjusting your filters</p>
-        <button class="btn-primary" onclick="resetAllFilters()">
-          <i class="fas fa-redo"></i> Reset Filters
-        </button>
-      </div>
-    `;
-    return;
-  }
-  container.innerHTML = filterState.filteredResults
-    .map(rec => createRecommendationCard(rec))
-    .join('');
-  // Rebind card actions
-  filterState.filteredResults.forEach((rec, i) => {
-    const card = container.children[i];
-    card.querySelector('.btn-add-to-trip')?.onclick = () =>
-      addRecommendationToTrip(rec);
-    card.querySelector('.btn-view-details')?.onclick = () =>
-      showRecommendationDetails(rec);
-    card.querySelector('.rec-card-compare-checkbox')?.addEventListener('click', e => {
-      e.stopPropagation();
-      toggleCompareSelection(rec, card);
-    });
-  });
-}
-function updateFilterUI() {
-  const count = countActiveFilters();
-  const badge = document.getElementById('activeFilterCount');
-  const resetBtn = document.getElementById('filterResetBtn');
-  const countEl = document.getElementById('filterCount');
-  if (badge) {
-    badge.textContent = count;
-    badge.style.display = count ? 'inline-flex' : 'none';
-  }
-  if (resetBtn) {
-    resetBtn.style.display = count ? 'block' : 'none';
-  }
-  if (countEl) {
-    countEl.textContent = filterState.filteredResults.length;
-  }
-}
-// Count how many filters are currently active
-function countActiveFilters() {
-  let count = filterState.activeFilters.categories.length;
-  if (filterState.activeFilters.minRating) count++;
-  if (filterState.activeFilters.maxDistance < 999) count++;
-  if (filterState.activeFilters.priceLevel !== null) count++;
-  return count;
-}
-// Reset
-function resetAllFilters() {
-  filterState.activeFilters = {
-    categories: [],
-    minRating: 0,
-    maxDistance: 999,f
-    priceLevel: null
-  };
-  document.querySelectorAll('.filter-chip.active').forEach(chip => {
-    chip.classList.remove('active');
-  });
-  updateFilteredRecommendations();
-  updateFilterUI();
-  showToast('Filters reset', 'info');
-}
-function getFilteredRecommendations() {
-  return filterState.filteredResults;
-}
-*/
+                <button class="btn-compare" id="compareBtn" onclick="openComparisonPanel()" style="display: none;">
+                    <i class="fas fa-balance-scale"></i>
+                    Compare
+                    <span class="compare-count" id="compareCountBadge">0</span>
+                </button>
+            </div>
+
+            <!-- Trip Center Selector will be inserted here -->
+
+            <!-- Recommendation Controls will be inserted here by advanced-recommendations.js -->
+
+            <!-- Recommendations Grid -->
+            <div class="recommendations-grid" id="recommendationsGrid">
+                <!-- Cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Map View Section -->
+        <div class="map-view-section">
+            <div class="map-header">
+                <h3><i class="fas fa-map"></i> Map View</h3>
+                <button id="closeMapBtn" class="btn-close-map" style="display:none;">✕</button>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- My Added Places Section -->
+        <div class="my-places-section">
+            <div class="section-header">
+                <h2><i class="fas fa-bookmark"></i> My Added Places</h2>
+                <div class="header-actions">
+                    <!-- NEW: Nearby Search Button -->
+                    <button class="btn-search-nearby" onclick="openNearbySearchModal()">
+                        <i class="fas fa-search-location"></i> Search Nearby
+                    </button>
+
+                    <button class="btn-add-place" id="addPlaceBtn">
+                        <i class="fas fa-plus"></i> Add Place
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-section">
+                <button class="filter-btn active" data-filter="all">All Categories</button>
+                <button class="filter-btn" data-filter="restaurant">🍴 Restaurants</button>
+                <button class="filter-btn" data-filter="attraction">🛕 Attractions</button>
+                <button class="filter-btn" data-filter="accommodation">🏨 Hotels</button>
+            </div>
+
+            <!-- Places Grid -->
+            <div class="places-grid" id="placesGrid"></div>
+            <div class="empty-state" id="emptyPlaces" style="display: none;">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>No places added yet</h3>
+                <p>Browse AI recommendations above and add them to your trip</p>
+            </div>
+        </div>
+
+        <!-- NEW: Nearby Search Modal -->
+        <div class="modal" id="nearbySearchModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-search-location"></i> Search Nearby Places</h3>
+                    <button class="modal-close" onclick="closeNearbySearchModal()">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="nearbyRadius">
+                            <i class="fas fa-arrows-alt"></i>
+                            Search Radius
+                        </label>
+                        <select id="nearbyRadius" class="form-control">
+                            <option value="1000">1 km</option>
+                            <option value="2000">2 km</option>
+                            <option value="5000" selected>5 km</option>
+                            <option value="10000">10 km</option>
+                            <option value="20000">20 km</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nearbyCategory">
+                            <i class="fas fa-filter"></i>
+                            Category Filter
+                        </label>
+                        <select id="nearbyCategory" class="form-control">
+                            <option value="all">All Categories</option>
+                            <option value="restaurant">🍴 Restaurants</option>
+                            <option value="attraction">🛕 Attractions</option>
+                            <option value="accommodation">🏨 Hotels</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-primary btn-block" onclick="searchNearbyPlaces()">
+                        <i class="fas fa-search"></i> Search Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Place Modal -->
+        <div class="modal" id="placeModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-map-marker-alt"></i> Add Place</h3>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="placeForm">
+                        <div class="form-group">
+                            <label for="placeName">Name *</label>
+                            <input type="text" id="placeName" required placeholder="Place name">
+                        </div>
+                        <div class="form-group">
+                            <label for="placeCategory">Category *</label>
+                            <select id="placeCategory" required>
+                                <option value="">Select category</option>
+                                <option value="restaurant">🍴 Restaurant</option>
+                                <option value="attraction">🛕 Attraction</option>
+                                <option value="accommodation">🏨 Hotel</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="placeVisitDate">Visit Date</label>
+                                <input type="date" id="placeVisitDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="placeRating">Rating</label>
+                                <input type="number" id="placeRating" min="0" max="5" step="0.1" placeholder="0-5">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="placeAddress">Address</label>
+                            <input type="text" id="placeAddress" placeholder="Place address">
+                        </div>
+                        <div class="form-group">
+                            <label for="placeDescription">Description</label>
+                            <textarea id="placeDescription" rows="3" placeholder="Details..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="placePrice">Price Level (0-5)</label>
+                            <input type="number" id="placePrice" min="0" max="5" step="1" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="placeNotes">Notes</label>
+                            <textarea id="placeNotes" rows="2" placeholder="Personal notes..."></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Place</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTER MODAL - FIXED -->
+        <div class="modal" id="filterModal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-filter"></i> Filters</h3>
+                    <button class="modal-close" id="closeFilterModal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Filters will be moved here dynamically -->
+                    <div id="filterModalContent"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="closeFilterFooter">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+        <script src="../js/config.js"></script>
+        <script src="../js/api-service.js"></script>
+        <script src="../js/toast.js"></script>
+        <script src="../js/auth.js"></script>
+        <script src="../js/nav.js"></script>
+        <script src="../js/trip-center-selector.js"></script>
+        <script src="../js/comparison.js"></script>
+        <script src="../js/advanced-recommendations.js"></script>
+        <script src="../js/places.js"></script>
+        
+        <!-- FILTER MODAL HANDLER - NEW -->
+        <script src="../js/filter-modal.js"></script>
+
+        <!-- Update Compare Button Badge -->
+        <script>
+            // Override updateComparisonPanel to also update the compare button
+            const originalUpdateComparisonPanel = window.updateComparisonPanel;
+            window.updateComparisonPanel = function () {
+                if (originalUpdateComparisonPanel) {
+                    originalUpdateComparisonPanel();
+                }
+
+                const compareBtn = document.getElementById('compareBtn');
+                const compareBadge = document.getElementById('compareCountBadge');
+                const count = window.comparisonState ? window.comparisonState.selectedPlaces.size : 0;
+
+                if (compareBtn && compareBadge) {
+                    compareBadge.textContent = count;
+
+                    if (count > 0) {
+                        compareBtn.style.display = 'inline-flex';
+                    } else {
+                        compareBtn.style.display = 'none';
+                    }
+                }
+            };
+            
+            function openNearbySearchModal() {
+                document.getElementById('nearbySearchModal').style.display = 'flex';
+            }
+            
+            function closeNearbySearchModal() {
+                document.getElementById('nearbySearchModal').style.display = 'none';
+            }
+        </script>
+</body>
+
+</html>
