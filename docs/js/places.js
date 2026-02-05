@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('placeForm')?.addEventListener('submit', handlePlaceSubmit);
   document.getElementById('toggleMapBtn')?.addEventListener('click', toggleMap);
   document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
+document.getElementById('openFilterBtn')?.addEventListener('click', () => {
+  document.getElementById('filterModal').style.display = 'block';
 });
 //Trip Context
 async function loadTripContext() {
