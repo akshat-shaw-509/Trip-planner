@@ -1,1 +1,721 @@
+/* =====================================================
+   🎯 MODERN FILTER DESIGN - PILL BUTTON STYLE
+   Matches reference design with checkbox-pill buttons
+   ===================================================== */
+
+:root {
+    --primary-blue: #2563eb;
+    --primary-blue-dark: #1d4ed8;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* =====================================================
+   📦 MAIN CONTAINER
+   ===================================================== */
+
+.recommendations-section {
+    padding: 40px 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    background: #f5f5f5;
+}
+
+/* =====================================================
+   🎨 FILTER SIDEBAR (Modal Style)
+   ===================================================== */
+
+.recommendation-controls {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    max-width: 520px;
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.recommendation-controls::-webkit-scrollbar {
+    width: 8px;
+}
+
+.recommendation-controls::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 10px;
+}
+
+.recommendation-controls::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 10px;
+}
+
+.recommendation-controls::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* =====================================================
+   📑 FILTER SECTIONS
+   ===================================================== */
+
+.controls-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.controls-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 16px;
+    letter-spacing: 0;
+    text-transform: none;
+    display: block;
+}
+
+/* =====================================================
+   🔘 PILL BUTTON STYLE (Main Filter Buttons)
+   ===================================================== */
+
+.category-buttons,
+.sort-buttons,
+.quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Base Pill Button */
+.category-btn,
+.sort-btn,
+.quick-filter-btn,
+.filter-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.category-btn:hover,
+.sort-btn:hover,
+.quick-filter-btn:hover,
+.filter-pill-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+/* Active State with Checkbox */
+.category-btn.active,
+.sort-btn.active,
+.quick-filter-btn.active,
+.filter-pill-btn.active {
+    background: white;
+    border-color: var(--primary-blue);
+    color: var(--gray-900);
+    padding-left: 14px;
+}
+
+/* Checkbox Icon (Before Text) */
+.category-btn.active::before,
+.sort-btn.active::before,
+.quick-filter-btn.active::before,
+.filter-pill-btn.active::before {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Remove default icon for category buttons */
+.category-btn i,
+.sort-btn i,
+.quick-filter-btn i {
+    display: none;
+}
+
+/* =====================================================
+   🎨 COLOR FILTERS (Special Styling)
+   ===================================================== */
+
+.color-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.color-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.color-filter-btn::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-300);
+    flex-shrink: 0;
+}
+
+/* Color Variations */
+.color-filter-btn[data-color="blue"]::before {
+    background: #2563eb;
+}
+
+.color-filter-btn[data-color="red"]::before {
+    background: #ef4444;
+}
+
+.color-filter-btn[data-color="green"]::before {
+    background: #10b981;
+}
+
+.color-filter-btn[data-color="yellow"]::before {
+    background: #f59e0b;
+}
+
+.color-filter-btn[data-color="brown"]::before {
+    background: #92400e;
+}
+
+.color-filter-btn[data-color="pink"]::before {
+    background: #ec4899;
+}
+
+.color-filter-btn[data-color="purple"]::before {
+    background: #8b5cf6;
+}
+
+.color-filter-btn[data-color="black"]::before {
+    background: #000000;
+}
+
+.color-filter-btn[data-color="white"]::before {
+    background: #ffffff;
+    border-color: var(--gray-400);
+}
+
+.color-filter-btn[data-color="gray"]::before {
+    background: #6b7280;
+}
+
+.color-filter-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.color-filter-btn.active {
+    border-color: var(--primary-blue);
+    background: white;
+}
+
+.color-filter-btn.active::before {
+    border-color: var(--primary-blue);
+    border-width: 3px;
+}
+
+/* =====================================================
+   🎚️ PRICE RANGE SLIDER
+   ===================================================== */
+
+.price-range-section {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.price-range-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.price-range-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.price-range-values {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+.price-range-slider {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: 10px;
+    margin: 24px 0;
+}
+
+.slider-input {
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--gray-800);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.slider-input::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.slider-input::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--gray-800);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.slider-input::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.slider-track {
+    position: absolute;
+    height: 6px;
+    background: var(--gray-800);
+    border-radius: 10px;
+    top: 0;
+    pointer-events: none;
+}
+
+/* =====================================================
+   🔢 SIZE FILTERS (Number Pills)
+   ===================================================== */
+
+.size-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.size-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    height: 40px;
+    padding: 0 16px;
+    background: white;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.size-filter-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.size-filter-btn.active {
+    background: white;
+    border-color: var(--primary-blue);
+    color: var(--gray-900);
+    position: relative;
+}
+
+.size-filter-btn.active::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+/* =====================================================
+   🎬 ACTION BUTTON (Bottom)
+   ===================================================== */
+
+.filter-actions {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.btn-apply-filters,
+.btn-show-results {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-apply-filters:hover,
+.btn-show-results:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-apply-filters:active,
+.btn-show-results:active {
+    transform: translateY(0);
+}
+
+/* =====================================================
+   🔄 RESET FILTERS
+   ===================================================== */
+
+.btn-reset-filters {
+    width: 100%;
+    padding: 12px 24px;
+    background: white;
+    color: var(--gray-700);
+    border: 1.5px solid var(--gray-300);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 12px;
+}
+
+.btn-reset-filters:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+/* =====================================================
+   📊 FILTER COUNT BADGE
+   ===================================================== */
+
+.filter-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.filter-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: var(--primary-blue);
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =====================================================
+   📱 RESPONSIVE DESIGN
+   ===================================================== */
+
+@media (max-width: 768px) {
+    .recommendation-controls {
+        padding: 24px;
+        border-radius: 16px;
+    }
+
+    .controls-section {
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+    }
+
+    .category-btn,
+    .sort-btn,
+    .quick-filter-btn,
+    .filter-pill-btn,
+    .color-filter-btn,
+    .size-filter-btn {
+        font-size: 13px;
+        padding: 9px 16px;
+    }
+
+    .size-filter-btn {
+        min-width: 44px;
+        height: 36px;
+    }
+}
+
+/* =====================================================
+   ♿ ACCESSIBILITY
+   ===================================================== */
+
+.category-btn:focus,
+.sort-btn:focus,
+.quick-filter-btn:focus,
+.filter-pill-btn:focus,
+.color-filter-btn:focus,
+.size-filter-btn:focus,
+.btn-apply-filters:focus,
+.btn-reset-filters:focus {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
+}
+
+/* =====================================================
+   🎯 CLOSE BUTTON (Top Right)
+   ===================================================== */
+
+.filter-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    background: var(--gray-100);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--gray-600);
+    font-size: 18px;
+}
+
+.filter-close-btn:hover {
+    background: var(--gray-200);
+    color: var(--gray-900);
+}
+
+/* =====================================================
+   🎨 SMOOTH ANIMATIONS
+   ===================================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.recommendation-controls {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* =====================================================
+   🔧 UTILITY CLASSES
+   ===================================================== */
+
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 12px;
+    display: block;
+}
+
+.filter-divider {
+    height: 1px;
+    background: var(--gray-200);
+    margin: 24px 0;
+}
+
+/* =====================================================
+   📋 WRAPPER LAYOUT
+   ===================================================== */
+
+.recommendations-controls-wrapper {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.recommendations-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .recommendations-controls-wrapper {
+        flex-direction: column;
+    }
+
+    .recommendation-controls {
+        width: 100%;
+        max-width: 100%;
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+
+    .recommendations-grid {
+        width: 100%;
+    }
+}
+/* ===============================
+   FILTER MODAL OVERRIDES
+================================ */
+
+#filterModal.active {
+  display: flex;
+}
+
+#filterModal {
+  align-items: center;
+  justify-content: center;
+}
+
+#filterModal .modal-content {
+  max-width: 720px;
+  width: 92%;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Header */
+#filterModal .modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#filterModal .modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Body */
+#filterModal .modal-body {
+  padding: 22px;
+}
+
+/* Section titles */
+#filterModal .section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* Filter buttons */
+#filterModal .filter-options,
+#filterModal .quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#filterModal button {
+  border-radius: 999px;
+}
+
+/* Sliders */
+#filterModal input[type="range"] {
+  width: 100%;
+  accent-color: #0066cc;
+}
+
+/* Footer */
+#filterModal .modal-footer {
+  padding: 16px 22px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+}
 
