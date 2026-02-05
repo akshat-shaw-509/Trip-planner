@@ -7,6 +7,163 @@ const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 /**
+ * -------------------- Dynamic Prompt Builder --------------------
+ * Builds AI prompt based ONLY on what user actually selected
+ */
+const buildDynamicPrompt = (category, destination, tripContext = {}) => {
+  const {
+    budget,
+    duration,
+    peopleCount,
+    currency = 'INR',
+    minRating,
+    maxRadius,
+    sortBy,
+    showHiddenGems,
+    topRatedOnly,
+    priceRange,
+    userPreferences
+  } = tripContext
+
+  // Start with base instruction
+  let promptSections = []
+
+  // Opening
+  promptSections.push(`You are a knowledgeable local travel expert for ${destination}.`)
+  promptSections.push(`\nGenerate exactly 10 ${category} recommendations in ${destination}.`)
+
+  // ========== TRIP CONTEXT (only if provided) ==========
+  const tripContextItems = []
+  if (budget) tripContextItems.push(`- Budget: ${budget} ${currency}`)
+  if (duration) tripContextItems.push(`- Trip duration: ${duration} days`)
+  if (peopleCount) tripContextItems.push(`- Number of travelers: ${peopleCount}`)
+  if (maxRadius) tripContextItems.push(`- Search area: Within ${maxRadius} km of city center`)
+
+  if (tripContextItems.length > 0) {
+    promptSections.push(`\n📍 TRIP DETAILS:`)
+    promptSections.push(tripContextItems.join('\n'))
+  }
+
+  // ========== QUALITY FILTERS (only if user set them) ==========
+  const qualityFilters = []
+  
+  if (minRating && minRating > 0) {
+    qualityFilters.push(`- Minimum rating: ${minRating}/5.0 stars (DO NOT include places below this rating)`)
+  }
+  
+  if (topRatedOnly) {
+    qualityFilters.push(`- ⭐ ONLY include top-rated places (4.5+ rating, highly acclaimed)`)
+  }
+  
+  if (showHiddenGems) {
+    qualityFilters.push(`- 💎 PRIORITIZE hidden gems, local favorites, and off-the-beaten-path spots`)
+    qualityFilters.push(`- Avoid overly touristy or mainstream places`)
+  }
+
+  if (qualityFilters.length > 0) {
+    promptSections.push(`\n🎯 QUALITY REQUIREMENTS:`)
+    promptSections.push(qualityFilters.join('\n'))
+  }
+
+  // ========== PRICE RANGE (only if specified) ==========
+  if (priceRange && (priceRange.min || priceRange.max)) {
+    promptSections.push(`\n💰 PRICE CONSTRAINTS:`)
+    if (priceRange.min && priceRange.max) {
+      promptSections.push(`- Only include places with price level ${priceRange.min} to ${priceRange.max}`)
+    } else if (priceRange.min) {
+      promptSections.push(`- Minimum price level: ${priceRange.min}`)
+    } else if (priceRange.max) {
+      promptSections.push(`- Maximum price level: ${priceRange.max}`)
+    }
+    promptSections.push(`- Price scale: 1=Budget, 2=Moderate, 3=Expensive, 4=Luxury, 5=Ultra-luxury`)
+  }
+
+  // ========== USER PREFERENCES (only if available) ==========
+  if (userPreferences && userPreferences.topCategories?.length > 0) {
+    promptSections.push(`\n👤 USER PREFERENCES:`)
+    promptSections.push(`- This user frequently enjoys: ${userPreferences.topCategories.join(', ')}`)
+    promptSections.push(`- Tailor recommendations to match these interests`)
+  }
+
+  // ========== SORTING INSTRUCTIONS (only if not default) ==========
+  if (sortBy && sortBy !== 'bestMatch') {
+    promptSections.push(`\n🔀 SORTING PRIORITY:`)
+    if (sortBy === 'rating') {
+      promptSections.push(`- Prioritize the HIGHEST-RATED places first`)
+      promptSections.push(`- List in descending order by rating`)
+    } else if (sortBy === 'distance') {
+      promptSections.push(`- Prioritize places CLOSEST to the city center`)
+      promptSections.push(`- List in order from nearest to farthest`)
+    }
+  }
+
+  // ========== OUTPUT FORMAT ==========
+  promptSections.push(`\n📋 FOR EACH PLACE, PROVIDE:`)
+  const outputFields = [
+    '- NAME: Official name of the place',
+    '- DESCRIPTION: Brief 2-3 sentence description highlighting what makes it special'
+  ]
+
+  // Rating field (adjust min based on filters)
+  const minRatingValue = minRating || 0
+  outputFields.push(`- RATING: Realistic rating between ${minRatingValue} and 5.0`)
+  
+  // Price field
+  outputFields.push(`- PRICE: Price level (1-5)`)
+  
+  // Location field
+  outputFields.push(`- LOCATION: Specific neighborhood or area name in ${destination}`)
+
+  // Conditional fields based on filters
+  if (showHiddenGems) {
+    outputFields.push(`- HIDDEN_GEM: true/false (is this a lesser-known local favorite?)`)
+  }
+
+  // Category-specific fields
+  if (category === 'restaurant') {
+    outputFields.push(`- CUISINE: Type of cuisine (e.g., Italian, French, Japanese)`)
+  } else if (category === 'attraction') {
+    outputFields.push(`- BEST_TIME: Best time to visit (e.g., morning, afternoon, evening, sunset)`)
+  } else if (category === 'accommodation') {
+    outputFields.push(`- AMENITIES: Key amenities (comma-separated, e.g., WiFi, Pool, Spa)`)
+  }
+
+  promptSections.push(outputFields.join('\n'))
+
+  // ========== CRITICAL INSTRUCTIONS ==========
+  promptSections.push(`\n⚠️ IMPORTANT RULES:`)
+  const criticalRules = []
+
+  if (minRating && minRating > 0) {
+    criticalRules.push(`- Every place MUST have a rating of ${minRating} or higher`)
+  }
+
+  if (maxRadius) {
+    criticalRules.push(`- All places MUST be within ${maxRadius} km of ${destination} center`)
+  }
+
+  criticalRules.push(`- Provide SPECIFIC neighborhood/area names for accurate location finding`)
+  criticalRules.push(`- Ensure variety in locations and price levels`)
+
+  if (showHiddenGems) {
+    criticalRules.push(`- Include at least 5-6 hidden gems or local favorites`)
+    criticalRules.push(`- Avoid well-known tourist traps unless exceptional`)
+  }
+
+  if (topRatedOnly) {
+    criticalRules.push(`- ALL places must be 4.5+ rating - no exceptions`)
+  }
+
+  promptSections.push(criticalRules.join('\n'))
+
+  // ========== FORMAT ==========
+  promptSections.push(`\nSeparate each place with "---"`)
+  promptSections.push(`Start immediately with the first recommendation.`)
+
+  return promptSections.join('\n')
+}
+
+/**
  * -------------------- AI Recommendations --------------------
  */
 const getAIRecommendations = async (category, destination, tripContext = {}) => {
@@ -14,31 +171,15 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     throw new Error('OPENROUTER_API_KEY missing')
   }
 
-  const {
-    budget,
-    duration,
-    peopleCount,
-    currency = 'INR'
-  } = tripContext
+  // Build dynamic prompt based on user's actual selections
+  const prompt = buildDynamicPrompt(category, destination, tripContext)
 
-  const prompt = `
-List exactly 10 popular ${category} places in ${destination}.
-
-Trip context:
-- Budget: ${budget || 'Not specified'} ${currency}
-- Trip duration: ${duration || 'Not specified'} days
-- Number of people: ${peopleCount || 'Not specified'}
-
-For each place, provide:
-- NAME
-- DESCRIPTION (short)
-- RATING (3.5–5.0)
-- PRICE (1=budget, 2=moderate, 3=expensive, 4=luxury)
-- LOCATION (area or neighborhood)
-
-Separate places using "---".
-Start immediately.
-`
+  // Log the prompt for debugging
+  console.log('='.repeat(60))
+  console.log('AI PROMPT GENERATED:')
+  console.log('='.repeat(60))
+  console.log(prompt)
+  console.log('='.repeat(60))
 
   try {
     const response = await axios.post(
@@ -46,11 +187,14 @@ Start immediately.
       {
         model: MODEL,
         messages: [
-          { role: 'system', content: 'You are a helpful travel guide.' },
+          { 
+            role: 'system', 
+            content: 'You are an expert local travel guide. Provide authentic, specific, well-researched recommendations tailored to user requirements.' 
+          },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: tripContext.showHiddenGems ? 0.8 : 0.7, // Higher creativity for hidden gems
+        max_tokens: 2500
       },
       {
         headers: {
@@ -66,21 +210,45 @@ Start immediately.
       return { places: [], message: 'AI returned no content' }
     }
 
-    const parsedPlaces = parseAIResponse(aiText, category)
+    console.log('AI Response received, parsing...')
+
+    const parsedPlaces = parseAIResponse(aiText, category, tripContext)
     if (!parsedPlaces.length) {
+      console.warn('No places parsed from AI response')
       return { places: [], message: 'Could not parse AI response' }
     }
 
+    console.log(`Parsed ${parsedPlaces.length} places, geocoding...`)
+
     const geocodedPlaces = await geocodePlaces(parsedPlaces, destination)
 
+    console.log(`Geocoded ${geocodedPlaces.length} places, applying filters...`)
+
+    // Apply post-processing filters
+    let filteredPlaces = applyFilters(geocodedPlaces, tripContext)
+
+    console.log(`${filteredPlaces.length} places after filtering, ranking...`)
+
     const rankedPlaces = scoreAndRankPlaces(
-      geocodedPlaces,
-      tripContext.centerLocation || null
+      filteredPlaces,
+      tripContext.centerLocation || null,
+      tripContext
     )
 
     return {
       places: rankedPlaces,
-      message: `Found ${rankedPlaces.length} ${category} recommendations`
+      message: `Found ${rankedPlaces.length} ${category} recommendations`,
+      metadata: {
+        promptLength: prompt.length,
+        appliedFilters: {
+          minRating: tripContext.minRating || null,
+          maxRadius: tripContext.maxRadius || null,
+          sortBy: tripContext.sortBy || 'bestMatch',
+          hiddenGems: tripContext.showHiddenGems || false,
+          topRatedOnly: tripContext.topRatedOnly || false,
+          priceRange: tripContext.priceRange || null
+        }
+      }
     }
   } catch (error) {
     console.error('AI recommendation error:', error.message)
@@ -92,9 +260,9 @@ Start immediately.
 }
 
 /**
- * -------------------- AI Response Parser --------------------
+ * -------------------- Enhanced AI Response Parser --------------------
  */
-const parseAIResponse = (text, category) => {
+const parseAIResponse = (text, category, tripContext = {}) => {
   const sections = text.split('---').filter(Boolean)
 
   return sections
@@ -104,7 +272,7 @@ const parseAIResponse = (text, category) => {
       const name = get(/NAME:\s*(.+)/i)
       if (!name) return null
 
-      return {
+      const place = {
         source: 'groq_ai',
         category,
         name,
@@ -113,8 +281,101 @@ const parseAIResponse = (text, category) => {
         priceLevel: parseInt(get(/PRICE:\s*(\d+)/i)) || 2,
         addressHint: get(/LOCATION:\s*(.+)/i) || ''
       }
+
+      // Parse hidden gem flag (only if requested)
+      if (tripContext.showHiddenGems) {
+        const hiddenGemMatch = get(/HIDDEN_GEM:\s*(true|false)/i)
+        if (hiddenGemMatch) {
+          place.isHiddenGem = hiddenGemMatch.toLowerCase() === 'true'
+        }
+      }
+
+      // Parse category-specific fields
+      if (category === 'restaurant') {
+        const cuisine = get(/CUISINE:\s*(.+)/i)
+        if (cuisine) place.cuisine = cuisine
+      }
+
+      if (category === 'attraction') {
+        const bestTime = get(/BEST_TIME:\s*(.+)/i)
+        if (bestTime) place.bestTimeToVisit = bestTime
+      }
+
+      if (category === 'accommodation') {
+        const amenities = get(/AMENITIES:\s*(.+)/i)
+        if (amenities) place.amenities = amenities.split(',').map(a => a.trim())
+      }
+
+      return place
     })
     .filter(Boolean)
+}
+
+/**
+ * -------------------- Apply Filters --------------------
+ */
+const applyFilters = (places, tripContext = {}) => {
+  const {
+    minRating = 0,
+    maxRadius = Infinity,
+    topRatedOnly = false,
+    showHiddenGems = false,
+    priceRange = null,
+    centerLocation = null
+  } = tripContext
+
+  let filtered = places.filter(place => {
+    // Rating filter
+    if (minRating > 0 && place.rating < minRating) {
+      console.log(`Filtered out ${place.name}: rating ${place.rating} < ${minRating}`)
+      return false
+    }
+    
+    // Top rated only filter
+    if (topRatedOnly && place.rating < 4.5) {
+      console.log(`Filtered out ${place.name}: not top-rated (${place.rating} < 4.5)`)
+      return false
+    }
+
+    // Price range filter
+    if (priceRange) {
+      if (priceRange.min && place.priceLevel < priceRange.min) {
+        console.log(`Filtered out ${place.name}: price ${place.priceLevel} < ${priceRange.min}`)
+        return false
+      }
+      if (priceRange.max && place.priceLevel > priceRange.max) {
+        console.log(`Filtered out ${place.name}: price ${place.priceLevel} > ${priceRange.max}`)
+        return false
+      }
+    }
+
+    // Distance filter (if location available)
+    if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
+      const dist = calculateDistance(
+        centerLocation.lat,
+        centerLocation.lon,
+        place.location.coordinates[1],
+        place.location.coordinates[0]
+      )
+      if (dist > maxRadius) {
+        console.log(`Filtered out ${place.name}: distance ${dist.toFixed(1)}km > ${maxRadius}km`)
+        return false
+      }
+    }
+
+    return true
+  })
+
+  // If showing hidden gems, boost those in the results
+  if (showHiddenGems) {
+    filtered = filtered.sort((a, b) => {
+      if (a.isHiddenGem && !b.isHiddenGem) return -1
+      if (!a.isHiddenGem && b.isHiddenGem) return 1
+      return 0
+    })
+  }
+
+  return filtered
 }
 
 /**
@@ -137,9 +398,11 @@ const geocodePlaces = async (places, destination) => {
             coordinates: [geo.lon, geo.lat]
           }
         })
+      } else {
+        console.warn(`Could not geocode: ${p.name}`)
       }
     } catch (err) {
-      console.error('Geocoding failed:', err.message)
+      console.error(`Geocoding failed for ${p.name}:`, err.message)
     }
   }
 
@@ -147,32 +410,70 @@ const geocodePlaces = async (places, destination) => {
 }
 
 /**
- * -------------------- Scoring & Ranking --------------------
+ * -------------------- Enhanced Scoring & Ranking --------------------
  */
-const scoreAndRankPlaces = (places, centerLocation) => {
-  return places
-    .map(place => {
-      let score = (place.rating || 4) * 2
+const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
+  const {
+    sortBy = 'bestMatch',
+    userPreferences = null,
+    showHiddenGems = false,
+    topRatedOnly = false
+  } = tripContext
 
-      if (centerLocation && place.location?.coordinates) {
-        const dist = calculateDistance(
-          centerLocation.lat,
-          centerLocation.lon,
-          place.location.coordinates[1],
-          place.location.coordinates[0]
-        )
-        place.distanceFromCenter = dist
-        score += Math.max(0, 20 - dist)
-      }
+  const scoredPlaces = places.map(place => {
+    let score = 0
 
-      return {
-        ...place,
-        recommendationScore: Math.round(score * 10) / 10
-      }
+    // Base rating score (0-10 points)
+    score += (place.rating || 4) * 2
+
+    // Distance score (0-20 points) - closer is better
+    if (centerLocation && place.location?.coordinates) {
+      const dist = calculateDistance(
+        centerLocation.lat,
+        centerLocation.lon,
+        place.location.coordinates[1],
+        place.location.coordinates[0]
+      )
+      place.distanceFromCenter = dist
+      score += Math.max(0, 20 - dist)
+    }
+
+    // Hidden gem bonus (5 points)
+    if (showHiddenGems && place.isHiddenGem) {
+      score += 5
+    }
+
+    // Top rated bonus (3 points)
+    if (topRatedOnly && place.rating >= 4.5) {
+      score += 3
+    }
+
+    // User preference bonus (0-10 points)
+    if (userPreferences?.categoryWeights) {
+      const categoryWeight = userPreferences.categoryWeights.get(place.category) || 0
+      score += Math.min(10, categoryWeight / 2) // Normalize to 0-10
+    }
+
+    place.recommendationScore = Math.round(score * 10) / 10
+    return place
+  })
+
+  // Sort based on user preference
+  if (sortBy === 'rating') {
+    return scoredPlaces.sort((a, b) => b.rating - a.rating)
+  } else if (sortBy === 'distance') {
+    return scoredPlaces.sort((a, b) => {
+      const distA = a.distanceFromCenter || Infinity
+      const distB = b.distanceFromCenter || Infinity
+      return distA - distB
     })
-    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+  } else {
+    // bestMatch - use computed score
+    return scoredPlaces.sort((a, b) => b.recommendationScore - a.recommendationScore)
+  }
 }
 
 module.exports = {
-  getAIRecommendations
+  getAIRecommendations,
+  scoreAndRankPlaces
 }
