@@ -14,8 +14,10 @@ let authHandler = {
       sessionStorage.setItem('refreshToken', refreshToken)
     }
     sessionStorage.setItem('user', JSON.stringify(user))
+ if (user && (user._id || user.id)) {
+    sessionStorage.setItem('userId', user._id || user.id)
+  }
   },
-
   clearAuthData() {
     sessionStorage.removeItem('accessToken')
     sessionStorage.removeItem('refreshToken')
