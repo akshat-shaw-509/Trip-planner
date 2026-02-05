@@ -250,7 +250,11 @@ async function loadRecommendations(options = {}) {
     );
 
     const data = response.data || response;
-    const recs = data.recommendations || [];
+    const recs = Array.isArray(data.places) ? data.places : [];
+recommendationsState.recommendations = recs;
+filterState.allRecommendations = recs;
+filterState.filteredResults = recs;
+console.log('AI RECS LOADED:', recs.length, recs[0]);
 
     recommendationsState.recommendations = recs;
     filterState.allRecommendations = recs;
