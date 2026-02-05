@@ -1,11 +1,12 @@
 /* =====================================================
-   🎯 MODERN FILTER DESIGN - PILL BUTTON STYLE
-   Matches reference design with checkbox-pill buttons
+   🎯 PLACES PAGE - MODERN DESIGN SYSTEM
+   Updated to match pill-style filter design
    ===================================================== */
 
 :root {
     --primary-blue: #2563eb;
     --primary-blue-dark: #1d4ed8;
+    --primary-blue-light: #60a5fa;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
@@ -16,6 +17,13 @@
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
+    --success-green: #10b981;
+    --warning-yellow: #f59e0b;
+    --danger-red: #ef4444;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -24,95 +32,220 @@
     box-sizing: border-box;
 }
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    line-height: 1.6;
+}
+
 /* =====================================================
-   📦 MAIN CONTAINER
+   📍 BREADCRUMB
+   ===================================================== */
+
+.breadcrumb {
+    padding: 20px 40px;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    color: var(--primary-blue-dark);
+}
+
+.breadcrumb i {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.breadcrumb span {
+    color: var(--gray-600);
+}
+
+/* =====================================================
+   📄 PAGE HEADER
+   ===================================================== */
+
+.page-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    padding: 40px;
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.page-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header h1 i {
+    font-size: 28px;
+}
+
+.page-header p {
+    font-size: 16px;
+    opacity: 0.95;
+    margin-top: 8px;
+}
+
+/* =====================================================
+   🎨 RECOMMENDATIONS SECTION
    ===================================================== */
 
 .recommendations-section {
-    padding: 40px 20px;
+    padding: 40px;
     max-width: 1600px;
     margin: 0 auto;
-    background: #f5f5f5;
 }
 
-/* =====================================================
-   🎨 FILTER SIDEBAR (Modal Style)
-   ===================================================== */
-
-.recommendation-controls {
-    background: white;
-    border-radius: 20px;
-    padding: 32px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    max-width: 520px;
-    position: sticky;
-    top: 100px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-}
-
-/* Custom Scrollbar */
-.recommendation-controls::-webkit-scrollbar {
-    width: 8px;
-}
-
-.recommendation-controls::-webkit-scrollbar-track {
-    background: var(--gray-100);
-    border-radius: 10px;
-}
-
-.recommendation-controls::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 10px;
-}
-
-.recommendation-controls::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-400);
-}
-
-/* =====================================================
-   📑 FILTER SECTIONS
-   ===================================================== */
-
-.controls-section {
+.section-header {
     margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--gray-200);
 }
 
-.controls-section:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.section-title {
-    font-size: 15px;
+.section-header h2 {
+    font-size: 24px;
     font-weight: 700;
     color: var(--gray-900);
-    margin-bottom: 16px;
-    letter-spacing: 0;
-    text-transform: none;
-    display: block;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-header h2 i {
+    color: var(--primary-blue);
+}
+
+.section-header p {
+    font-size: 15px;
+    color: var(--gray-600);
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 20px;
 }
 
 /* =====================================================
-   🔘 PILL BUTTON STYLE (Main Filter Buttons)
+   🔘 MODERN BUTTON STYLES (Pill Design)
    ===================================================== */
 
-.category-buttons,
-.sort-buttons,
-.quick-filters {
+.btn-filter,
+.btn-compare,
+.btn-add-place,
+.btn-search-nearby {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.btn-filter {
+    background: white;
+    color: var(--gray-700);
+    border: 1.5px solid var(--gray-300);
+}
+
+.btn-filter:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+    transform: translateY(-1px);
+}
+
+.btn-compare {
+    background: var(--primary-blue);
+    color: white;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-compare:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.compare-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: white;
+    color: var(--primary-blue);
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+.btn-add-place,
+.btn-search-nearby {
+    background: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-add-place:hover,
+.btn-search-nearby:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-search-nearby {
+    background: white;
+    color: var(--primary-blue);
+    border: 1.5px solid var(--primary-blue);
+    box-shadow: none;
+}
+
+.btn-search-nearby:hover {
+    background: var(--primary-blue);
+    color: white;
+}
+
+/* =====================================================
+   🏷️ FILTER SECTION (Pill Buttons)
+   ===================================================== */
+
+.filter-section {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin: 24px 0;
 }
 
-/* Base Pill Button */
-.category-btn,
-.sort-btn,
-.quick-filter-btn,
-.filter-pill-btn {
+.filter-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -126,35 +259,22 @@
     color: var(--gray-700);
     cursor: pointer;
     transition: all 0.2s ease;
-    position: relative;
     font-family: inherit;
-    white-space: nowrap;
 }
 
-.category-btn:hover,
-.sort-btn:hover,
-.quick-filter-btn:hover,
-.filter-pill-btn:hover {
+.filter-btn:hover {
     background: var(--gray-50);
     border-color: var(--gray-400);
 }
 
-/* Active State with Checkbox */
-.category-btn.active,
-.sort-btn.active,
-.quick-filter-btn.active,
-.filter-pill-btn.active {
+.filter-btn.active {
     background: white;
     border-color: var(--primary-blue);
     color: var(--gray-900);
     padding-left: 14px;
 }
 
-/* Checkbox Icon (Before Text) */
-.category-btn.active::before,
-.sort-btn.active::before,
-.quick-filter-btn.active::before,
-.filter-pill-btn.active::before {
+.filter-btn.active::before {
     content: '';
     width: 18px;
     height: 18px;
@@ -168,394 +288,42 @@
     background-size: 12px;
     background-position: center;
     background-repeat: no-repeat;
-}
-
-/* Remove default icon for category buttons */
-.category-btn i,
-.sort-btn i,
-.quick-filter-btn i {
-    display: none;
+    margin-right: 6px;
 }
 
 /* =====================================================
-   🎨 COLOR FILTERS (Special Styling)
+   🗺️ MAP VIEW SECTION
    ===================================================== */
 
-.color-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.color-filter-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
+.map-view-section {
     background: white;
-    border: 1.5px solid var(--gray-300);
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--gray-700);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
+    border-radius: 20px;
+    padding: 32px;
+    margin: 32px 0;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
-.color-filter-btn::before {
-    content: '';
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 2px solid var(--gray-300);
-    flex-shrink: 0;
-}
-
-/* Color Variations */
-.color-filter-btn[data-color="blue"]::before {
-    background: #2563eb;
-}
-
-.color-filter-btn[data-color="red"]::before {
-    background: #ef4444;
-}
-
-.color-filter-btn[data-color="green"]::before {
-    background: #10b981;
-}
-
-.color-filter-btn[data-color="yellow"]::before {
-    background: #f59e0b;
-}
-
-.color-filter-btn[data-color="brown"]::before {
-    background: #92400e;
-}
-
-.color-filter-btn[data-color="pink"]::before {
-    background: #ec4899;
-}
-
-.color-filter-btn[data-color="purple"]::before {
-    background: #8b5cf6;
-}
-
-.color-filter-btn[data-color="black"]::before {
-    background: #000000;
-}
-
-.color-filter-btn[data-color="white"]::before {
-    background: #ffffff;
-    border-color: var(--gray-400);
-}
-
-.color-filter-btn[data-color="gray"]::before {
-    background: #6b7280;
-}
-
-.color-filter-btn:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-}
-
-.color-filter-btn.active {
-    border-color: var(--primary-blue);
-    background: white;
-}
-
-.color-filter-btn.active::before {
-    border-color: var(--primary-blue);
-    border-width: 3px;
-}
-
-/* =====================================================
-   🎚️ PRICE RANGE SLIDER
-   ===================================================== */
-
-.price-range-section {
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.price-range-header {
+.map-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
-.price-range-header h3 {
-    font-size: 15px;
+.map-header h3 {
+    font-size: 20px;
     font-weight: 700;
     color: var(--gray-900);
-}
-
-.price-range-values {
     display: flex;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--gray-600);
-}
-
-.price-range-slider {
-    position: relative;
-    width: 100%;
-    height: 6px;
-    background: var(--gray-200);
-    border-radius: 10px;
-    margin: 24px 0;
-}
-
-.slider-input {
-    width: 100%;
-    height: 6px;
-    background: transparent;
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-}
-
-.slider-input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: var(--gray-800);
-    border-radius: 50%;
-    cursor: pointer;
-    pointer-events: auto;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-}
-
-.slider-input::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.slider-input::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: var(--gray-800);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-}
-
-.slider-input::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.slider-track {
-    position: absolute;
-    height: 6px;
-    background: var(--gray-800);
-    border-radius: 10px;
-    top: 0;
-    pointer-events: none;
-}
-
-/* =====================================================
-   🔢 SIZE FILTERS (Number Pills)
-   ===================================================== */
-
-.size-filters {
-    display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
 }
 
-.size-filter-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 48px;
-    height: 40px;
-    padding: 0 16px;
-    background: white;
-    border: 1.5px solid var(--gray-300);
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--gray-700);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
+.map-header h3 i {
+    color: var(--primary-blue);
 }
 
-.size-filter-btn:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-}
-
-.size-filter-btn.active {
-    background: white;
-    border-color: var(--primary-blue);
-    color: var(--gray-900);
-    position: relative;
-}
-
-.size-filter-btn.active::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    position: absolute;
-    top: 6px;
-    right: 6px;
-}
-
-/* =====================================================
-   🎬 ACTION BUTTON (Bottom)
-   ===================================================== */
-
-.filter-actions {
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid var(--gray-200);
-}
-
-.btn-apply-filters,
-.btn-show-results {
-    width: 100%;
-    padding: 14px 24px;
-    background: var(--primary-blue);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.btn-apply-filters:hover,
-.btn-show-results:hover {
-    background: var(--primary-blue-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-}
-
-.btn-apply-filters:active,
-.btn-show-results:active {
-    transform: translateY(0);
-}
-
-/* =====================================================
-   🔄 RESET FILTERS
-   ===================================================== */
-
-.btn-reset-filters {
-    width: 100%;
-    padding: 12px 24px;
-    background: white;
-    color: var(--gray-700);
-    border: 1.5px solid var(--gray-300);
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    margin-bottom: 12px;
-}
-
-.btn-reset-filters:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-}
-
-/* =====================================================
-   📊 FILTER COUNT BADGE
-   ===================================================== */
-
-.filter-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.filter-count-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 8px;
-    background: var(--primary-blue);
-    color: white;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-/* =====================================================
-   📱 RESPONSIVE DESIGN
-   ===================================================== */
-
-@media (max-width: 768px) {
-    .recommendation-controls {
-        padding: 24px;
-        border-radius: 16px;
-    }
-
-    .controls-section {
-        margin-bottom: 24px;
-        padding-bottom: 20px;
-    }
-
-    .category-btn,
-    .sort-btn,
-    .quick-filter-btn,
-    .filter-pill-btn,
-    .color-filter-btn,
-    .size-filter-btn {
-        font-size: 13px;
-        padding: 9px 16px;
-    }
-
-    .size-filter-btn {
-        min-width: 44px;
-        height: 36px;
-    }
-}
-
-/* =====================================================
-   ♿ ACCESSIBILITY
-   ===================================================== */
-
-.category-btn:focus,
-.sort-btn:focus,
-.quick-filter-btn:focus,
-.filter-pill-btn:focus,
-.color-filter-btn:focus,
-.size-filter-btn:focus,
-.btn-apply-filters:focus,
-.btn-reset-filters:focus {
-    outline: 3px solid rgba(37, 99, 235, 0.4);
-    outline-offset: 2px;
-}
-
-/* =====================================================
-   🎯 CLOSE BUTTON (Top Right)
-   ===================================================== */
-
-.filter-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
+.btn-close-map {
     width: 36px;
     height: 36px;
     background: var(--gray-100);
@@ -567,16 +335,534 @@
     cursor: pointer;
     transition: all 0.2s ease;
     color: var(--gray-600);
-    font-size: 18px;
+    font-size: 20px;
+    font-weight: 400;
 }
 
-.filter-close-btn:hover {
+.btn-close-map:hover {
     background: var(--gray-200);
     color: var(--gray-900);
 }
 
+#map {
+    width: 100%;
+    height: 500px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 /* =====================================================
-   🎨 SMOOTH ANIMATIONS
+   📍 MY PLACES SECTION
+   ===================================================== */
+
+.my-places-section {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    margin: 32px 0;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* =====================================================
+   🎴 PLACES GRID
+   ===================================================== */
+
+.places-grid,
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+/* =====================================================
+   🃏 PLACE CARD
+   ===================================================== */
+
+.place-card,
+.recommendation-card {
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.place-card:hover,
+.recommendation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    border-color: var(--gray-300);
+}
+
+.place-image,
+.recommendation-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: var(--gray-100);
+}
+
+.place-content,
+.recommendation-content {
+    padding: 20px;
+}
+
+.place-header,
+.recommendation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.place-title,
+.recommendation-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.place-category,
+.recommendation-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--gray-100);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 12px;
+}
+
+.place-rating,
+.recommendation-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--gray-700);
+    margin-bottom: 8px;
+}
+
+.place-rating i,
+.recommendation-rating i {
+    color: var(--warning-yellow);
+}
+
+.place-address,
+.recommendation-address {
+    font-size: 14px;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.place-address i,
+.recommendation-address i {
+    color: var(--gray-400);
+    margin-top: 2px;
+}
+
+.place-description,
+.recommendation-description {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.place-footer,
+.recommendation-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.place-date,
+.recommendation-date {
+    font-size: 13px;
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.place-actions,
+.recommendation-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray-300);
+    background: white;
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-icon:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+    color: var(--gray-900);
+}
+
+.btn-icon.edit {
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.btn-icon.edit:hover {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.btn-icon.delete {
+    color: var(--danger-red);
+    border-color: var(--danger-red);
+}
+
+.btn-icon.delete:hover {
+    background: var(--danger-red);
+    color: white;
+}
+
+.btn-icon.add {
+    color: var(--success-green);
+    border-color: var(--success-green);
+}
+
+.btn-icon.add:hover {
+    background: var(--success-green);
+    color: white;
+}
+
+/* =====================================================
+   📭 EMPTY STATE
+   ===================================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--gray-500);
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: var(--gray-300);
+    margin-bottom: 20px;
+    display: block;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    color: var(--gray-700);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 15px;
+    color: var(--gray-500);
+}
+
+/* =====================================================
+   🪟 MODAL STYLES
+   ===================================================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-content.modal-large {
+    max-width: 800px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h3 i {
+    color: var(--primary-blue);
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    background: var(--gray-100);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--gray-600);
+    font-size: 20px;
+}
+
+.modal-close:hover {
+    background: var(--gray-200);
+    color: var(--gray-900);
+}
+
+.modal-body {
+    padding: 32px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 24px 32px;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* =====================================================
+   📝 FORM STYLES
+   ===================================================== */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea,
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--gray-900);
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* =====================================================
+   🎨 BUTTON VARIANTS
+   ===================================================== */
+
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--gray-700);
+    border: 1.5px solid var(--gray-300);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.btn-block {
+    width: 100%;
+    display: block;
+}
+
+/* =====================================================
+   📱 RESPONSIVE DESIGN
+   ===================================================== */
+
+@media (max-width: 1200px) {
+    .places-grid,
+    .recommendations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header,
+    .recommendations-section,
+    .breadcrumb {
+        padding: 20px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .section-header h2 {
+        font-size: 20px;
+    }
+
+    .map-view-section,
+    .my-places-section {
+        padding: 20px;
+        border-radius: 16px;
+    }
+
+    .places-grid,
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #map {
+        height: 350px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-filter,
+    .btn-compare,
+    .btn-add-place,
+    .btn-search-nearby {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modal-content {
+        margin: 20px;
+        max-height: calc(100vh - 40px);
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================
+   ♿ ACCESSIBILITY
+   ===================================================== */
+
+*:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =====================================================
+   🎬 ANIMATIONS
    ===================================================== */
 
 @keyframes fadeIn {
@@ -590,63 +876,89 @@
     }
 }
 
-.recommendation-controls {
+.place-card,
+.recommendation-card {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* =====================================================
+   🎯 PRICE TAG
+   ===================================================== */
+
+.place-price,
+.recommendation-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--success-green);
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.price-level-1 { background: var(--success-green); }
+.price-level-2 { background: var(--warning-yellow); }
+.price-level-3 { background: var(--primary-blue); }
+.price-level-4 { background: var(--danger-red); }
+.price-level-5 { background: var(--gray-900); }
+
+/* =====================================================
+   🏷️ BADGE STYLES
+   ===================================================== */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-new {
+    background: var(--success-green);
+    color: white;
+}
+
+.badge-popular {
+    background: var(--warning-yellow);
+    color: white;
+}
+
+.badge-featured {
+    background: var(--primary-blue);
+    color: white;
 }
 
 /* =====================================================
    🔧 UTILITY CLASSES
    ===================================================== */
 
-.filter-group {
-    margin-bottom: 20px;
+.text-center {
+    text-align: center;
 }
 
-.filter-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--gray-700);
-    margin-bottom: 12px;
-    display: block;
-}
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
 
-.filter-divider {
-    height: 1px;
-    background: var(--gray-200);
-    margin: 24px 0;
-}
-
-/* =====================================================
-   📋 WRAPPER LAYOUT
-   ===================================================== */
-
-.recommendations-controls-wrapper {
+.d-flex {
     display: flex;
-    gap: 32px;
-    align-items: flex-start;
 }
 
-.recommendations-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
+.justify-between {
+    justify-content: space-between;
 }
 
-@media (max-width: 1024px) {
-    .recommendations-controls-wrapper {
-        flex-direction: column;
-    }
-
-    .recommendation-controls {
-        width: 100%;
-        max-width: 100%;
-        position: relative;
-        top: 0;
-        max-height: none;
-    }
-
-    .recommendations-grid {
-        width: 100%;
-    }
+.align-center {
+    align-items: center;
 }
+
+.gap-2 { gap: 16px; }
+.gap-3 { gap: 24px; }
