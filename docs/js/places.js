@@ -4,7 +4,6 @@ let currentFilter = 'all';
 let map = null;
 let markers = [];
 let currentTripData = null;
-let recommendedPlaces = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const token = sessionStorage.getItem('accessToken');
@@ -131,59 +130,6 @@ function displayPlaces() {
       deletePlace(place._id);
     });
   });
-}
-
-function createPlaceCard(place) {
-  const icon = getCategoryIcon(place.category);
-  const isFavorite = place.isFavorite || false;
-  return `
-    <div class="place-card ${place.category.toLowerCase()}" data-place-id="${place._id}">
-      <div class="place-card-header">
-        <div class="place-avatar">
-          <i class="fas fa-${icon}"></i>
-        </div>
-
-        <div class="place-info">
-          <div class="place-name">${escapeHtml(place.name)}</div>
-          <div class="place-meta">
-            ${
-              place.visitDate
-                ? `<span><i class="fas fa-calendar"></i> ${new Date(
-                    place.visitDate
-                  ).toLocaleDateString()}</span>`
-                : ''
-            }
-            ${
-              place.rating > 0
-                ? `<span><i class="fas fa-star"></i> ${place.rating.toFixed(1)}</span>`
-                : ''
-            }
-          </div>
-        </div>
-
-        <button class="btn-toggle-favorite ${isFavorite ? 'favorited' : ''}">
-          <i class="fas fa-heart"></i>
-        </button>
-      </div>
-
-      ${
-        place.notes || place.description
-          ? `<div class="place-description">${escapeHtml(
-              place.notes || place.description
-            )}</div>`
-          : ''
-      }
-
-      <div class="place-actions">
-        <button class="btn-primary btn-small btn-add-schedule">
-          <i class="fas fa-calendar-plus"></i> Add to Schedule
-        </button>
-        <button class="btn-delete-place btn-small">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-    </div>
-  `;
 }
 
 function initFilters() {
