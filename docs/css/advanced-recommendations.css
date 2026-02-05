@@ -653,21 +653,39 @@
 /* ===============================
    FILTER MODAL OVERRIDES
 ================================ */
+#filterModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
 
 #filterModal.active {
   display: flex;
 }
 
-#filterModal {
-  align-items: center;
-  justify-content: center;
-}
 
 #filterModal .modal-content {
   max-width: 720px;
   width: 92%;
   border-radius: 16px;
   overflow: hidden;
+}
+#filterModal .modal-content {
+  position: relative;
+  background: #fff;
+  pointer-events: auto;
+}
+
+#filterModal .modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 20;
+  cursor: pointer;
 }
 
 /* Header */
