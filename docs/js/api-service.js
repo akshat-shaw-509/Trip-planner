@@ -444,6 +444,6 @@ const apiService = {
     return await apiService.request(`/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`);
   }
   }
-}
+};
 
 window.apiService = apiService;
