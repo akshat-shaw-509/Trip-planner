@@ -1,6 +1,6 @@
 /* =====================================================
-   🎯 PLACES PAGE - COMPREHENSIVE FIX
-   Modern pill-style filters matching reference design
+   🎯 PLACES PAGE - FIXED VERSION
+   Fixes: spacing, alignment, backgrounds, filter modal
    ===================================================== */
 
 :root {
@@ -36,7 +36,7 @@ body {
 }
 
 /* =====================================================
-   📍 BREADCRUMB
+   📍 BREADCRUMB - FIXED ALIGNMENT
    ===================================================== */
 
 .breadcrumb {
@@ -47,6 +47,8 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 14px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .breadcrumb a {
@@ -72,14 +74,16 @@ body {
 }
 
 /* =====================================================
-   📄 PAGE HEADER
+   📄 PAGE HEADER - WHITE BACKGROUND
    ===================================================== */
 
 .page-header {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    background: white;
     padding: 40px;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: var(--gray-900);
+    border-bottom: 1px solid var(--gray-200);
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .page-header h1 {
@@ -89,16 +93,101 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    color: var(--gray-900);
 }
 
 .page-header h1 i {
     font-size: 28px;
+    color: var(--primary-blue);
 }
 
 .page-header p {
     font-size: 16px;
-    opacity: 0.95;
+    color: var(--gray-600);
     margin-top: 8px;
+}
+
+/* =====================================================
+   🎯 TRIP CENTER SELECTOR STYLING
+   ===================================================== */
+
+.trip-center-container {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    border-radius: 20px;
+    padding: 32px;
+    margin: 32px 0;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.trip-center-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.trip-center-title {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+.btn-change-location {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-change-location:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.trip-center-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.trip-center-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.trip-center-details h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.trip-center-coords {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Courier New', monospace;
 }
 
 /* =====================================================
@@ -139,6 +228,7 @@ body {
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
+    margin-top: 20px;
 }
 
 /* =====================================================
@@ -231,279 +321,7 @@ body {
 }
 
 /* =====================================================
-   🏷️ CATEGORY FILTER BUTTONS (Modern Pill Style)
-   ===================================================== */
-
-.rec-category-filters {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.rec-category-filters h3 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.rec-category-filters h3 i {
-    color: var(--primary-blue);
-}
-
-.category-filter-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.category-filter-btn,
-.filter-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 18px;
-    background: white;
-    border: 1.5px solid var(--gray-300);
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--gray-700);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-}
-
-.category-filter-btn:hover,
-.filter-btn:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-}
-
-.category-filter-btn.active,
-.filter-btn.active {
-    background: white;
-    border-color: var(--primary-blue);
-    color: var(--gray-900);
-    padding-left: 14px;
-}
-
-.category-filter-btn.active::before,
-.filter-btn.active::before {
-    content: '';
-    width: 18px;
-    height: 18px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 6px;
-    flex-shrink: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    background-size: 12px;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-.category-filter-btn.loading {
-    opacity: 0.6;
-    cursor: wait;
-}
-
-/* =====================================================
-   ⚙️ RECOMMENDATION CONTROLS PANEL
-   ===================================================== */
-
-.rec-controls-panel {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.rec-controls-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    cursor: pointer;
-}
-
-.rec-controls-header h3 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gray-900);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.rec-controls-header h3 i {
-    color: var(--primary-blue);
-}
-
-.rec-controls-toggle {
-    width: 32px;
-    height: 32px;
-    background: var(--gray-100);
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: var(--gray-600);
-}
-
-.rec-controls-toggle:hover {
-    background: var(--gray-200);
-    color: var(--gray-900);
-}
-
-.rec-controls-toggle.collapsed i {
-    transform: rotate(-90deg);
-}
-
-.rec-controls-body {
-    transition: all 0.3s ease;
-}
-
-.rec-controls-body.hidden {
-    display: none;
-}
-
-.control-group {
-    margin-bottom: 24px;
-}
-
-.control-group:last-child {
-    margin-bottom: 0;
-}
-
-.control-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--gray-700);
-    margin-bottom: 12px;
-}
-
-.control-value {
-    font-weight: 600;
-    color: var(--primary-blue);
-}
-
-.range-slider {
-    width: 100%;
-    height: 6px;
-    background: var(--gray-200);
-    border-radius: 10px;
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.range-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-    transition: all 0.2s ease;
-}
-
-.range-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
-
-.range-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-    transition: all 0.2s ease;
-}
-
-.range-slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-}
-
-/* =====================================================
-   🔘 SORT & QUICK FILTER BUTTONS
-   ===================================================== */
-
-.sort-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.sort-btn,
-.quick-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 18px;
-    background: white;
-    border: 1.5px solid var(--gray-300);
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--gray-700);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-}
-
-.sort-btn:hover,
-.quick-action-btn:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-400);
-}
-
-.sort-btn.active,
-.quick-action-btn.active {
-    background: white;
-    border-color: var(--primary-blue);
-    color: var(--gray-900);
-    padding-left: 14px;
-}
-
-.sort-btn.active::before,
-.quick-action-btn.active::before {
-    content: '';
-    width: 18px;
-    height: 18px;
-    background: var(--primary-blue);
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 6px;
-    flex-shrink: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    background-size: 12px;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-/* =====================================================
-   🏷️ MY PLACES FILTER SECTION (Pill Buttons)
+   🏷️ FILTER SECTION (Pill Buttons)
    ===================================================== */
 
 .filter-section {
@@ -513,82 +331,52 @@ body {
     margin: 24px 0;
 }
 
-/* =====================================================
-   📦 BULK ACTIONS BAR
-   ===================================================== */
-
-.bulk-actions-bar {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 50px;
-    padding: 16px 24px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    display: none;
-    align-items: center;
-    gap: 20px;
-    z-index: 1000;
-    animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-}
-
-.bulk-actions-bar.active {
-    display: flex;
-}
-
-.bulk-count {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--gray-900);
-}
-
-.bulk-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.bulk-action-btn {
+.filter-btn,
+.category-filter-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 10px 18px;
+    background: white;
+    border: 1.5px solid var(--gray-300);
     border-radius: 50px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
+    color: var(--gray-700);
     cursor: pointer;
     transition: all 0.2s ease;
-    border: none;
     font-family: inherit;
 }
 
-.bulk-action-btn.primary {
+.filter-btn:hover,
+.category-filter-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.filter-btn.active,
+.category-filter-btn.active {
+    background: white;
+    border-color: var(--primary-blue);
+    color: var(--gray-900);
+    padding-left: 14px;
+}
+
+.filter-btn.active::before,
+.category-filter-btn.active::before {
+    content: '';
+    width: 18px;
+    height: 18px;
     background: var(--primary-blue);
-    color: white;
-}
-
-.bulk-action-btn.primary:hover {
-    background: var(--primary-blue-dark);
-}
-
-.bulk-action-btn.secondary {
-    background: var(--gray-100);
-    color: var(--gray-700);
-}
-
-.bulk-action-btn.secondary:hover {
-    background: var(--gray-200);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+    flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 12px;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* =====================================================
@@ -1016,6 +804,11 @@ body {
 .rec-card-compare-checkbox i {
     color: white;
     font-size: 14px;
+    display: none;
+}
+
+.recommendation-card.comparing .rec-card-compare-checkbox i {
+    display: block;
 }
 
 /* =====================================================
@@ -1047,7 +840,7 @@ body {
 }
 
 /* =====================================================
-   🪟 MODAL STYLES
+   🪟 MODAL STYLES - FIXED TO DISPLAY PROPERLY
    ===================================================== */
 
 .modal {
@@ -1063,6 +856,9 @@ body {
     justify-content: center;
     z-index: 10000;
     padding: 20px;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal-content {
@@ -1074,6 +870,7 @@ body {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: modalSlideIn 0.3s ease-out;
+    position: relative;
 }
 
 .modal-content.modal-large {
@@ -1267,8 +1064,7 @@ body {
 
     .map-view-section,
     .my-places-section,
-    .rec-category-filters,
-    .rec-controls-panel {
+    .trip-center-container {
         padding: 20px;
         border-radius: 16px;
     }
@@ -1307,15 +1103,6 @@ body {
 
     .form-row {
         grid-template-columns: 1fr;
-    }
-
-    .bulk-actions-bar {
-        bottom: 16px;
-        padding: 12px 20px;
-        left: 16px;
-        right: 16px;
-        transform: none;
-        border-radius: 16px;
     }
 }
 
