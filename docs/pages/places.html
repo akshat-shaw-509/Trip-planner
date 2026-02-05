@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="../css/comparison.css">
     <link rel="stylesheet" href="../css/trip-center-selector.css">
 </head>
+
 <body>
     <!-- Navigation -->
     <nav id="mainNav">
@@ -57,17 +59,24 @@
                 <h2><i class="fas fa-star"></i> AI Recommendations for Your Trip</h2>
                 <p>Personalized suggestions based on your destination</p>
             </div>
-            <button class="btn-compare" id="compareBtn" onclick="openComparisonPanel()" style="display: none;">
-                <i class="fas fa-balance-scale"></i>
-                Compare
-                <span class="compare-count" id="compareCountBadge">0</span>
-            </button>
+
+            <div class="header-actions">
+                <button class="btn-filter" id="openFilterBtn">
+                    <i class="fas fa-sliders-h"></i> Filters
+                </button>
+
+                <button class="btn-compare" id="compareBtn" onclick="openComparisonPanel()" style="display: none;">
+                    <i class="fas fa-balance-scale"></i>
+                    Compare
+                    <span class="compare-count" id="compareCountBadge">0</span>
+                </button>
+            </div>
         </div>
-        
+
         <!-- Trip Center Selector will be inserted here -->
-        
+
         <!-- Recommendation Controls will be inserted here by advanced-recommendations.js -->
-        
+
         <!-- Recommendations Grid -->
         <div class="recommendations-grid" id="recommendationsGrid">
             <!-- Cards will be inserted here -->
@@ -87,9 +96,16 @@
     <div class="my-places-section">
         <div class="section-header">
             <h2><i class="fas fa-bookmark"></i> My Added Places</h2>
-            <button class="btn-add-place" id="addPlaceBtn">
-                <i class="fas fa-plus"></i> Add Place
-            </button>
+            <div class="header-actions">
+                <!-- Nearby Search Button -->
+                <button class="btn-search-nearby" onclick="openNearbySearchModal()">
+                    <i class="fas fa-search-location"></i> Search Nearby
+                </button>
+
+                <button class="btn-add-place" id="addPlaceBtn">
+                    <i class="fas fa-plus"></i> Add Place
+                </button>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -109,67 +125,49 @@
         </div>
     </div>
 
-     <div class="my-places-section">
-  <div class="section-header">
-    <h2><i class="fas fa-bookmark"></i> My Added Places</h2>
-    <div class="header-actions">
-      <!-- ✅ NEW: Nearby Search Button -->
-      <button class="btn-search-nearby" onclick="openNearbySearchModal()">
-        <i class="fas fa-search-location"></i> Search Nearby
-      </button>
-      
-      <button class="btn-add-place" id="addPlaceBtn">
-        <i class="fas fa-plus"></i> Add Place
-      </button>
-    </div>
-  </div>
-  
-  <!-- Rest of existing code... -->
-</div>
+    <!-- Nearby Search Modal -->
+    <div class="modal" id="nearbySearchModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-search-location"></i> Search Nearby Places</h3>
+                <button class="modal-close" onclick="closeNearbySearchModal()">&times;</button>
+            </div>
 
-<!-- ✅ NEW: Nearby Search Modal -->
-<div class="modal" id="nearbySearchModal" style="display: none;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3><i class="fas fa-search-location"></i> Search Nearby Places</h3>
-      <button class="modal-close" onclick="closeNearbySearchModal()">&times;</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="nearbyRadius">
+                        <i class="fas fa-arrows-alt"></i>
+                        Search Radius
+                    </label>
+                    <select id="nearbyRadius" class="form-control">
+                        <option value="1000">1 km</option>
+                        <option value="2000">2 km</option>
+                        <option value="5000" selected>5 km</option>
+                        <option value="10000">10 km</option>
+                        <option value="20000">20 km</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="nearbyCategory">
+                        <i class="fas fa-filter"></i>
+                        Category Filter
+                    </label>
+                    <select id="nearbyCategory" class="form-control">
+                        <option value="all">All Categories</option>
+                        <option value="restaurant">🍴 Restaurants</option>
+                        <option value="attraction">🛕 Attractions</option>
+                        <option value="accommodation">🏨 Hotels</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary btn-block" onclick="searchNearbyPlaces()">
+                    <i class="fas fa-search"></i> Search Now
+                </button>
+            </div>
+        </div>
     </div>
-    
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="nearbyRadius">
-          <i class="fas fa-arrows-alt"></i>
-          Search Radius
-        </label>
-        <select id="nearbyRadius" class="form-control">
-          <option value="1000">1 km</option>
-          <option value="2000">2 km</option>
-          <option value="5000" selected>5 km</option>
-          <option value="10000">10 km</option>
-          <option value="20000">20 km</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="nearbyCategory">
-          <i class="fas fa-filter"></i>
-          Category Filter
-        </label>
-        <select id="nearbyCategory" class="form-control">
-          <option value="all">All Categories</option>
-          <option value="restaurant">🍴 Restaurants</option>
-          <option value="attraction">🛕 Attractions</option>
-          <option value="accommodation">🏨 Hotels</option>
-        </select>
-      </div>
-      
-      <button class="btn-primary btn-block" onclick="searchNearbyPlaces()">
-        <i class="fas fa-search"></i> Search Now
-      </button>
-    </div>
-  </div>
-</div>
-    
+
     <!-- Add Place Modal -->
     <div class="modal" id="placeModal" style="display: none;">
         <div class="modal-content">
@@ -226,6 +224,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Filter Modal -->
+    <div class="modal" id="filterModal" style="display:none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-filter"></i> Filters</h3>
+                <button class="modal-close" id="closeFilterModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Filters will be moved here dynamically -->
+                <div id="filterModalContent"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="closeFilterFooter">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="../js/config.js"></script>
@@ -237,23 +256,23 @@
     <script src="../js/comparison.js"></script>
     <script src="../js/advanced-recommendations.js"></script>
     <script src="../js/places.js"></script>
-    
+
     <!-- Update Compare Button Badge -->
     <script>
         // Override updateComparisonPanel to also update the compare button
         const originalUpdateComparisonPanel = window.updateComparisonPanel;
-        window.updateComparisonPanel = function() {
+        window.updateComparisonPanel = function () {
             if (originalUpdateComparisonPanel) {
                 originalUpdateComparisonPanel();
             }
-            
+
             const compareBtn = document.getElementById('compareBtn');
             const compareBadge = document.getElementById('compareCountBadge');
             const count = window.comparisonState ? window.comparisonState.selectedPlaces.size : 0;
-            
+
             if (compareBtn && compareBadge) {
                 compareBadge.textContent = count;
-                
+
                 if (count > 0) {
                     compareBtn.style.display = 'inline-flex';
                 } else {
@@ -261,12 +280,15 @@
                 }
             }
         };
+
         function openNearbySearchModal() {
-  document.getElementById('nearbySearchModal').style.display = 'block'
-}
-function closeNearbySearchModal() {
-  document.getElementById('nearbySearchModal').style.display = 'none'
-}
+            document.getElementById('nearbySearchModal').style.display = 'block';
+        }
+
+        function closeNearbySearchModal() {
+            document.getElementById('nearbySearchModal').style.display = 'none';
+        }
     </script>
 </body>
+
 </html>
