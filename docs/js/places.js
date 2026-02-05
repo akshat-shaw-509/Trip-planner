@@ -269,10 +269,15 @@ async function deletePlace(placeId) {
 }
 function toggleMap() {
   const mapEl = document.getElementById('map');
+  const closeBtn = document.getElementById('closeMapBtn');
+
   mapEl.style.display = 'block';
+  closeBtn.style.display = 'inline-flex';
+
   if (!map) {
     initMap();
   }
+
   setTimeout(() => {
     if (map) {
       map.invalidateSize();
@@ -282,6 +287,7 @@ function toggleMap() {
 }
 function closeMap() {
   document.getElementById('map').style.display = 'none';
+  document.getElementById('closeMapBtn').style.display = 'none';
 }
 
 function initMap() {
