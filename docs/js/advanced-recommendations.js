@@ -12,21 +12,36 @@ window.recommendationState = {
   },
   isLoading: false,
   recommendations: [],
-  centerLocation: null
+  centerLocation: null,
+  tripId: null,
+  tripData: null
 };
 
-// ==================== INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', function() {
+/**
+ * Main initialization function called from places.js
+ * This is the entry point
+ */
+window.initRecommendations = async function(tripId, tripData) {
+  console.log('Initializing recommendations for trip:', tripId);
+  
+  window.recommendationState.tripId = tripId;
+  window.recommendationState.tripData = tripData;
+  
   initRecommendationControls();
-  loadRecommendations();
-});
+  await loadRecommendations();
+  
+  console.log('Recommendations initialized successfully');
+};
 
 /**
  * Initialize recommendation control UI
  */
 function initRecommendationControls() {
   const section = document.querySelector('.recommendations-section');
-  if (!section) return;
+  if (!section) {
+    console.warn('Recommendations section not found');
+    return;
+  }
 
   const controlsHTML = `
     <div class="recommendation-controls">
@@ -158,10 +173,10 @@ function initRecommendationControls() {
 
   // Insert controls after section header
   const sectionHeader = section.querySelector('.section-header');
-  sectionHeader.insertAdjacentHTML('afterend', controlsHTML);
-
-  // Attach event listeners
-  attachFilterListeners();
+  if (sectionHeader) {
+    sectionHeader.insertAdjacentHTML('afterend', controlsHTML);
+    attachFilterListeners();
+  }
 }
 
 /**
@@ -241,14 +256,19 @@ function attachFilterListeners() {
  * Load recommendations with current filters
  */
 async function loadRecommendations() {
-  const tripId = getTripIdFromURL();
+  const tripId = window.recommendationState.tripId;
+  
   if (!tripId) {
-    console.error('No trip ID found');
+    console.error('No trip ID available in recommendation state');
+    showErrorState('No trip ID found');
     return;
   }
 
   const grid = document.getElementById('recommendationsGrid');
-  if (!grid) return;
+  if (!grid) {
+    console.warn('Recommendations grid not found');
+    return;
+  }
 
   // Show loading state
   window.recommendationState.isLoading = true;
@@ -263,7 +283,7 @@ async function loadRecommendations() {
     const filters = window.recommendationState.currentFilters;
     
     // Build query parameters
-    const params = new URLSearchParams({
+    const params = {
       limit: 50,
       radius: filters.radius,
       category: filters.category,
@@ -271,21 +291,21 @@ async function loadRecommendations() {
       sortBy: filters.sortBy,
       hiddenGems: filters.hiddenGems,
       topRated: filters.topRated
-    });
+    };
 
     // Add price range if specified
-    if (filters.minPrice) params.append('minPrice', filters.minPrice);
-    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+    if (filters.minPrice) params.minPrice = filters.minPrice;
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
 
-    console.log('Fetching recommendations with params:', params.toString());
+    console.log('Fetching recommendations with params:', params);
 
-    const response = await apiService.recommendations.getForTrip(tripId, Object.fromEntries(params));
+    const response = await apiService.recommendations.getForTrip(tripId, params);
 
     window.recommendationState.recommendations = response.data.places || [];
     window.recommendationState.centerLocation = response.data.centerLocation;
 
     displayRecommendations(response.data.places || []);
-    updateActiveFiltersDisplay(response.data.appliedFilters);
+    updateActiveFiltersDisplay(response.data.appliedFilters || {});
 
     if (typeof showToast === 'function') {
       showToast(response.message || 'Recommendations loaded', 'success');
@@ -297,12 +317,16 @@ async function loadRecommendations() {
       <div class="error-state">
         <i class="fas fa-exclamation-circle"></i>
         <h3>Failed to Load Recommendations</h3>
-        <p>${error.message}</p>
+        <p>${error.message || 'Unknown error'}</p>
         <button class="btn-retry" onclick="loadRecommendations()">
           <i class="fas fa-redo"></i> Try Again
         </button>
       </div>
     `;
+    
+    if (typeof showToast === 'function') {
+      showToast('Failed to load recommendations', 'error');
+    }
   } finally {
     window.recommendationState.isLoading = false;
   }
@@ -413,14 +437,14 @@ function createRecommendationCard(place) {
 /**
  * Apply current filters and reload recommendations
  */
-function applyFilters() {
+window.applyFilters = function() {
   loadRecommendations();
-}
+};
 
 /**
  * Reset all filters to default
  */
-function resetFilters() {
+window.resetFilters = function() {
   // Reset state
   window.recommendationState.currentFilters = {
     category: 'all',
@@ -434,12 +458,21 @@ function resetFilters() {
   };
 
   // Reset UI
-  document.getElementById('ratingFilter').value = 3.5;
-  document.getElementById('ratingValue').textContent = '3.5';
-  document.getElementById('radiusFilter').value = 10;
-  document.getElementById('radiusValue').textContent = '10';
-  document.getElementById('minPriceFilter').value = '';
-  document.getElementById('maxPriceFilter').value = '';
+  const ratingFilter = document.getElementById('ratingFilter');
+  const radiusFilter = document.getElementById('radiusFilter');
+  const minPriceFilter = document.getElementById('minPriceFilter');
+  const maxPriceFilter = document.getElementById('maxPriceFilter');
+  
+  if (ratingFilter) {
+    ratingFilter.value = 3.5;
+    document.getElementById('ratingValue').textContent = '3.5';
+  }
+  if (radiusFilter) {
+    radiusFilter.value = 10;
+    document.getElementById('radiusValue').textContent = '10';
+  }
+  if (minPriceFilter) minPriceFilter.value = '';
+  if (maxPriceFilter) maxPriceFilter.value = '';
 
   // Reset button states
   document.querySelectorAll('.category-filters .filter-btn').forEach(btn => {
@@ -454,7 +487,7 @@ function resetFilters() {
 
   // Reload
   applyFilters();
-}
+};
 
 /**
  * Update active filters display
@@ -467,16 +500,16 @@ function updateActiveFiltersDisplay(appliedFilters) {
 
   const filters = [];
 
-  if (appliedFilters.category !== 'all') {
+  if (appliedFilters.category && appliedFilters.category !== 'all') {
     filters.push(`Category: ${appliedFilters.category}`);
   }
-  if (appliedFilters.minRating > 3.5) {
+  if (appliedFilters.minRating && appliedFilters.minRating > 3.5) {
     filters.push(`Min Rating: ${appliedFilters.minRating}★`);
   }
-  if (appliedFilters.maxRadius !== 10) {
+  if (appliedFilters.maxRadius && appliedFilters.maxRadius !== 10) {
     filters.push(`Radius: ${appliedFilters.maxRadius} km`);
   }
-  if (appliedFilters.sortBy !== 'bestMatch') {
+  if (appliedFilters.sortBy && appliedFilters.sortBy !== 'bestMatch') {
     filters.push(`Sort: ${appliedFilters.sortBy}`);
   }
   if (appliedFilters.hiddenGems) {
@@ -486,7 +519,7 @@ function updateActiveFiltersDisplay(appliedFilters) {
     filters.push('Top Rated Only');
   }
   if (appliedFilters.priceRange) {
-    filters.push(`Price: ${'$'.repeat(appliedFilters.priceRange.min)}-${'$'.repeat(appliedFilters.priceRange.max)}`);
+    filters.push(`Price: ${'$'.repeat(appliedFilters.priceRange.min || 1)}-${'$'.repeat(appliedFilters.priceRange.max || 5)}`);
   }
 
   if (filters.length > 0) {
@@ -500,7 +533,7 @@ function updateActiveFiltersDisplay(appliedFilters) {
 /**
  * Handle compare checkbox click
  */
-function handleCompareClick(event, button) {
+window.handleCompareClick = function(event, button) {
   event.stopPropagation();
   const card = button.closest('.recommendation-card');
   const placeName = card.dataset.name;
@@ -509,14 +542,21 @@ function handleCompareClick(event, button) {
   if (place && typeof window.handleCompareCheckboxClick === 'function') {
     window.handleCompareCheckboxClick(place, card);
   }
-}
+};
 
 /**
  * Add recommendation to trip
  */
-async function addRecommendationToTrip(place) {
-  const tripId = getTripIdFromURL();
-  if (!tripId) return;
+window.addRecommendationToTrip = async function(place) {
+  const tripId = window.recommendationState.tripId;
+  
+  if (!tripId) {
+    console.error('No trip ID available');
+    if (typeof showToast === 'function') {
+      showToast('Trip ID not found', 'error');
+    }
+    return;
+  }
 
   try {
     await apiService.places.create(tripId, {
@@ -535,7 +575,7 @@ async function addRecommendationToTrip(place) {
       showToast(`Added ${place.name} to your trip!`, 'success');
     }
 
-    // Refresh places list if available
+    // Refresh places list if available (from places.js)
     if (typeof loadPlaces === 'function') {
       loadPlaces();
     }
@@ -545,22 +585,31 @@ async function addRecommendationToTrip(place) {
       showToast('Failed to add place', 'error');
     }
   }
-}
+};
 
 /**
  * Show recommendation details modal
  */
-function showRecommendationDetails(place) {
-  // Implementation depends on your modal system
-  alert(`${place.name}\n\nCategory: ${place.category}\nRating: ${place.rating}\n\n${place.description}`);
-}
+window.showRecommendationDetails = function(place) {
+  const details = `
+${place.name}
+
+Category: ${place.category}
+Rating: ${place.rating} / 5.0
+${place.priceLevel ? `Price Level: ${'$'.repeat(place.priceLevel)}` : ''}
+${place.distanceFromCenter ? `Distance: ${place.distanceFromCenter.toFixed(1)} km from center` : ''}
+
+${place.description || 'No description available'}
+
+${place.address ? `Address: ${place.address}` : ''}
+${place.cuisine ? `Cuisine: ${place.cuisine}` : ''}
+${place.bestTimeToVisit ? `Best Time: ${place.bestTimeToVisit}` : ''}
+  `.trim();
+  
+  alert(details);
+};
 
 // ==================== HELPER FUNCTIONS ====================
-
-function getTripIdFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('tripId');
-}
 
 function getCategoryIcon(category) {
   const icons = {
@@ -582,9 +631,17 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Make functions available globally
-window.applyFilters = applyFilters;
-window.resetFilters = resetFilters;
-window.loadRecommendations = loadRecommendations;
-window.addRecommendationToTrip = addRecommendationToTrip;
-window.showRecommendationDetails = showRecommendationDetails;
+function showErrorState(message) {
+  const grid = document.getElementById('recommendationsGrid');
+  if (grid) {
+    grid.innerHTML = `
+      <div class="error-state">
+        <i class="fas fa-exclamation-circle"></i>
+        <h3>Error</h3>
+        <p>${message}</p>
+      </div>
+    `;
+  }
+}
+
+console.log('Advanced recommendations module loaded');
