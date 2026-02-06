@@ -722,8 +722,49 @@ body {
     cursor: pointer;
     position: relative;
 }
+/* Recommendation card positioning */
+.recommendation-card {
+    position: relative;
+}
 
-/* ... keep all your existing recommendation card CSS below this ... */
+/* Compare checkbox → top right */
+.rec-card-compare-checkbox {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 5;
+
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Heart (Save for later) → top center */
+.save-for-later {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
 
 /* =====================================================
    🪟 MODAL STYLES - FIXED TO DISPLAY PROPERLY
