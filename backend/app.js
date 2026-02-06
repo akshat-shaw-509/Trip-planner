@@ -82,7 +82,15 @@ app.use(cookieParser()) // ✅ explicitly kept
    6. Static uploads
    → moved to infra-level responsibility
 */
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, '../uploads'), {
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    }
+  })
+)
 
 /* =========================
    7. Logging
