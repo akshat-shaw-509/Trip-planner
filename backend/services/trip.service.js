@@ -195,22 +195,22 @@ const deleteTrip = async (tripId, userId) => {
  * --------------------
  */
 const updateTripStatus = async (tripId, status, userId) => {
-  if (!TRIP_STATUSES.includes(status)) {
-    throw new ValidationError(
-      `Status must be one of: ${TRIP_STATUSES.join(', ')}`
-    )
+ /**
+ * -------------------- Remove Trip Banner
+ * --------------------
+ */
+const removeBanner = async (tripId, userId) => {
+  if (!tripId) {
+    throw new ValidationError('Trip ID is required')
   }
-
   const trip = await Trip.findOneAndUpdate(
     { _id: tripId, userId: userId.toString() },
-    { status },
+    { coverImage: null },
     { new: true }
   )
-
   if (!trip) {
     throw new NotFoundError('Trip not found or access denied')
   }
-
   return trip
 }
 
