@@ -237,10 +237,10 @@ const uploadBanner = async (file) => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
     
     const formData = new FormData()
-    formData.append('image', file)
+    formData.append('file', file) 
     
     const token = sessionStorage.getItem('accessToken')
-    const res = await fetch(`${apiService.baseURL}/trips/${currentTrip._id}/banner`, {
+    const res = await fetch(`${apiService.baseURL}/uploads/image`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData
@@ -249,7 +249,7 @@ const uploadBanner = async (file) => {
     const data = await res.json()
     if (!res.ok || !data.success) throw new Error(data.message)
     
-    currentTrip.coverImage = data.data.coverImage
+    currentTrip.coverImage = data.data.url
     displayTripOverview()
     showToast?.('Banner saved!', 'success')
   } catch (err) {
