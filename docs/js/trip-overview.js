@@ -292,10 +292,8 @@ const removeBanner = async () => {
     currentTrip.coverImage = null
     const bannerImg = document.querySelector('.trip-banner img')
     if (bannerImg) {
-      bannerImg.dataset.locked = 'true'
-      bannerImg.src = getDefaultBanner(currentTrip.destination)
-    }
-    
+  bannerImg.src = getDefaultBanner(currentTrip.destination)
+}
     showToast?.('Banner removed successfully!', 'success')
   } catch (err) {
     console.error('Remove banner error:', err)
