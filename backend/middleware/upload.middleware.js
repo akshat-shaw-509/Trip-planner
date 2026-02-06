@@ -1,52 +1,124 @@
-let multer = require('multer')
-let path = require('path')
-let fs = require('fs').promises
-let bannerStorage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    // Define upload directory for banners
-    let uploadPath = path.join(__dirname, '../uploads/banners')
-    try {
-      // Create directory if it doesn't exist
-      await fs.mkdir(uploadPath, { recursive: true })
-      cb(null, uploadPath)
-    } catch (error) {
-      cb(error)
-    }
-  },
-//Filename callback
-//Generates a unique filename using tripId and timestamp
-  filename: (req, file, cb) => {
-    let uniqueName = `banner-${req.params.tripId}-${Date.now()}${path.extname(file.originalname)}`
+const multer = require('multer')
+const path = require('path')
 
-    cb(null, uniqueName)
-  }
-})
+/**
+ * Memory storage for general uploads (processed by service layer)
+ * This gives us more control and allows the service to handle folder logic
+ */
+const memoryStorage = multer.memoryStorage()
 
-//File Type Filter
- //Allows only valid image formats
-let imageFileFilter = (req, file, cb) => {
-  let allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+/**
+ * File type filter for images
+ */
+const imageFileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+  
   if (allowedTypes.includes(file.mimetype)) {
-    // Accept file
     cb(null, true)
   } else {
-    //Reject file
     cb(
-      new Error('Invalid file type. Only JPEG, PNG and WebP are allowed'),
+      new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed'),
       false
     )
   }
 }
 
-let uploadBanner = multer({
-  storage: bannerStorage,   
-  fileFilter: imageFileFilter, 
+/**
+ * File type filter for documents
+ */
+const documentFileFilter = (req, file, cb) => {
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain'
+  ]
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(
+      new Error('Invalid document type. Only PDF, Word, Excel, and text files are allowed'),
+      false
+    )
+  }
+}
+
+/**
+ * General file filter (allows both images and documents)
+ */
+const generalFileFilter = (req, file, cb) => {
+  const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+  const allowedDocTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain'
+  ]
+  
+  const allAllowedTypes = [...allowedImageTypes, ...allowedDocTypes]
+  
+  if (allAllowedTypes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(
+      new Error('Invalid file type'),
+      false
+    )
+  }
+}
+
+/**
+ * Multer instance for image uploads (banners, profile pics, etc.)
+ */
+const uploadImage = multer({
+  storage: memoryStorage,
+  fileFilter: imageFileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+})
+
+/**
+ * Multer instance for banner uploads specifically
+ */
+const uploadBanner = multer({
+  storage: memoryStorage,
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+})
+
+/**
+ * Multer instance for document uploads
+ */
+const uploadDocument = multer({
+  storage: memoryStorage,
+  fileFilter: documentFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+})
+
+/**
+ * Multer instance for general file uploads (mixed types)
+ */
+const uploadGeneral = multer({
+  storage: memoryStorage,
+  fileFilter: generalFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
   }
 })
 
 module.exports = {
-  uploadBanner
+  uploadImage,
+  uploadBanner,
+  uploadDocument,
+  uploadGeneral
 }
-
