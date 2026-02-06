@@ -67,7 +67,7 @@ const displayTripOverview = () => {
   
   // ---------- Banner ----------
   const bannerImg = document.querySelector('.trip-banner img')
-  if (bannerImg && bannerImg.dataset.locked !== 'true') {
+  if (bannerImg) {
     if (trip.coverImage) {
       const baseURL = apiService.baseURL.replace('/api', '')
       const imageUrl = trip.coverImage.startsWith('/uploads/')
@@ -208,7 +208,6 @@ const previewBanner = (file) => {
   if (!img) return
   
   const url = URL.createObjectURL(file)
-  img.dataset.locked = 'true'
   img.src = url
   img.onload = () => URL.revokeObjectURL(url)
 }
