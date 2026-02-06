@@ -1,0 +1,161 @@
+/* =====================================================
+   🗺️ MAP POPUP BUTTON FIX
+   Ensures "Add to My Places" button is properly styled
+   ===================================================== */
+
+/* Override any conflicting styles */
+.leaflet-popup-content button,
+.map-popup-content button,
+.custom-popup button {
+    all: unset;
+    box-sizing: border-box;
+}
+
+/* Popup Action Buttons - Fixed Styling */
+.map-popup-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.map-popup-btn,
+.map-popup-content button {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Primary Button (Add to My Places) */
+.map-popup-btn-primary,
+button[onclick*="addToMyPlaces"],
+.map-popup-content button:first-of-type {
+    background: #6366f1;
+    color: white;
+    border: 1px solid #6366f1;
+}
+
+.map-popup-btn-primary:hover,
+button[onclick*="addToMyPlaces"]:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.map-popup-btn-primary:active,
+button[onclick*="addToMyPlaces"]:active {
+    transform: translateY(0);
+}
+
+/* Secondary Button (View Details) */
+.map-popup-btn-secondary,
+.map-popup-content button:last-of-type {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}
+
+.map-popup-btn-secondary:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* Specific targeting for Leaflet popups */
+.leaflet-popup-content-wrapper .map-popup-content button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
+/* Icon styling inside buttons */
+.map-popup-btn i,
+.map-popup-content button i {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+/* Ensure buttons are visible and clickable */
+.map-popup-actions button {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Remove any default button styles that might interfere */
+.custom-popup .leaflet-popup-content button,
+.leaflet-popup-content button {
+    appearance: auto;
+    -webkit-appearance: button;
+    -moz-appearance: button;
+}
+
+/* Fix for button text */
+.map-popup-btn,
+.map-popup-content button {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .map-popup-actions {
+        flex-direction: column;
+    }
+
+    .map-popup-btn,
+    .map-popup-content button {
+        width: 100%;
+    }
+}
+
+/* Focus states for accessibility */
+.map-popup-btn:focus,
+.map-popup-content button:focus {
+    outline: 3px solid rgba(99, 102, 241, 0.4);
+    outline-offset: 2px;
+}
+
+/* Disabled state */
+.map-popup-btn:disabled,
+.map-popup-content button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Loading state */
+.map-popup-btn.loading,
+.map-popup-content button.loading {
+    position: relative;
+    color: transparent;
+}
+
+.map-popup-btn.loading::after,
+.map-popup-content button.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
