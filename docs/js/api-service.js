@@ -205,42 +205,65 @@ const apiService = {
 
   // Trip endpoints
   trips: {
-    async getAll(filters = {}) {
-      const params = new URLSearchParams(filters);
-      const query = params.toString();
-      return await apiService.request(`/trips${query ? '?' + query : ''}`);
-    },
-
-    async getById(id) {
-      return await apiService.request(`/trips/${id}`);
-    },
-
-    async create(data) {
-      return await apiService.request('/trips', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-    },
-
-    async update(id, data) {
-      return await apiService.request(`/trips/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-    },
-
-    async delete(id) {
-      return await apiService.request(`/trips/${id}`, {
-        method: 'DELETE'
-      });
-    },
-
-    async removeBanner(tripId) {
-      return await apiService.request(`/trips/${tripId}/banner`, {
-        method: 'DELETE'
-      });
-    }
+  async getAll(filters = {}) {
+    const params = new URLSearchParams(filters);
+    const query = params.toString();
+    return await apiService.request(`/trips${query ? '?' + query : ''}`);
   },
+
+  async getById(id) {
+    return await apiService.request(`/trips/${id}`);
+  },
+
+  async create(data) {
+    return await apiService.request('/trips', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async update(id, data) {
+    return await apiService.request(`/trips/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async delete(id) {
+    return await apiService.request(`/trips/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async removeBanner(tripId) {
+    return await apiService.request(`/trips/${tripId}/banner`, {
+      method: 'DELETE'
+    });
+  }, 
+  async uploadBanner(tripId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = sessionStorage.getItem('accessToken');
+
+    const response = await fetch(
+      `${apiService.baseURL}/uploads/image`,
+      {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
+        body: formData
+      }
+    );
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(err || 'Banner upload failed');
+    }
+    return await response.json();
+  }
+},
+
 
   // Place endpoints
   places: {
