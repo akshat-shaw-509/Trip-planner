@@ -130,40 +130,43 @@ const getTripById = async (tripId, userId) => {
  * -------------------- Update Trip
  * --------------------
  */
-const updateTrip = async (tripId, updateData, userId) => {
-  if (!tripId) {
-    throw new ValidationError('Trip ID is required')
-  }
-
-  const blockedFields = ['_id', 'userId', 'createdAt', 'updatedAt']
-  if (blockedFields.some(f => f in updateData)) {
-    throw new ValidationError('Cannot update system fields')
-  }
-
-  if (updateData.startDate || updateData.endDate) {
-    const existingTrip = await Trip.findById(tripId)
-    if (!existingTrip) throw new NotFoundError('Trip not found')
-
-    const start = updateData.startDate
-      ? new Date(updateData.startDate)
-      : existingTrip.startDate
-
-    const end = updateData.endDate
-      ? new Date(updateData.endDate)
-      : existingTrip.endDate
-
-    if (end < start) {
-      throw new ValidationError('End date must be after or equal to start date')
-    }
-
-    updateData.startDate = start
-    updateData.endDate = end
+/**
+ * -------------------- Update Trip Status
+ * --------------------
+ */
+const updateTripStatus = async (tripId, status, userId) => {
+  if (!TRIP_STATUSES.includes(status)) {
+    throw new ValidationError(
+      `Status must be one of: ${TRIP_STATUSES.join(', ')}`
+    )
   }
 
   const trip = await Trip.findOneAndUpdate(
     { _id: tripId, userId: userId.toString() },
-    updateData,
-    { new: true, runValidators: true }
+    { status },
+    { new: true }
+  )
+
+  if (!trip) {
+    throw new NotFoundError('Trip not found or access denied')
+  }
+
+  return trip
+}
+
+/**
+ * -------------------- Remove Trip Banner
+ * --------------------
+ */
+const removeBanner = async (tripId, userId) => {
+  if (!tripId) {
+    throw new ValidationError('Trip ID is required')
+  }
+
+  const trip = await Trip.findOneAndUpdate(
+    { _id: tripId, userId: userId.toString() },
+    { coverImage: null },
+    { new: true }
   )
 
   if (!trip) {
@@ -220,5 +223,6 @@ module.exports = {
   getTripById,
   updateTrip,
   deleteTrip,
-  updateTripStatus
+  updateTripStatus,
+  removeBanner
 }
