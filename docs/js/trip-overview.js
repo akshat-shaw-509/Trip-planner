@@ -248,9 +248,12 @@ const uploadBanner = async (file) => {
 
     const data = await res.json()
     if (!res.ok || !data.success) throw new Error(data.message)
-    
-    currentTrip.coverImage = data.data.url
-    displayTripOverview()
+    const imageUrl = data.data.url
+await apiService.trips.update(currentTrip._id, {
+  coverImage: imageUrl
+})
+currentTrip.coverImage = imageUrl
+displayTripOverview()
     showToast?.('Banner saved!', 'success')
   } catch (err) {
     console.error(err)
