@@ -468,8 +468,8 @@ const apiService = {
       // Route: router.get('/trips/:tripId/recommendations', ...)
       // Final URL: /api/recommendations/trips/:tripId/recommendations
       return await apiService.request(
-        `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
-      );
+  `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
+);
     }
   }
 };
