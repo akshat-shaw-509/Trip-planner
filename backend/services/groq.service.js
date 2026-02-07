@@ -230,7 +230,9 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     if (!aiText) {
       return { places: [], message: 'AI returned no content' }
     }
-
+    console.log('================ RAW AI RESPONSE ================')
+console.log(aiText)
+console.log('=================================================')
     console.log('AI Response received, parsing...')
 
     const parsedPlaces = parseAIResponse(aiText, category, tripContext)
@@ -304,7 +306,10 @@ const parseAIResponse = (text, category, tripContext = {}) => {
     .map(section => {
       const get = (r) => section.match(r)?.[1]?.trim()
 
-      const name = get(/NAME:\s*(.+)/i)
+      const name =
+  get(/NAME:\s*(.+)/i) ||
+  get(/^\s*\d+\.\s*(.+)/m) ||
+  get(/^-\s*(.+)/m)
       if (!name) return null
 
       const place = {
