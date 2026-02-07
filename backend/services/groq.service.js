@@ -167,6 +167,11 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
  * -------------------- AI Recommendations --------------------
  */
 const getAIRecommendations = async (category, destination, tripContext = {}) => {
+    // 🔧 Normalize invalid sortBy coming from frontend
+  if (tripContext.sortBy === 'score') {
+    tripContext.sortBy = 'bestMatch'
+  }
+
   if (!OPENROUTER_API_KEY) {
     throw new Error('OPENROUTER_API_KEY missing')
   }
