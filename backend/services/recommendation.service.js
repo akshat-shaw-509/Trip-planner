@@ -81,13 +81,11 @@ const getRecommendations = async (tripId, options = {}) => {
       minRating: parseFloat(options.minRating) || userPreferences?.ratingThreshold || 3.5,
       maxRadius: parseFloat(options.radius) || 10, // km
       
-      // Sorting
-      const normalizedSortBy =
-  options.sortBy === 'score' ? 'bestMatch' : options.sortBy
-
-// then use
-sortBy: normalizedSortBy || 'bestMatch'
- // bestMatch, rating, distance
+     
+// Sorting
+sortBy: options.sortBy === 'score'
+  ? 'bestMatch'
+  : options.sortBy || 'bestMatch',
       
       // Quick filters
       showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
@@ -136,17 +134,12 @@ sortBy: normalizedSortBy || 'bestMatch'
       /**
  * STEP 6: Keep places with coordinates, distance handled later
  */
-const validPlaces = result.places.filter(place => {
-  return !!place.location?.coordinates
-})
-
-allPlaces.push(
-  ...result.places.filter(p =>
-    Array.isArray(p.location?.coordinates) &&
-    typeof p.location.coordinates[0] === 'number' &&
-    typeof p.location.coordinates[1] === 'number'
-  )
+allPlaces.push(...result.places)
+      console.log(
+  '[DEBUG] Total places collected so far:',
+  allPlaces.length
 )
+
 
     }
     if (allPlaces.length === 0) {
