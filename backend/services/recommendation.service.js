@@ -131,7 +131,7 @@ const validPlaces = result.places.filter(place => {
 })
 
 allPlaces.push(...validPlaces)
-
+    }
     if (allPlaces.length === 0) {
       return {
         places: [],
