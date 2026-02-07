@@ -82,7 +82,12 @@ const getRecommendations = async (tripId, options = {}) => {
       maxRadius: parseFloat(options.radius) || 10, // km
       
       // Sorting
-      sortBy: options.sortBy || 'bestMatch', // bestMatch, rating, distance
+      const normalizedSortBy =
+  options.sortBy === 'score' ? 'bestMatch' : options.sortBy
+
+// then use
+sortBy: normalizedSortBy || 'bestMatch'
+ // bestMatch, rating, distance
       
       // Quick filters
       showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
