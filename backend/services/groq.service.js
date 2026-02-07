@@ -220,7 +220,12 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
 
     console.log(`Parsed ${parsedPlaces.length} places, geocoding...`)
 
-    const geocodedPlaces = await geocodePlaces(parsedPlaces, destination)
+    const geocodedPlaces = await geocodePlaces(
+  parsedPlaces,
+  destination,
+  tripContext.centerLocation
+)
+
 
     console.log(`Geocoded ${geocodedPlaces.length} places, applying filters...`)
 
@@ -381,12 +386,12 @@ const applyFilters = (places, tripContext = {}) => {
 /**
  * -------------------- Geocoding --------------------
  */
-const geocodePlaces = async (places, destination) => {
+const geocodePlaces = async (places, destination, centerLocation) => {
   const results = []
 
   for (const p of places) {
     try {
-      const query = `${p.name}, ${p.addressHint}, ${destination}`.trim()
+      const query = `${p.name}, ${p.addressHint || ''}, ${destination}`.trim()
       const geo = await geoapifyService.geocodeLocation(query)
 
       if (geo?.lat && geo?.lon) {
@@ -399,15 +404,40 @@ const geocodePlaces = async (places, destination) => {
           }
         })
       } else {
-        console.warn(`Could not geocode: ${p.name}`)
+        // ✅ FALLBACK — DO NOT DROP PLACE
+        results.push({
+          ...p,
+          address: p.addressHint || destination,
+          location: {
+            type: 'Point',
+            coordinates: [
+              centerLocation.lon,
+              centerLocation.lat
+            ]
+          },
+          isApproximateLocation: true
+        })
       }
     } catch (err) {
-      console.error(`Geocoding failed for ${p.name}:`, err.message)
+      // ✅ STILL DO NOT DROP
+      results.push({
+        ...p,
+        address: p.addressHint || destination,
+        location: {
+          type: 'Point',
+          coordinates: [
+            centerLocation.lon,
+            centerLocation.lat
+          ]
+        },
+        isApproximateLocation: true
+      })
     }
   }
 
   return results
 }
+
 
 /**
  * -------------------- Enhanced Scoring & Ranking --------------------
