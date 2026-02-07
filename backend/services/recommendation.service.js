@@ -112,29 +112,20 @@ sortBy: options.sortBy === 'score'
      * STEP 5: Fetch AI recommendations with enhanced options
      */
     let allPlaces = []
-
-for (const category of categories) {
-  const geoapifyPlaces = await geoapifyService.searchPlaces({
-    lat: centerLocation.lat,
-    lon: centerLocation.lon,
-    radius: recommendationOptions.maxRadius * 1000, // km → meters
-    categories: [category],
-    limit: 20
-  })
-
-  console.log(
-    '[DEBUG] Geoapify places for category:',
+    for (const category of categories) {
+  const aiResult = await groqService.getAIRecommendations(
     category,
-    geoapifyPlaces.length
+    trip.destination,
+    recommendationOptions
   )
-
-  allPlaces.push(...geoapifyPlaces)
-
+  if (aiResult?.places?.length) {
+    allPlaces.push(...aiResult.places)
+  }
+}
   console.log(
     '[DEBUG] Total places collected so far:',
     allPlaces.length
   )
-    }
     if (allPlaces.length === 0) {
       return {
         places: [],
@@ -143,6 +134,14 @@ for (const category of categories) {
         appliedFilters: recommendationOptions
       }
     }
+    allPlaces = Object.values(
+  allPlaces.reduce((acc, place) => {
+    const key = place.name.toLowerCase()
+    acc[key] = acc[key] || place
+    return acc
+  }, {})
+)
+
 
     /**
      * STEP 7: Apply final sorting if needed
