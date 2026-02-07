@@ -213,6 +213,11 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     console.log('AI Response received, parsing...')
 
     const parsedPlaces = parseAIResponse(aiText, category, tripContext)
+    console.log(
+  '[DEBUG] Parsed AI places:',
+  parsedPlaces.length,
+  parsedPlaces.map(p => p.name)
+)
     if (!parsedPlaces.length) {
       console.warn('No places parsed from AI response')
       return { places: [], message: 'Could not parse AI response' }
@@ -225,7 +230,11 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
   destination,
   tripContext.centerLocation
 )
-
+    console.log(
+  '[DEBUG] Geocoded places:',
+  geocodedPlaces.length,
+  geocodedPlaces.map(p => p.location?.coordinates)
+)
 
     console.log(`Geocoded ${geocodedPlaces.length} places, applying filters...`)
 
