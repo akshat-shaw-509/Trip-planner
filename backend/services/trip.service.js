@@ -197,7 +197,6 @@ module.exports = {
   createTrip,
   getTripsByUser,
   getTripById,
-  updateTrip,
   deleteTrip,
   updateTripStatus,
   removeBanner
