@@ -370,38 +370,6 @@
   gap: 12px;
 }
 
-.quick-option-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 16px;
-  background: white;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.quick-option-btn:hover {
-  border-color: #0066cc;
-  background: #f8fafc;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
-}
-
-.quick-option-btn i {
-  font-size: 28px;
-  color: #0066cc;
-}
-
-.quick-option-btn span {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a2332;
-  text-align: center;
-}
-
 /* =============================================
    SELECTED LOCATION PREVIEW
    ============================================= */
@@ -622,4 +590,33 @@
   .preview-coords {
     font-size: 12px;
   }
+}
+.quick-options-grid button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-options-grid button i {
+  color: #0066cc;
+  font-size: 16px;
+}
+
+.quick-options-grid button:hover {
+  border-color: #0066cc;
+  background: #f0f7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12);
+}
+
+.quick-options-grid button:active {
+  transform: translateY(0);
 }
