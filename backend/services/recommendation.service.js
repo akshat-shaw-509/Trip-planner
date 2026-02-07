@@ -119,6 +119,11 @@ const getRecommendations = async (tripId, options = {}) => {
       )
 
       if (!result?.places?.length) continue
+      console.log(
+  'Groq raw places for category',
+  category,
+  result?.places
+)
 
       /**
        * STEP 6: Distance validation only (no re-geocoding)
