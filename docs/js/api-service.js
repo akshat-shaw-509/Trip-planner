@@ -464,7 +464,9 @@ const apiService = {
     const query = params.toString();
     
     // CORRECTED ENDPOINT PATH - matches your backend route structure
-    return await apiService.request(`/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`);
+    return await apiService.request(
+      `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
+    );
   }
   }
 };
