@@ -45,7 +45,7 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
 
   // Opening
   promptSections.push(`You are a knowledgeable local travel expert for ${destination}.`)
-  promptSections.push(`\nGenerate exactly 10 ${category} recommendations in ${destination}.`)
+  promptSections.push(`\nGenerate exactly 35 ${category} recommendations in ${destination}.`)
 
   // ========== TRIP CONTEXT (only if provided) ==========
   const tripContextItems = []
