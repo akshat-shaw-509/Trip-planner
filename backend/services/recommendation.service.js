@@ -123,22 +123,14 @@ const getRecommendations = async (tripId, options = {}) => {
       /**
        * STEP 6: Distance validation only (no re-geocoding)
        */
-      const validPlaces = result.places.filter(place => {
-        if (!place.location?.coordinates) return false
+      /**
+ * STEP 6: Keep places with coordinates, distance handled later
+ */
+const validPlaces = result.places.filter(place => {
+  return !!place.location?.coordinates
+})
 
-        const [lon, lat] = place.location.coordinates
-        const distance = calculateDistance(
-          centerLocation.lat,
-          centerLocation.lon,
-          lat,
-          lon
-        )
-
-        return distance <= recommendationOptions.maxRadius
-      })
-
-      allPlaces.push(...validPlaces)
-    }
+allPlaces.push(...validPlaces)
 
     if (allPlaces.length === 0) {
       return {
