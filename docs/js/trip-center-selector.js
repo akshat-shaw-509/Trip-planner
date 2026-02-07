@@ -122,6 +122,9 @@ async function calculateCenterFromPlaces(tripId) {
 }
 
 async function calculateTripCenter(tripData) {
+  if (tripCenterState.currentCenter) {
+  return tripCenterState.currentCenter
+}
   if (!tripData) {
     console.warn('No trip data provided')
     return { lat: 20.5937, lon: 78.9629, formatted: 'Default Location' }
@@ -145,13 +148,12 @@ async function calculateTripCenter(tripData) {
     const geocoded = await geocodeDestination(searchQuery)
     
     if (geocoded) {
-      await saveTripCoordinates(tripData._id, [geocoded.lon, geocoded.lat])
-      return {
-        lat: geocoded.lat,
-        lon: geocoded.lon,
-        formatted: geocoded.formatted || tripData.destination
-      }
-    } 
+  return {
+    lat: geocoded.lat,
+    lon: geocoded.lon,
+    formatted: geocoded.formatted || tripData.destination
+  }
+} 
   } else if (tripData.destination && !tripCenterState.geoapifyApiKey) {
     console.warn('Skipping geocoding - API key not available')
   }
