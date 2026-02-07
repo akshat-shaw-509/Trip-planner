@@ -193,30 +193,6 @@ const deleteTrip = async (tripId, userId) => {
   return { message: 'Trip deleted successfully' }
 }
 
-/**
- * -------------------- Update Trip Status
- * --------------------
- */
-const updateTripStatus = async (tripId, status, userId) => {
- /**
- * -------------------- Remove Trip Banner
- * --------------------
- */
-const removeBanner = async (tripId, userId) => {
-  if (!tripId) {
-    throw new ValidationError('Trip ID is required')
-  }
-  const trip = await Trip.findOneAndUpdate(
-    { _id: tripId, userId: userId.toString() },
-    { coverImage: null },
-    { new: true }
-  )
-  if (!trip) {
-    throw new NotFoundError('Trip not found or access denied')
-  }
-  return trip
-}
-
 module.exports = {
   createTrip,
   getTripsByUser,
