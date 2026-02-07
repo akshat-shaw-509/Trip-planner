@@ -25,6 +25,7 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
  * - maxPrice: Maximum price level (1-5)
  */
 const getRecommendations = async (req, res, next) => {
+  console.log('🔥 RECOMMENDATIONS CONTROLLER HIT', req.params, req.query)
   try {
     const tripId = req.params.tripId
     
@@ -155,5 +156,6 @@ module.exports = {
   updateRatingThreshold,  
   resetPreferences        
 }
+
 
 
