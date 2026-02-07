@@ -6,6 +6,7 @@ let { authenticate } = require('../middleware/auth.middleware');
 
 // All routes require authentication
 router.use(authenticate);
+router.get('/:tripId', recommendationController.getRecommendations);
 
 // Recommendation routes
 router.get('/trips/:tripId/recommendations', recommendationController.getRecommendations);
