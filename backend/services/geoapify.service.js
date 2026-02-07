@@ -50,12 +50,17 @@ let mapCategoriesToGeoapify = (categories) => {
       'catering.fast_food',
       'catering.cafe'
     ],
-    attraction: [
-      'tourism.attraction',
-      'tourism.sights',
-      'entertainment.museum',
-      'leisure.park'
-    ],
+   attraction: [
+  'tourism.attraction',
+  'tourism.sights',
+  'tourism.landmark',
+  'heritage',
+  'historic',
+  'building.historic',
+  'monument',
+  'entertainment.museum',
+  'leisure.park'
+],
     accommodation: [
       'accommodation.hotel',
       'accommodation.hostel',
