@@ -114,33 +114,27 @@ sortBy: options.sortBy === 'score'
      */
     let allPlaces = []
 
-    for (const category of categories) {
-      const result = await groqService.getAIRecommendations(
-        category,
-        trip.destination,
-        recommendationOptions
-      )
-      console.log(
-  '[DEBUG] Groq result for category:',
-  category,
-  'places length:',
-  result?.places?.length
-)
-      if (!result?.places?.length) continue
+for (const category of categories) {
+  const geoapifyPlaces = await geoapifyService.searchPlaces({
+    lat: centerLocation.lat,
+    lon: centerLocation.lon,
+    radius: recommendationOptions.maxRadius * 1000, // km → meters
+    categories: [category],
+    limit: 20
+  })
 
-      /**
-       * STEP 6: Distance validation only (no re-geocoding)
-       */
-      /**
- * STEP 6: Keep places with coordinates, distance handled later
- */
-allPlaces.push(...result.places)
-      console.log(
-  '[DEBUG] Total places collected so far:',
-  allPlaces.length
-)
+  console.log(
+    '[DEBUG] Geoapify places for category:',
+    category,
+    geoapifyPlaces.length
+  )
 
+  allPlaces.push(...geoapifyPlaces)
 
+  console.log(
+    '[DEBUG] Total places collected so far:',
+    allPlaces.length
+  )
     }
     if (allPlaces.length === 0) {
       return {
