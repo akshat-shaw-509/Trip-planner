@@ -447,27 +447,27 @@ const apiService = {
     }
   },
 
-  // Recommendation endpoints
+  // Recommendation endpoints - FIXED ENDPOINT PATH
   recommendations: {
-  async getForTrip(tripId, options = {}) {
-    const params = new URLSearchParams();
-    
-    // Add all filter parameters
-    if (options.radius) params.append('radius', options.radius);
-    if (options.minRating) params.append('minRating', options.minRating);
-    if (options.category && options.category !== 'all') params.append('category', options.category);
-    if (options.sortBy) params.append('sortBy', options.sortBy);
-    if (options.hiddenGems) params.append('hiddenGems', 'true');
-    if (options.topRated) params.append('topRated', 'true');
-    if (options.maxResults) params.append('limit', options.maxResults);
-    
-    const query = params.toString();
-    
-    // CORRECTED ENDPOINT PATH - matches your backend route structure
-    return await apiService.request(
-      `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
-    );
-  }
+    async getForTrip(tripId, options = {}) {
+      const params = new URLSearchParams();
+      
+      // Add all filter parameters
+      if (options.radius) params.append('radius', options.radius);
+      if (options.minRating) params.append('minRating', options.minRating);
+      if (options.category && options.category !== 'all') params.append('category', options.category);
+      if (options.sortBy) params.append('sortBy', options.sortBy);
+      if (options.hiddenGems) params.append('hiddenGems', 'true');
+      if (options.topRated) params.append('topRated', 'true');
+      if (options.maxResults) params.append('limit', options.maxResults);
+      
+      const query = params.toString();
+      
+      // FIXED: Remove /recommendations prefix since router is already mounted at /api/recommendations
+      return await apiService.request(
+        `/trips/${tripId}/recommendations${query ? '?' + query : ''}`
+      );
+    }
   }
 };
 
