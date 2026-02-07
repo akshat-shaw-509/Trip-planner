@@ -292,16 +292,21 @@ function openTripCenterModal() {
         <div class="trip-center-quick-options">
           <h4>Quick Options</h4>
           <div class="quick-options-grid">
-            <button onclick="useDestinationCenter()" ${!canSearch ? 'disabled title="API key required"' : ''}>
-              <i class="fas fa-city"></i> City Center
-            </button>
-            <button onclick="useFirstPlace()">
-              <i class="fas fa-map-pin"></i> First Added Place
-            </button>
-            <button onclick="useCurrentLocation()">
-  <i class="fas fa-location-crosshairs"></i> My Current Location
-</button>
-          </div>
+  <button class="quick-option-btn" onclick="useDestinationCenter()" ${!canSearch ? 'disabled title="API key required"' : ''}>
+    <i class="fas fa-city"></i>
+    <span>City Center</span>
+  </button>
+
+  <button class="quick-option-btn" onclick="useFirstPlace()">
+    <i class="fas fa-map-pin"></i>
+    <span>First Added Place</span>
+  </button>
+
+  <button class="quick-option-btn" onclick="useCurrentLocation()">
+    <i class="fas fa-location-crosshairs"></i>
+    <span>My Current Location</span>
+  </button>
+</div>
         </div>
 
         <div id="selectedLocationPreview" style="display:none">
