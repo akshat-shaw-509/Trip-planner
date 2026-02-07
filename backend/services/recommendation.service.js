@@ -135,7 +135,14 @@ const validPlaces = result.places.filter(place => {
   return !!place.location?.coordinates
 })
 
-allPlaces.push(...validPlaces)
+allPlaces.push(
+  ...result.places.filter(p =>
+    Array.isArray(p.location?.coordinates) &&
+    typeof p.location.coordinates[0] === 'number' &&
+    typeof p.location.coordinates[1] === 'number'
+  )
+)
+
     }
     if (allPlaces.length === 0) {
       return {
