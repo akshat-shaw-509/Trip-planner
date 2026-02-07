@@ -160,25 +160,69 @@ sortBy: options.sortBy === 'score'
     /**
      * STEP 8: Apply limit
      */
-    const limit = options.limit || 50
+    /**
+ * STEP 8: Category Bucketing (BALANCE RESULTS)
+ */
+const TARGET_TOTAL = options.limit || 20
 
-    return {
-      places: allPlaces.slice(0, limit),
-      centerLocation,
-      message: `Found ${Math.min(allPlaces.length, limit)} recommendations`,
-      appliedFilters: {
-        category: options.category || 'all',
-        minRating: recommendationOptions.minRating,
-        maxRadius: recommendationOptions.maxRadius,
-        sortBy: recommendationOptions.sortBy,
-        hiddenGems: recommendationOptions.showHiddenGems,
-        topRatedOnly: recommendationOptions.topRatedOnly,
-        priceRange: recommendationOptions.priceRange
-      }
-    }
-  } catch (error) {
-    throw error
+const BUCKETS = {
+  attraction: Math.ceil(TARGET_TOTAL * 0.4),   // 40%
+  restaurant: Math.ceil(TARGET_TOTAL * 0.35),  // 35%
+  accommodation: Math.ceil(TARGET_TOTAL * 0.25) // 25%
+}
+
+const bucketed = []
+const leftovers = []
+allPlaces = allPlaces.map(p => ({
+  ...p,
+  category: String(p.category || '')
+    .toLowerCase()
+    .replace('hotels', 'accommodation')
+    .replace('hotel', 'accommodation')
+    .replace('lodging', 'accommodation')
+    .replace('restaurants', 'restaurant')
+    .replace('attractions', 'attraction')
+}))
+
+for (const [category, limit] of Object.entries(BUCKETS)) {
+  const items = allPlaces
+    .filter(p => p.category === category)
+    .slice(0, limit)
+
+  bucketed.push(...items)
+}
+
+// collect remaining places
+for (const place of allPlaces) {
+  if (!bucketed.some(b => b.name === place.name)) {
+    leftovers.push(place)
   }
+}
+
+// fill gaps if some categories had less data
+while (bucketed.length < TARGET_TOTAL && leftovers.length) {
+  bucketed.push(leftovers.shift())
+}
+
+// keep final ordering stable
+bucketed.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+
+return {
+  places: bucketed,
+  centerLocation,
+  message: `Found ${bucketed.length} balanced recommendations`,
+  appliedFilters: {
+    category: options.category || 'all',
+    minRating: recommendationOptions.minRating,
+    maxRadius: recommendationOptions.maxRadius,
+    sortBy: recommendationOptions.sortBy,
+    hiddenGems: recommendationOptions.showHiddenGems,
+    topRatedOnly: recommendationOptions.topRatedOnly,
+    priceRange: recommendationOptions.priceRange
+  }
+}
+
+    
 }
 
 module.exports = {
