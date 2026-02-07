@@ -45,8 +45,7 @@ const getRecommendations = async (tripId, options = {}) => {
       centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
 
       // Cache for future calls
-      trip.destinationCoords = [geocoded.lon, geocoded.lat]
-      await trip.save()
+      centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
     }
 
     /**
