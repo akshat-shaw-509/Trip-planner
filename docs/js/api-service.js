@@ -447,7 +447,7 @@ const apiService = {
     }
   },
 
-  // Recommendation endpoints - FIXED ENDPOINT PATH
+  // Recommendation endpoints
   recommendations: {
     async getForTrip(tripId, options = {}) {
       const params = new URLSearchParams();
@@ -463,9 +463,12 @@ const apiService = {
       
       const query = params.toString();
       
-      // FIXED: Remove /recommendations prefix since router is already mounted at /api/recommendations
+      // ✅ CORRECT: Include /recommendations prefix to match backend route structure
+      // Backend: app.use('/api/recommendations', recommendationRoutes)
+      // Route: router.get('/trips/:tripId/recommendations', ...)
+      // Final URL: /api/recommendations/trips/:tripId/recommendations
       return await apiService.request(
-        `/trips/${tripId}/recommendations${query ? '?' + query : ''}`
+        `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
       );
     }
   }
