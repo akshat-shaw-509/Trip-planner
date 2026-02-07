@@ -147,7 +147,7 @@ const resetPreferences = async (req, res, next) => {
     next(error)
   }
 }
-
+console.log('External API raw places count:', rawPlaces.length);
 module.exports = {
   getRecommendations,
   getUserPreferences,     
@@ -155,3 +155,4 @@ module.exports = {
   updateRatingThreshold,  
   resetPreferences        
 }
+
