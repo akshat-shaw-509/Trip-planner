@@ -10,6 +10,21 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
  * -------------------- Dynamic Prompt Builder --------------------
  * Builds AI prompt based ONLY on what user actually selected
  */
+const POPULAR_LANDMARK_KEYWORDS = [
+  'mahal', 'palace', 'fort', 'temple', 'mosque',
+  'church', 'cathedral', 'monument', 'memorial',
+  'museum', 'heritage', 'historic', 'tower', 'gate'
+]
+
+const isMustVisit = (place) => {
+  if (!place?.name) return false
+  const name = place.name.toLowerCase()
+  return (
+    place.category === 'attraction' &&
+    POPULAR_LANDMARK_KEYWORDS.some(k => name.includes(k))
+  )
+}
+
 const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   const {
     budget,
@@ -138,9 +153,10 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
     criticalRules.push(`- Every place MUST have a rating of ${minRating} or higher`)
   }
 
-  if (maxRadius) {
-    criticalRules.push(`- All places MUST be within ${maxRadius} km of ${destination} center`)
-  }
+ if (maxRadius) {
+  criticalRules.push(`- Prefer places within ${maxRadius} km, but include famous landmarks even if slightly farther`)
+}
+
 
   criticalRules.push(`- Provide SPECIFIC neighborhood/area names for accurate location finding`)
   criticalRules.push(`- Ensure variety in locations and price levels`)
@@ -369,19 +385,20 @@ const applyFilters = (places, tripContext = {}) => {
     }
 
     // Distance filter (if location available)
-    if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
-      const dist = calculateDistance(
-        centerLocation.lat,
-        centerLocation.lon,
-        place.location.coordinates[1],
-        place.location.coordinates[0]
-      )
-      if (dist > maxRadius) {
-        console.log(`Filtered out ${place.name}: distance ${dist.toFixed(1)}km > ${maxRadius}km`)
-        return false
-      }
-    }
+    // Distance filter (SOFT for must-visit)
+if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
+  const dist = calculateDistance(
+    centerLocation.lat,
+    centerLocation.lon,
+    place.location.coordinates[1],
+    place.location.coordinates[0]
+  )
 
+  // Only hard-filter NON must-visit places
+  if (!isMustVisit(place) && dist > maxRadius) {
+    return false
+  }
+}
     return true
   })
 
@@ -467,26 +484,37 @@ const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
   const scoredPlaces = places.map(place => {
     let score = 0
 
-    // Base rating score (0-10 points)
-    score += (place.rating || 4) * 2
+    // Base rating (rating ≠ popularity)
+score += (place.rating || 4) * 1.5
 
-    // Distance score (0-20 points) - closer is better
-    if (centerLocation && place.location?.coordinates) {
-      const dist = calculateDistance(
-        centerLocation.lat,
-        centerLocation.lon,
-        place.location.coordinates[1],
-        place.location.coordinates[0]
-      )
-      place.distanceFromCenter = dist
-      score += Math.max(0, 20 - dist)
-    }
+// Must-Visit boost (Airbnb logic)
+if (isMustVisit(place)) {
+  score += 30
+  place.badges = ['Must Visit']
+}
 
-    // Hidden gem bonus (5 points)
-    if (showHiddenGems && place.isHiddenGem) {
-      score += 5
-    }
+// Soft distance rule
+if (centerLocation && place.location?.coordinates) {
+  const dist = calculateDistance(
+    centerLocation.lat,
+    centerLocation.lon,
+    place.location.coordinates[1],
+    place.location.coordinates[0]
+  )
 
+  place.distanceFromCenter = dist
+
+  if (isMustVisit(place)) {
+    score += Math.max(0, 25 - dist * 0.4) // VERY soft penalty
+  } else {
+    score += Math.max(0, 20 - dist * 1.2) // normal places
+  }
+}
+
+// Hidden gem logic stays
+if (showHiddenGems && place.isHiddenGem) {
+  score += 5
+}
     // Top rated bonus (3 points)
     if (topRatedOnly && place.rating >= 4.5) {
       score += 3
@@ -502,19 +530,34 @@ const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
     return place
   })
 
-  // Sort based on user preference
-  if (sortBy === 'rating') {
-    return scoredPlaces.sort((a, b) => b.rating - a.rating)
-  } else if (sortBy === 'distance') {
-    return scoredPlaces.sort((a, b) => {
-      const distA = a.distanceFromCenter || Infinity
-      const distB = b.distanceFromCenter || Infinity
-      return distA - distB
-    })
-  } else {
-    // bestMatch - use computed score
-    return scoredPlaces.sort((a, b) => b.recommendationScore - a.recommendationScore)
-  }
+  const mustVisit = []
+const regular = []
+
+for (const p of scoredPlaces) {
+  if (isMustVisit(p)) mustVisit.push(p)
+  else regular.push(p)
+}
+
+mustVisit.sort((a, b) => b.recommendationScore - a.recommendationScore)
+regular.sort((a, b) => b.recommendationScore - a.recommendationScore)
+
+let merged = [...mustVisit, ...regular]
+
+// Optional override sorting
+if (sortBy === 'rating') {
+  return merged.sort((a, b) => b.rating - a.rating)
+}
+
+if (sortBy === 'distance') {
+  return merged.sort((a, b) => {
+    const da = a.distanceFromCenter ?? Infinity
+    const db = b.distanceFromCenter ?? Infinity
+    return da - db
+  })
+}
+
+// Default: bestMatch
+return merged
 }
 
 module.exports = {
