@@ -130,6 +130,47 @@ const getTripById = async (tripId, userId) => {
  * -------------------- Update Trip
  * --------------------
  */
+const updateTrip = async (tripId, updateData, userId) => {
+  if (!tripId) {
+    throw new ValidationError('Trip ID is required')
+  }
+
+  const allowedUpdates = [
+    'title',
+    'destination',
+    'description',
+    'startDate',
+    'endDate',
+    'budget',
+    'travelers',
+    'tags',
+    'coverImage',
+    'destinationCoords'
+  ]
+
+  const updates = {}
+  for (const key of allowedUpdates) {
+    if (updateData[key] !== undefined) {
+      updates[key] = updateData[key]
+    }
+  }
+
+  const trip = await Trip.findOneAndUpdate(
+    { _id: tripId, userId: userId.toString() },
+    updates,
+    { new: true, runValidators: true }
+  )
+
+  if (!trip) {
+    throw new NotFoundError('Trip not found or access denied')
+  }
+
+  return trip
+}
+/**
+ * -------------------- Update Trip
+ * --------------------
+ */
 /**
  * -------------------- Update Trip Status
  * --------------------
@@ -195,6 +236,7 @@ const deleteTrip = async (tripId, userId) => {
 
 module.exports = {
   createTrip,
+  updateTrip,
   getTripsByUser,
   getTripById,
   deleteTrip,
