@@ -31,7 +31,7 @@
     </nav>
 
     <div class="trips-container">
-        <!-- Page Header -->
+        <!-- Page header with create button -->
         <div class="page-header">
             <div class="header-content">
                 <h1><i class="fas fa-suitcase-rolling"></i> My Trips</h1>
@@ -43,7 +43,7 @@
             </button>
         </div>
 
-        <!-- Quick Stats -->
+        <!-- Trip summary stats -->
         <div class="stats-section">
             <div class="stat-card">
                 <div class="stat-icon upcoming">
@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        <!-- Filters -->
+        <!-- Filter tabs + sort dropdown -->
         <div class="filters-section">
             <div class="filter-tabs">
                 <button class="filter-tab active" data-filter="all">
@@ -117,12 +117,11 @@
             </div>
         </div>
 
-        <!-- Trips Grid -->
+        <!-- Trip cards rendered by trips.js -->
         <div class="trips-grid" id="tripsGrid">
-            <!-- Trip cards will be injected here by JavaScript -->
         </div>
 
-        <!-- Empty State -->
+        <!-- Shown when no trips match filters -->
         <div class="empty-state" style="display: none;">
             <div class="empty-icon">
                 <i class="fas fa-suitcase-rolling"></i>
@@ -135,16 +134,14 @@
             </button>
         </div>
 
-        <!-- Loading State -->
+        <!-- Initial load spinner -->
         <div class="loading-state" id="loadingState">
             <div class="spinner"></div>
             <p>Loading your trips...</p>
         </div>
     </div>
-
-    <!-- Toast Container -->
+    
     <div id="toast-container"></div>
-
     <script src="../js/config.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/toast.js"></script>
