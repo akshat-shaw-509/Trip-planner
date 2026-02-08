@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="auth-wrapper">
-        <!-- Left Side - Branding -->
+        <!-- Brand -->
         <div class="auth-branding">
             <div class="branding-content">
                 <div class="logo-section">
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <!-- Right Side - Login Form -->
+        <!-- Login Form -->
         <div class="auth-container">
             <div class="auth-card">
                 <div class="back-link">
@@ -131,105 +131,9 @@
                 </div>
 
                 <div class="auth-footer">
-                    <p>Don't have an account? <a href="signup.html">Sign up free</a></p>
+                    <p>Don't have an account? <a href="signup.html">Sign up</a></p>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div class="modal-overlay" id="forgotPasswordModal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeForgotPasswordModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div class="modal-header">
-                <h2>Forgot Password?</h2>
-                <p>Enter your email and we'll send you a reset link</p>
-            </div>
-
-            <form id="forgotPasswordForm" class="auth-form">
-                <div class="form-group">
-                    <label for="forgotEmail">
-                        <i class="fas fa-envelope"></i>
-                        Email Address
-                    </label>
-                    <input 
-                        type="email" 
-                        id="forgotEmail" 
-                        placeholder="Enter your email" 
-                        required 
-                        autocomplete="email"
-                    >
-                </div>
-
-                <button type="submit" class="btn-auth" id="forgotPasswordBtn">
-                    <span>Send Reset Link</span>
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Reset Password Modal -->
-    <div class="modal-overlay" id="resetPasswordModal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeResetPasswordModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div class="modal-header">
-                <h2>Reset Password</h2>
-                <p>Enter your new password below</p>
-            </div>
-
-            <form id="resetPasswordForm" class="auth-form">
-                <div class="form-group">
-                    <label for="newPassword">
-                        <i class="fas fa-lock"></i>
-                        New Password
-                    </label>
-                    <div class="password-input">
-                        <input 
-                            type="password" 
-                            id="newPassword" 
-                            placeholder="Enter new password" 
-                            required
-                            minlength="8"
-                        >
-                        <button type="button" class="toggle-password" onclick="togglePassword('newPassword')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <small class="password-requirements">
-                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character (@$!%*?&)
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label for="confirmNewPassword">
-                        <i class="fas fa-lock"></i>
-                        Confirm Password
-                    </label>
-                    <div class="password-input">
-                        <input 
-                            type="password" 
-                            id="confirmNewPassword" 
-                            placeholder="Confirm new password" 
-                            required
-                        >
-                        <button type="button" class="toggle-password" onclick="togglePassword('confirmNewPassword')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-auth" id="resetPasswordBtn">
-                    <span>Reset Password</span>
-                    <i class="fas fa-check"></i>
-                </button>
-            </form>
         </div>
     </div>
 
@@ -256,151 +160,6 @@
                 icon?.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
-
-        // ===================== Modal Functions =====================
-        function openForgotPasswordModal(e) {
-            e.preventDefault();
-            document.getElementById('forgotPasswordModal').classList.add('active');
-            document.getElementById('forgotEmail').focus();
-        }
-
-        function closeForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').classList.remove('active');
-            document.getElementById('forgotPasswordForm').reset();
-        }
-
-        function openResetPasswordModal() {
-            document.getElementById('resetPasswordModal').classList.add('active');
-            document.getElementById('newPassword').focus();
-        }
-
-        function closeResetPasswordModal() {
-            document.getElementById('resetPasswordModal').classList.remove('active');
-            document.getElementById('resetPasswordForm').reset();
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
-            if (e.target === this) closeForgotPasswordModal();
-        });
-
-        document.getElementById('resetPasswordModal').addEventListener('click', function(e) {
-            if (e.target === this) closeResetPasswordModal();
-        });
-
-        // ===================== Forgot Password Handler =====================
-        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('forgotEmail').value.trim();
-            const submitBtn = document.getElementById('forgotPasswordBtn');
-            const originalHTML = submitBtn.innerHTML;
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            
-            try {
-                const response = await apiService.auth.forgotPassword(email);
-                
-                if (response.success) {
-                    showToast('Reset link sent! Check your email.', 'success');
-                    closeForgotPasswordModal();
-                } else {
-                    throw new Error(response.message || 'Failed to send reset link');
-                }
-            } catch (error) {
-                console.error('Forgot password error:', error);
-                showToast(error.message || 'Failed to send reset link', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalHTML;
-            }
-        });
-
-        // ===================== Reset Password Handler =====================
-        document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const password = document.getElementById('newPassword').value.trim();
-            const confirmPassword = document.getElementById('confirmNewPassword').value.trim();
-            
-            if (password !== confirmPassword) {
-                showToast('Passwords do not match', 'error');
-                return;
-            }
-
-            // Validate password strength
-            const isStrongPassword =
-                password.length >= 8 &&
-                /[A-Z]/.test(password) &&
-                /[a-z]/.test(password) &&
-                /[0-9]/.test(password) &&
-                /[@$!%*?&]/.test(password);
-
-            if (!isStrongPassword) {
-                showToast('Password does not meet requirements', 'error');
-                return;
-            }
-            
-            const submitBtn = document.getElementById('resetPasswordBtn');
-            const originalHTML = submitBtn.innerHTML;
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
-            
-            try {
-                const resetToken = new URLSearchParams(window.location.search).get('reset');
-                
-                if (!resetToken) {
-                    throw new Error('Invalid reset link');
-                }
-
-                const response = await apiService.auth.resetPassword(resetToken, password);
-                
-                if (response.success) {
-                    showToast('Password reset successful!', 'success');
-                    
-                    // Store tokens if returned
-                    if (response.data?.accessToken) {
-                        sessionStorage.setItem('accessToken', response.data.accessToken);
-                        if (response.data.refreshToken) {
-                            sessionStorage.setItem('refreshToken', response.data.refreshToken);
-                        }
-                        if (response.data.user) {
-                            sessionStorage.setItem('user', JSON.stringify(response.data.user));
-                        }
-                    }
-                    
-                    closeResetPasswordModal();
-                    
-                    // Clear URL parameter
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    // Redirect to trips page
-                    setTimeout(() => {
-                        window.location.href = './trips.html';
-                    }, 1500);
-                } else {
-                    throw new Error(response.message || 'Password reset failed');
-                }
-            } catch (error) {
-                console.error('Reset password error:', error);
-                showToast(error.message || 'Password reset failed. Link may be expired.', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalHTML;
-            }
-        });
-
-        // ===================== Check for Reset Token on Page Load =====================
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const resetToken = urlParams.get('reset');
-            
-            if (resetToken) {
-                // Open reset password modal automatically
-                openResetPasswordModal();
-            }
-        });
     </script>
 </body>
 </html>
