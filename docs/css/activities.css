@@ -40,7 +40,7 @@ body {
     font-weight: 600;
 }
 
-/* Activities Container */
+/* Activities */
 .activities-container {
     max-width: 1400px;
     margin: 0 auto;
@@ -85,7 +85,7 @@ body {
     background: #111;
 }
 
-/* Filter Section */
+/* Filters */
 .filter-section {
     display: flex;
     gap: 12px;
