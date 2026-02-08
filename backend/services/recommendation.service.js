@@ -141,8 +141,16 @@ sortBy: options.sortBy === 'score'
     return acc
   }, {})
 )
-
-
+    allPlaces = allPlaces.map(p => ({
+  ...p,
+  category: String(p.category || '')
+    .toLowerCase()
+    .replace('hotels', 'accommodation')
+    .replace('hotel', 'accommodation')
+    .replace('lodging', 'accommodation')
+    .replace('restaurants', 'restaurant')
+    .replace('attractions', 'attraction')
+}))
     /**
      * STEP 7: Apply final sorting if needed
      */
@@ -166,46 +174,52 @@ sortBy: options.sortBy === 'score'
 const TARGET_TOTAL = options.limit || 20
 
 const BUCKETS = {
-  attraction: Math.ceil(TARGET_TOTAL * 0.4),   // 40%
-  restaurant: Math.ceil(TARGET_TOTAL * 0.35),  // 35%
-  accommodation: Math.ceil(TARGET_TOTAL * 0.25) // 25%
+  attraction: 7,
+  restaurant: 7,
+  accommodation: 6
 }
 
 const bucketed = []
-const leftovers = []
-allPlaces = allPlaces.map(p => ({
-  ...p,
-  category: String(p.category || '')
-    .toLowerCase()
-    .replace('hotels', 'accommodation')
-    .replace('hotel', 'accommodation')
-    .replace('lodging', 'accommodation')
-    .replace('restaurants', 'restaurant')
-    .replace('attractions', 'attraction')
-}))
+const usedNames = new Set()
 
 for (const [category, limit] of Object.entries(BUCKETS)) {
-  const items = allPlaces
-    .filter(p => p.category === category)
+  let candidates = allPlaces.filter(p => p.category === category)
+
+  // ✅ APPLY TOP RATED HERE (FIX)
+  if (recommendationOptions.topRatedOnly) {
+    candidates = candidates.filter(p => (p.rating || 0) >= 4.5)
+  }
+
+  const selected = candidates
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
     .slice(0, limit)
 
-  bucketed.push(...items)
-}
-
-// collect remaining places
-for (const place of allPlaces) {
-  if (!bucketed.some(b => b.name === place.name)) {
-    leftovers.push(place)
+  for (const item of selected) {
+    if (!usedNames.has(item.name)) {
+      usedNames.add(item.name)
+      bucketed.push(item)
+    }
   }
 }
+const leftovers = allPlaces
+  .filter(p => !usedNames.has(p.name))
+  .filter(p => !recommendationOptions.topRatedOnly || (p.rating || 0) >= 4.5)
+  .sort((a, b) => (b.rating || 0) - (a.rating || 0))
 
-// fill gaps if some categories had less data
 while (bucketed.length < TARGET_TOTAL && leftovers.length) {
-  bucketed.push(leftovers.shift())
+  const next = leftovers.shift()
+  if (!usedNames.has(next.name)) {
+    usedNames.add(next.name)
+    bucketed.push(next)
+  }
 }
+bucketed.sort((a, b) => {
+  if ((b.rating || 0) !== (a.rating || 0)) {
+    return (b.rating || 0) - (a.rating || 0)
+  }
+  return (b.recommendationScore || 0) - (a.recommendationScore || 0)
+})
 
-// keep final ordering stable
-bucketed.sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
 
 return {
   places: bucketed,
