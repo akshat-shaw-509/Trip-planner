@@ -1,8 +1,3 @@
-/* =====================================================
-   🎯 MODERN FILTER DESIGN - PILL BUTTON STYLE
-   Matches reference design with checkbox-pill buttons
-   ===================================================== */
-
 :root {
     --primary-blue: #2563eb;
     --primary-blue-dark: #1d4ed8;
@@ -24,10 +19,6 @@
     box-sizing: border-box;
 }
 
-/* =====================================================
-   📦 MAIN CONTAINER
-   ===================================================== */
-
 .recommendations-section {
     padding: 40px 20px;
     max-width: 1600px;
@@ -35,10 +26,7 @@
     background: #f5f5f5;
 }
 
-/* =====================================================
-   🎨 FILTER SIDEBAR (Modal Style)
-   ===================================================== */
-
+/* Filter */
 .recommendation-controls {
     background: white;
     border-radius: 20px;
@@ -50,8 +38,6 @@
     max-height: calc(100vh - 120px);
     overflow-y: auto;
 }
-
-/* Custom Scrollbar */
 .recommendation-controls::-webkit-scrollbar {
     width: 8px;
 }
@@ -69,10 +55,6 @@
 .recommendation-controls::-webkit-scrollbar-thumb:hover {
     background: var(--gray-400);
 }
-
-/* =====================================================
-   📑 FILTER SECTIONS
-   ===================================================== */
 
 .controls-section {
     margin-bottom: 32px;
@@ -95,10 +77,6 @@
     text-transform: none;
     display: block;
 }
-
-/* =====================================================
-   🔘 PILL BUTTON STYLE (Main Filter Buttons)
-   ===================================================== */
 
 .category-buttons,
 .sort-buttons,
@@ -139,7 +117,6 @@
     border-color: var(--gray-400);
 }
 
-/* Active State with Checkbox */
 .category-btn.active,
 .sort-btn.active,
 .quick-filter-btn.active,
@@ -150,7 +127,7 @@
     padding-left: 14px;
 }
 
-/* Checkbox Icon (Before Text) */
+/* Checkbox Icon*/
 .category-btn.active::before,
 .sort-btn.active::before,
 .quick-filter-btn.active::before,
@@ -170,17 +147,13 @@
     background-repeat: no-repeat;
 }
 
-/* Remove default icon for category buttons */
 .category-btn i,
 .sort-btn i,
 .quick-filter-btn i {
     display: none;
 }
 
-/* =====================================================
-   🎨 COLOR FILTERS (Special Styling)
-   ===================================================== */
-
+/* COLOR FILTERS */
 .color-filters {
     display: flex;
     flex-wrap: wrap;
@@ -211,8 +184,6 @@
     border: 2px solid var(--gray-300);
     flex-shrink: 0;
 }
-
-/* Color Variations */
 .color-filter-btn[data-color="blue"]::before {
     background: #2563eb;
 }
@@ -269,10 +240,7 @@
     border-width: 3px;
 }
 
-/* =====================================================
-   🎚️ PRICE RANGE SLIDER
-   ===================================================== */
-
+/*PRICE RANGE SLIDER*/
 .price-range-section {
     margin-bottom: 32px;
     padding-bottom: 24px;
@@ -363,10 +331,7 @@
     pointer-events: none;
 }
 
-/* =====================================================
-   🔢 SIZE FILTERS (Number Pills)
-   ===================================================== */
-
+/* SIZE FILTERS*/
 .size-filters {
     display: flex;
     flex-wrap: wrap;
@@ -414,10 +379,7 @@
     right: 6px;
 }
 
-/* =====================================================
-   🎬 ACTION BUTTON (Bottom)
-   ===================================================== */
-
+/* ACTION BUTTON */
 .filter-actions {
     margin-top: 32px;
     padding-top: 24px;
@@ -452,10 +414,7 @@
     transform: translateY(0);
 }
 
-/* =====================================================
-   🔄 RESET FILTERS
-   ===================================================== */
-
+/*RESET FILTERS*/
 .btn-reset-filters {
     width: 100%;
     padding: 12px 24px;
@@ -476,10 +435,7 @@
     border-color: var(--gray-400);
 }
 
-/* =====================================================
-   📊 FILTER COUNT BADGE
-   ===================================================== */
-
+/* FILTER COUNT BADGE*/
 .filter-section-header {
     display: flex;
     justify-content: space-between;
@@ -501,10 +457,7 @@
     font-weight: 700;
 }
 
-/* =====================================================
-   📱 RESPONSIVE DESIGN
-   ===================================================== */
-
+/* RESPONSIVE*/
 @media (max-width: 768px) {
     .recommendation-controls {
         padding: 24px;
@@ -531,11 +484,6 @@
         height: 36px;
     }
 }
-
-/* =====================================================
-   ♿ ACCESSIBILITY
-   ===================================================== */
-
 .category-btn:focus,
 .sort-btn:focus,
 .quick-filter-btn:focus,
@@ -547,11 +495,6 @@
     outline: 3px solid rgba(37, 99, 235, 0.4);
     outline-offset: 2px;
 }
-
-/* =====================================================
-   🎯 CLOSE BUTTON (Top Right)
-   ===================================================== */
-
 .filter-close-btn {
     position: absolute;
     top: 20px;
@@ -575,10 +518,6 @@
     color: var(--gray-900);
 }
 
-/* =====================================================
-   🎨 SMOOTH ANIMATIONS
-   ===================================================== */
-
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -593,10 +532,6 @@
 .recommendation-controls {
     animation: fadeIn 0.3s ease-out;
 }
-
-/* =====================================================
-   🔧 UTILITY CLASSES
-   ===================================================== */
 
 .filter-group {
     margin-bottom: 20px;
@@ -615,11 +550,6 @@
     background: var(--gray-200);
     margin: 24px 0;
 }
-
-/* =====================================================
-   📋 WRAPPER LAYOUT
-   ===================================================== */
-
 .recommendations-controls-wrapper {
     display: flex;
     gap: 32px;
@@ -650,9 +580,7 @@
         width: 100%;
     }
 }
-/* ===============================
-   FILTER MODAL OVERRIDES
-================================ */
+
 #filterModal {
   display: none;
   position: fixed;
@@ -688,7 +616,6 @@
   cursor: pointer;
 }
 
-/* Header */
 #filterModal .modal-header {
   padding: 18px 22px;
   border-bottom: 1px solid #e5e7eb;
@@ -699,19 +626,15 @@
   font-weight: 700;
 }
 
-/* Body */
 #filterModal .modal-body {
   padding: 22px;
 }
-
-/* Section titles */
 #filterModal .section-title {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 10px;
 }
 
-/* Filter buttons */
 #filterModal .filter-options,
 #filterModal .quick-filters {
   display: flex;
@@ -723,13 +646,10 @@
   border-radius: 999px;
 }
 
-/* Sliders */
 #filterModal input[type="range"] {
   width: 100%;
   accent-color: #0066cc;
 }
-
-/* Footer */
 #filterModal .modal-footer {
   padding: 16px 22px;
   border-top: 1px solid #e5e7eb;
