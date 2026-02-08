@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="auth-wrapper">
-        <!-- Left Side - Branding -->
+        <!-- Marketing side panel -->
         <div class="auth-branding">
             <div class="branding-content">
                 <div class="logo-section">
@@ -57,7 +57,7 @@
             </div>
         </div>
 
-        <!-- Right Side - Registration Form -->
+        <!-- Signup form -->
         <div class="auth-container">
             <div class="auth-card">
                 <div class="back-link">
@@ -120,7 +120,6 @@
                             </button>
                         </div>
                         
-                        <!-- Password Requirements -->
                         <div class="password-requirements">
                             <ul id="passwordRequirements">
                                 <li class="invalid" data-requirement="length">
@@ -210,6 +209,7 @@
     <script src="../js/auth.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGoogleScriptLoad()"></script>
 
+    <!-- Password validation + toggle -->
     <script>
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
@@ -235,7 +235,6 @@
                 special: /[@$!%*?&]/
             };
 
-            // Real-time password requirement validation
             passwordInput.addEventListener('input', () => {
                 const password = passwordInput.value;
                 
@@ -258,13 +257,11 @@
                     }
                 });
                 
-                // Also check password match if confirm field has value
                 if (confirmInput.value) {
                     checkPasswordMatch();
                 }
             });
 
-            // Password match validation
             function checkPasswordMatch() {
                 const password = passwordInput.value;
                 const confirm = confirmInput.value;
