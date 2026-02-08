@@ -74,59 +74,57 @@
 </head>
 <body>
     <nav id="mainNav">
-    <div class="logo">
-        <img src="../Svg/Logo.png" alt="Planora">
-    </div>
-    <div class="nav-center">
-        <a href="../index.html">Home</a>
-        <a href="./trips.html">My Trips</a>
-        <div class="search-bar">
-            <input type="search" id="searchInput" placeholder="Search destinations...">
-            <i class="fa fa-search search-icon"></i>
+        <div class="logo">
+            <img src="../Svg/Logo.png" alt="Planora">
         </div>
-    </div>
-    <div class="auth-buttons">
-        <button class="primary" onclick="window.location.href='./login.html'">Login</button>
-        <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
-    </div>
-</nav>
+        <div class="nav-center">
+            <a href="../index.html">Home</a>
+            <a href="./trips.html">My Trips</a>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="Search destinations...">
+                <i class="fa fa-search search-icon"></i>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="primary" onclick="window.location.href='./login.html'">Login</button>
+            <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
+        </div>
+    </nav>
 
-    <!-- Breadcrumb -->
+    <!-- Breadcrumb-->
     <div class="breadcrumb">
         <a href="./trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
         <i class="fas fa-chevron-right"></i>
         <span>Trip Overview</span>
     </div>
 
-    <!-- Banner -->
+    <!-- Hero banner with upload button -->
     <div class="trip-banner">
-    <img src="https://source.unsplash.com/1600x400/?travel,destination" alt="Trip Banner">
-    <div class="banner-overlay"></div>
-    
-    <!-- Add this button -->
-    <button class="banner-upload-btn">
-        <i class="fas fa-image"></i>
-        <span>Change Banner</span>
-    </button>
-    
-    <div class="banner-content">
-        <h1 class="trip-title">Loading...</h1>
-        <p class="trip-subtitle">
-            <i class="far fa-calendar"></i> <span id="tripDates">Loading...</span>
-            <span class="divider">•</span>
-            <i class="fas fa-map-marker-alt"></i> <span id="tripLocation">Loading...</span>
-        </p>
+        <img src="https://source.unsplash.com/1600x400/?travel,destination" alt="Trip Banner">
+        <div class="banner-overlay"></div>
+        
+        <button class="banner-upload-btn">
+            <i class="fas fa-image"></i>
+            <span>Change Banner</span>
+        </button>
+        
+        <div class="banner-content">
+            <h1 class="trip-title">Loading...</h1>
+            <p class="trip-subtitle">
+                <i class="far fa-calendar"></i> <span id="tripDates">Loading...</span>
+                <span class="divider">•</span>
+                <i class="fas fa-map-marker-alt"></i> <span id="tripLocation">Loading...</span>
+            </p>
+        </div>
     </div>
-</div>
 
-    <!-- Overview Container -->
+    <!-- Main content cards -->
     <div class="overview-container">
         <div class="section-header">
             <h2>Trip Overview</h2>
             <p>Manage all aspects of your trip in one place</p>
         </div>
 
-        <!-- Feature Cards -->
         <div class="features-grid">
             <!-- Budget Card -->
             <div class="feature-card budget-card" onclick="navigateTo('budget')">
@@ -184,9 +182,7 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
     <div id="toast-container"></div>
-    
     <script src="../js/config.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/toast.js"></script>
