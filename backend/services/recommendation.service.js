@@ -10,15 +10,6 @@ const { calculateDistance } = require('../utils/helpers')
  */
 const getRecommendations = async (tripId, options = {}) => {
   try {
-    const Trip = require('../models/Trip.model')
-    const UserPreference = require('../models/UserPreference.model')
-    
-    const trip = await Trip.findById(tripId)
-
-    if (!trip) {
-      throw new Error('Trip not found')
-    }
-
     /**
      * STEP 1: Resolve trip center coordinates
      */
@@ -42,9 +33,6 @@ const getRecommendations = async (tripId, options = {}) => {
         )
       }
 
-      centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
-
-      // Cache for future calls
       centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
     }
 
@@ -80,11 +68,10 @@ const getRecommendations = async (tripId, options = {}) => {
       minRating: parseFloat(options.minRating) || userPreferences?.ratingThreshold || 3.5,
       maxRadius: parseFloat(options.radius) || 10, // km
       
-     
-// Sorting
-sortBy: options.sortBy === 'score'
-  ? 'bestMatch'
-  : options.sortBy || 'bestMatch',
+      // Sorting
+      sortBy: options.sortBy === 'score'
+        ? 'bestMatch'
+        : options.sortBy || 'bestMatch',
       
       // Quick filters
       showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
@@ -113,19 +100,18 @@ sortBy: options.sortBy === 'score'
      */
     let allPlaces = []
     for (const category of categories) {
-  const aiResult = await groqService.getAIRecommendations(
-    category,
-    trip.destination,
-    recommendationOptions
-  )
-  if (aiResult?.places?.length) {
-    allPlaces.push(...aiResult.places)
-  }
-}
-  console.log(
-    '[DEBUG] Total places collected so far:',
-    allPlaces.length
-  )
+      const aiResult = await groqService.getAIRecommendations(
+        category,
+        trip.destination,
+        recommendationOptions
+      )
+      if (aiResult?.places?.length) {
+        allPlaces.push(...aiResult.places)
+      }
+    }
+    
+    console.log('[DEBUG] Total places collected so far:', allPlaces.length)
+    
     if (allPlaces.length === 0) {
       return {
         places: [],
@@ -134,23 +120,29 @@ sortBy: options.sortBy === 'score'
         appliedFilters: recommendationOptions
       }
     }
+
+    /**
+     * STEP 6: Remove duplicates and normalize categories
+     */
     allPlaces = Object.values(
-  allPlaces.reduce((acc, place) => {
-    const key = place.name.toLowerCase()
-    acc[key] = acc[key] || place
-    return acc
-  }, {})
-)
+      allPlaces.reduce((acc, place) => {
+        const key = place.name.toLowerCase()
+        acc[key] = acc[key] || place
+        return acc
+      }, {})
+    )
+    
     allPlaces = allPlaces.map(p => ({
-  ...p,
-  category: String(p.category || '')
-    .toLowerCase()
-    .replace('hotels', 'accommodation')
-    .replace('hotel', 'accommodation')
-    .replace('lodging', 'accommodation')
-    .replace('restaurants', 'restaurant')
-    .replace('attractions', 'attraction')
-}))
+      ...p,
+      category: String(p.category || '')
+        .toLowerCase()
+        .replace('hotels', 'accommodation')
+        .replace('hotel', 'accommodation')
+        .replace('lodging', 'accommodation')
+        .replace('restaurants', 'restaurant')
+        .replace('attractions', 'attraction')
+    }))
+
     /**
      * STEP 7: Apply final sorting if needed
      */
@@ -166,77 +158,78 @@ sortBy: options.sortBy === 'score'
     // bestMatch is already sorted by groqService
 
     /**
-     * STEP 8: Apply limit
+     * STEP 8: Category Bucketing (BALANCE RESULTS)
      */
-    /**
- * STEP 8: Category Bucketing (BALANCE RESULTS)
- */
-const TARGET_TOTAL = options.limit || 20
+    const TARGET_TOTAL = options.limit || 20
 
-const BUCKETS = {
-  attraction: 7,
-  restaurant: 7,
-  accommodation: 6
-}
-
-const bucketed = []
-const usedNames = new Set()
-
-for (const [category, limit] of Object.entries(BUCKETS)) {
-  let candidates = allPlaces.filter(p => p.category === category)
-
-  // ✅ APPLY TOP RATED HERE (FIX)
-  if (recommendationOptions.topRatedOnly) {
-    candidates = candidates.filter(p => (p.rating || 0) >= 4.5)
-  }
-
-  const selected = candidates
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, limit)
-
-  for (const item of selected) {
-    if (!usedNames.has(item.name)) {
-      usedNames.add(item.name)
-      bucketed.push(item)
+    const BUCKETS = {
+      attraction: 7,
+      restaurant: 7,
+      accommodation: 6
     }
-  }
-}
-const leftovers = allPlaces
-  .filter(p => !usedNames.has(p.name))
-  .filter(p => !recommendationOptions.topRatedOnly || (p.rating || 0) >= 4.5)
-  .sort((a, b) => (b.rating || 0) - (a.rating || 0))
 
-while (bucketed.length < TARGET_TOTAL && leftovers.length) {
-  const next = leftovers.shift()
-  if (!usedNames.has(next.name)) {
-    usedNames.add(next.name)
-    bucketed.push(next)
-  }
-}
-bucketed.sort((a, b) => {
-  if ((b.rating || 0) !== (a.rating || 0)) {
-    return (b.rating || 0) - (a.rating || 0)
-  }
-  return (b.recommendationScore || 0) - (a.recommendationScore || 0)
-})
+    const bucketed = []
+    const usedNames = new Set()
 
+    for (const [category, limit] of Object.entries(BUCKETS)) {
+      let candidates = allPlaces.filter(p => p.category === category)
 
-return {
-  places: bucketed,
-  centerLocation,
-  message: `Found ${bucketed.length} balanced recommendations`,
-  appliedFilters: {
-    category: options.category || 'all',
-    minRating: recommendationOptions.minRating,
-    maxRadius: recommendationOptions.maxRadius,
-    sortBy: recommendationOptions.sortBy,
-    hiddenGems: recommendationOptions.showHiddenGems,
-    topRatedOnly: recommendationOptions.topRatedOnly,
-    priceRange: recommendationOptions.priceRange
-  }
-}
+      // ✅ APPLY TOP RATED HERE (FIX)
+      if (recommendationOptions.topRatedOnly) {
+        candidates = candidates.filter(p => (p.rating || 0) >= 4.5)
+      }
 
+      const selected = candidates
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, limit)
+
+      for (const item of selected) {
+        if (!usedNames.has(item.name)) {
+          usedNames.add(item.name)
+          bucketed.push(item)
+        }
+      }
+    }
     
+    const leftovers = allPlaces
+      .filter(p => !usedNames.has(p.name))
+      .filter(p => !recommendationOptions.topRatedOnly || (p.rating || 0) >= 4.5)
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+
+    while (bucketed.length < TARGET_TOTAL && leftovers.length) {
+      const next = leftovers.shift()
+      if (!usedNames.has(next.name)) {
+        usedNames.add(next.name)
+        bucketed.push(next)
+      }
+    }
+    
+    bucketed.sort((a, b) => {
+      if ((b.rating || 0) !== (a.rating || 0)) {
+        return (b.rating || 0) - (a.rating || 0)
+      }
+      return (b.recommendationScore || 0) - (a.recommendationScore || 0)
+    })
+
+    return {
+      places: bucketed,
+      centerLocation,
+      message: `Found ${bucketed.length} balanced recommendations`,
+      appliedFilters: {
+        category: options.category || 'all',
+        minRating: recommendationOptions.minRating,
+        maxRadius: recommendationOptions.maxRadius,
+        sortBy: recommendationOptions.sortBy,
+        hiddenGems: recommendationOptions.showHiddenGems,
+        topRatedOnly: recommendationOptions.topRatedOnly,
+        priceRange: recommendationOptions.priceRange
+      }
+    }
+
+  } catch (error) {
+    console.error('[RECOMMENDATION SERVICE ERROR]', error)
+    throw error
+  }
 }
 
 module.exports = {
