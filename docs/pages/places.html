@@ -37,15 +37,13 @@
             <button class="secondary" onclick="window.location.href='./signup.html'">Sign Up</button>
         </div>
     </nav>
-
-    <!-- Breadcrumb -->
+    
     <div class="breadcrumb">
         <a href="./trips.html"><i class="fas fa-arrow-left"></i> Back to Trips</a>
         <i class="fas fa-chevron-right"></i>
         <span>Places</span>
     </div>
 
-    <!-- Page Header -->
     <div class="page-header">
         <div>
             <h1><i class="fas fa-map-marked-alt"></i> Places to Visit</h1>
@@ -73,11 +71,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- Trip Center Selector will be inserted here -->
-
-        <!-- Recommendation Controls will be inserted here by advanced-recommendations.js -->
-
         <!-- Recommendations Grid -->
         <div class="recommendations-grid" id="recommendationsGrid">
             <!-- Cards will be inserted here -->
@@ -248,8 +241,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="../js/config.js"></script>
@@ -261,10 +252,7 @@
     <script src="../js/comparison.js"></script>
     <script src="../js/advanced-recommendations.js"></script>
     <script src="../js/places.js"></script>
-
-    <!-- Update Compare Button Badge -->
     <script>
-        // Override updateComparisonPanel to also update the compare button
         const originalUpdateComparisonPanel = window.updateComparisonPanel;
         window.updateComparisonPanel = function () {
             if (originalUpdateComparisonPanel) {
