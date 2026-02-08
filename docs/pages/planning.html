@@ -31,7 +31,7 @@
 </nav>
 
     <div class="planning-container">
-        <!-- Progress Steps -->
+        <!-- Step indicator for the multi-step form -->
         <div class="progress-steps">
             <div class="step active">
                 <div class="step-circle">1</div>
@@ -57,7 +57,7 @@
         <div class="content-wrapper">
             <div class="form-section">
                 <form id="createTripForm">
-                    <!-- Step 1: Basic Details -->
+                    <!-- Step 1: Basic details -->
                     <div class="form-step active" id="step1">
                         <h2 class="step-title">
                             <i class="fas fa-info-circle"></i>
@@ -104,7 +104,7 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: Dates & Budget -->
+                    <!-- Step 2: Dates and budget -->
                     <div class="form-step" id="step2">
                         <h2 class="step-title">
                             <i class="fas fa-calendar-alt"></i>
@@ -260,126 +260,111 @@
     </div>
 
     <div id="toast-container"></div>
-    
-<!-- ============================================
-     CRITICAL: Load scripts in correct order
-     ============================================ -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/api-service.js?v=2"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/nav.js"></script>
+    <script src="../js/plan.js"></script>
+    <script>
+        let currentStep = 1;
 
-<!-- 0. External libraries FIRST (Leaflet for maps) -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        function nextStep(step) {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step').forEach((s, i) => {
+                s.classList.remove('active');
+                if (i < step) s.classList.add('completed');
+            });
 
-<!-- 1. Config -->
-<script src="../js/config.js"></script>
+            document.getElementById('step' + step).classList.add('active');
+            document.querySelectorAll('.step')[step - 1].classList.add('active');
+            currentStep = step;
 
-<!-- 2. API Service -->
-<script src="../js/api-service.js?v=2"></script>
-
-<!-- 3. Toast -->
-<script src="../js/toast.js"></script>
-
-<!-- 4. Auth -->
-<script src="../js/auth.js"></script>
-
-<!-- 5. Nav -->
-<script src="../js/nav.js"></script>
-
-<!-- 6. Page script (plan.js) -->
-<script src="../js/plan.js"></script>
-
-<!-- 7. Inline scripts for UI - MUST BE DEFINED BEFORE ONCLICK HANDLERS RUN -->
-<script>
-    let currentStep = 1;
-
-    function nextStep(step) {
-        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.step').forEach((s, i) => {
-            s.classList.remove('active');
-            if (i < step) s.classList.add('completed');
-        });
-
-        document.getElementById('step' + step).classList.add('active');
-        document.querySelectorAll('.step')[step - 1].classList.add('active');
-        currentStep = step;
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function prevStep(step) {
-        nextStep(step);
-    }
-
-    function validateStep(currentStepNum, nextStepNum) {
-        let currentStepEl = document.getElementById(`step${currentStepNum}`);
-        let inputs = currentStepEl.querySelectorAll('input, select, textarea');
-        let isValid = true;
-        inputs.forEach(input => {
-            if (!input.checkValidity()) {
-                isValid = false;
-                input.reportValidity();
-            }
-        });
-        
-        if (isValid) {
-            nextStep(nextStepNum);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    }
 
-    function initializeMap() {
-        if (typeof L !== 'undefined' && !window.tripMap) {
-            try {
-                // ✅ CREATE MAP AND EXPOSE IT GLOBALLY
-                window.tripMap = L.map('map').setView([20.5937, 78.9629], 5);
+        function prevStep(step) {
+            nextStep(step);
+        }
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(window.tripMap);
+        function validateStep(currentStepNum, nextStepNum) {
+            const currentStepEl = document.getElementById(`step${currentStepNum}`);
+            const inputs = currentStepEl.querySelectorAll('input, select, textarea');
 
-                console.log('✅ Map initialized successfully!');
-                
-                // ✅ NOTIFY plan.js THAT MAP IS READY
-                if (typeof window.initializePlanningMap === 'function') {
-                    window.initializePlanningMap();
+            let isValid = true;
+            inputs.forEach(input => {
+                if (!input.checkValidity()) {
+                    isValid = false;
+                    input.reportValidity();
                 }
-            } catch (error) {
-                console.error('❌ Map initialization error:', error);
+            });
+
+            if (isValid) nextStep(nextStepNum);
+        }
+
+        function initializeMap() {
+            // Only create the map once
+            if (typeof L !== 'undefined' && !window.tripMap) {
+                try {
+                    // Expose the map so plan.js can add markers/updates later.
+                    window.tripMap = L.map('map').setView([20.5937, 78.9629], 5);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(window.tripMap);
+
+                    console.log('Map initialized');
+
+                    // If plan.js registered a hook, call it once the map exists.
+                    if (typeof window.initializePlanningMap === 'function') {
+                        window.initializePlanningMap();
+                    }
+                } catch (error) {
+                    console.error('Map init failed:', error);
+                }
             }
         }
-    }
 
-    function updateDuration() {
-        let start = document.getElementById('startDate')?.value;
-        let end = document.getElementById('endDate')?.value;
-        if (start && end) {
-            let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
-            document.getElementById('previewDuration').textContent = days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
+        function updateDuration() {
+            const start = document.getElementById('startDate')?.value;
+            const end = document.getElementById('endDate')?.value;
+
+            if (start && end) {
+                const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+                document.getElementById('previewDuration').textContent =
+                    days > 0 ? `${days} ${days === 1 ? 'Day' : 'Days'}` : '-';
+            }
         }
-    }
 
-    // Live preview updates
-    document.getElementById('title')?.addEventListener('input', (e) => {
-        document.getElementById('previewTitle').textContent = e.target.value || '-';
-    });
+        // Live preview
+        document.getElementById('title')?.addEventListener('input', (e) => {
+            document.getElementById('previewTitle').textContent = e.target.value || '-';
+        });
 
-    document.getElementById('destination')?.addEventListener('input', (e) => {
-        document.getElementById('previewDestination').textContent = e.target.value || '-';
-    });
+        document.getElementById('destination')?.addEventListener('input', (e) => {
+            document.getElementById('previewDestination').textContent = e.target.value || '-';
+        });
 
-    document.getElementById('budget')?.addEventListener('input', (e) => {
-        let value = e.target.value;
-        document.getElementById('previewBudget').textContent = value ? `₹${parseInt(value).toLocaleString('en-IN')}` : '-';
-    });
+        document.getElementById('budget')?.addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('previewBudget').textContent =
+                value ? `₹${parseInt(value).toLocaleString('en-IN')}` : '-';
+        });
 
-    document.getElementById('travelers')?.addEventListener('input', (e) => {
-        document.getElementById('previewTravelers').textContent = e.target.value || '1';
-    });
+        document.getElementById('travelers')?.addEventListener('input', (e) => {
+            document.getElementById('previewTravelers').textContent = e.target.value || '1';
+        });
 
-    document.getElementById('startDate')?.addEventListener('change', updateDuration);
-    document.getElementById('endDate')?.addEventListener('change', updateDuration);
-    
-    // ✅ CRITICAL: Initialize map after page loads
-    window.addEventListener('load', () => {
-        setTimeout(initializeMap, 200);
-    });
-</script>
+        document.getElementById('startDate')?.addEventListener('change', updateDuration);
+        document.getElementById('endDate')?.addEventListener('change', updateDuration);
+
+        // Delay slightly so the map container has a computed height before Leaflet runs.
+        window.addEventListener('load', () => {
+            setTimeout(initializeMap, 200);
+        });
+    </script>
 </body>
+
 </html>
+
