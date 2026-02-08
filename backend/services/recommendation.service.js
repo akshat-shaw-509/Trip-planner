@@ -9,6 +9,13 @@ const { calculateDistance } = require('../utils/helpers')
  * Fetches AI recommendations for a trip with comprehensive options
  */
 const getRecommendations = async (tripId, options = {}) => {
+  const Trip = require('../models/Trip.model')
+
+const trip = await Trip.findById(tripId)
+if (!trip) {
+  throw new Error('Trip not found')
+}
+
   try {
     /**
      * STEP 1: Resolve trip center coordinates
