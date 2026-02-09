@@ -19,7 +19,6 @@ body {
     min-height: 100vh;
 }
 
-/* Left Side - Branding */
 .auth-branding {
      background: linear-gradient(152deg,#0a5fc2 0%,#0052a3 58%,#00458c 100%);
     color: white;
@@ -69,7 +68,7 @@ body {
     line-height: 1.6;
 }
 
-/* Features List */
+/* Features*/
 .features-list {
     display: flex;
     flex-direction: column;
@@ -153,7 +152,6 @@ body {
 }
 
 /* Stats Showcase */
-
 .stat-item {
     text-align: center;
     padding: 24px 16px;
@@ -181,7 +179,6 @@ body {
     opacity: 0.9;
 }
 
-/* Right Side - Auth Container */
 .auth-container {
     background: #f8fafc;
     padding: 60px;
@@ -202,7 +199,6 @@ body {
     0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
-/* Back Link */
 .back-link {
     margin-bottom: 32px;
 }
@@ -226,7 +222,6 @@ body {
     font-size: 12px;
 }
 
-/* Auth Header */
 .auth-header {
     margin-bottom: 32px;
 }
@@ -405,7 +400,6 @@ body {
     transform: translateY(0);
 }
 
-/* Divider */
 .auth-divider {
     display: flex;
     align-items: center;
@@ -465,8 +459,6 @@ body {
 .social-btn svg {
     flex-shrink: 0;
 }
-
-/* Auth Footer */
 .auth-footer {
     text-align: center;
     margin-top: 32px;
@@ -490,7 +482,7 @@ body {
     color: #0052a3;
 }
 
-/* Password Requirements Styling */
+/* Password Requirements*/
 .password-requirements {
     margin-top: 12px;
     padding: 16px;
@@ -527,8 +519,6 @@ body {
     width: 14px;
     flex-shrink: 0;
 }
-
-/* Invalid State (Default) */
 .password-requirements li.invalid {
     color: #e74c3c;
 }
@@ -579,7 +569,6 @@ body {
     background: #0066cc;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
     .auth-wrapper {
         grid-template-columns: 1fr;
@@ -637,7 +626,7 @@ body {
         align-items: flex-start;
     }
 }
-/* ===================== Modal Styles ===================== */
+/* Modal Styles */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -728,7 +717,6 @@ body {
   }
 }
 
-/* Responsive modal */
 @media (max-width: 768px) {
   .modal-content {
     padding: 30px 20px;
