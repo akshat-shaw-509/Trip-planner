@@ -12,7 +12,6 @@ body {
     line-height: 1.6;
 }
 
-/* Navigation */
 nav {
     position: fixed;
     top: 0;
@@ -34,7 +33,7 @@ nav.scrolled {
 }
 
 .logo img {
-    height: 48px;  /* Increased from 36px */
+    height: 48px;  
     display: block;
     transition: height 0.3s ease;
 }
@@ -591,7 +590,6 @@ footer {
     font-size: 14px;
 }
 
-/* Responsive Design */
 @media (max-width: 1024px) {
     nav {
         padding: 16px 32px;
@@ -742,4 +740,3 @@ footer {
     }
 
 }
-
