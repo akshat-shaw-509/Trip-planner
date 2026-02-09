@@ -9,7 +9,6 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Breadcrumb */
 .breadcrumb {
     max-width: 1400px;
     margin: 0 auto;
@@ -162,7 +161,6 @@ body {
     margin-bottom: 48px;
 }
 
-/* Feature Card - Modern Blue Theme */
 .feature-card {
     background: white;
     border-radius: 20px;
