@@ -4,12 +4,10 @@
     box-sizing: border-box;
 }
 
-/* Add body padding for fixed nav */
 body {
     padding-top: 76px; /* Height of navigation */
 }
 
-/* Navigation */
 nav {
     position: fixed;
     top: 0;
@@ -284,7 +282,6 @@ nav.scrolled {
     color: #ef4444;
 }
 
-/* Mobile Menu Toggle */
 .mobile-menu-toggle {
     display: none;
     background: none;
@@ -367,7 +364,6 @@ nav.scrolled {
     .user-dropdown-icon {
         display: none;
     }
-    
     /* Ensure dropdown still works on mobile */
     .user-dropdown {
         right: -10px;
