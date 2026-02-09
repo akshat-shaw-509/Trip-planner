@@ -203,7 +203,6 @@
   display: none;
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   .smart-filters-container {
     padding: 16px;
