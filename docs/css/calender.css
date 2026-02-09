@@ -1,18 +1,17 @@
-.flatpickr-calendar{
-    background: white;   
+.flatpickr-calendar {
+    background: white;
     box-shadow: 0 8px 28px rgba(0,0,0,0.15);
     border: none;
     border-radius: 14px;
     padding: 20px;
-    margin-top: 10px
+    margin-top: 10px;
 }
-.flatpickr-months{
+
+.flatpickr-months {
     margin-bottom: 15px;
 }
-.flatpickr-month{
-    height: auto;
-}
-.flatpickr-current-month{
+
+.flatpickr-current-month {
     font-size: 18px;
     font-weight: 600;
     color: #000;
@@ -20,8 +19,9 @@
     position: static;
     height: auto;
 }
-.flatpickr-current-month .flatpickr-monthDropdown-months{
-    font-size:16px;
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    font-size: 16px;
     font-weight: 600;
     color: #000;
     background: #f9f9f9;
@@ -31,19 +31,15 @@
     cursor: pointer;
     transition: all 0.3s;
 }
+
 .flatpickr-current-month .flatpickr-monthDropdown-months:hover {
     background: #000;
     color: white;
     border-color: white;
 }
-.flatpickr-current-month input.cur-year{
-    font-size:18px;
-    font-weight: 600;
-    color: #000;
-    background: transparent;
-}
+
 .flatpickr-prev-month,
-.flatpickr-next-month{
+.flatpickr-next-month {
     width: 36px;
     height: 36px;
     border: 1.5px solid #333;
@@ -55,43 +51,44 @@
     padding: 0;
     top: 10px;
 }
+
 .flatpickr-prev-month:hover,
-.flatpickr-next-month:hover{
+.flatpickr-next-month:hover {
     background: #333;
     color: white;
 }
-.flatpickr-prev-month svg,
-.flatpickr-next-month svg {
-    width: 12px;
-    height: 12px;
-    fill: currentColor;
-}
-.flatpickr-weekdays{
+
+.flatpickr-weekdays {
     margin-top: 15px;
     margin-bottom: 10px;
 }
-.flatpickr-weekday{
+
+.flatpickr-weekday {
     font-size: 12px;
     color: #999;
     font-weight: 600;
 }
-.flatpickr-day{
+
+.flatpickr-day {
     border-radius: 50%;
     color: #333;
     border: none;
     font-size: 14px;
     height: 40px;
     max-width: 40px;
-    line-height: 40px;   
+    line-height: 40px;
 }
-.flatpickr-day:hover{
+
+.flatpickr-day:hover {
     background: #51a8f0;
     border-color: transparent;
 }
+
 .flatpickr-day.prevMonthDay,
 .flatpickr-day.nextMonthDay {
     color: #bdc3c7;
 }
+
 .flatpickr-day.selected,
 .flatpickr-day.startRange,
 .flatpickr-day.endRange {
@@ -100,20 +97,10 @@
     color: white;
 }
 
-.flatpickr-day.selected:hover,
-.flatpickr-day.startRange:hover,
-.flatpickr-day.endRange:hover {
-    background: #1a252f;
-}
-
 .flatpickr-day.inRange {
     background: #e8f4f8;
     border-color: transparent;
     box-shadow: none;
-}
-
-.flatpickr-day.today {
-    border-color: transparent;
 }
 
 .flatpickr-day.today:hover {
