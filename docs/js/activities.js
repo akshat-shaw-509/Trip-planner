@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    
+    // Prevent the script from running more than once
     if (window.activitiesPageLoaded) return;
     window.activitiesPageLoaded = true;
     let tripId = null;
@@ -11,6 +11,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('Activities page initializing...');
         const token = sessionStorage.getItem('accessToken');
+        // Redirect to login if user is not authenticated
         if (!token) {
             showToast('Please log in to continue', 'error');
             setTimeout(() => window.location.href = './login.html', 1500);
@@ -18,10 +19,12 @@
         }
         const urlParams = new URLSearchParams(window.location.search);
         tripId = urlParams.get('id');
+        // Update trip overview link if available
 const tripOverviewLink = document.getElementById('tripOverviewLink');
 if (tripOverviewLink && tripId) {
     tripOverviewLink.href = `./trip-overview.html?id=${tripId}`;
 }
+        // If no trip ID is provided, go back to trips page
         if (!tripId) {
             window.location.href = 'trips.html';
             return;
@@ -45,7 +48,7 @@ if (tripOverviewLink && tripId) {
            btn.addEventListener('click', openAddModal);
         });
 
-        // Modal controls
+        // Modal buttons and form handling
         const closeModal = document.getElementById('closeModal');
         const cancelBtn = document.getElementById('cancelBtn');
         const activityForm = document.getElementById('activityForm');
@@ -54,7 +57,7 @@ if (tripOverviewLink && tripId) {
         if (closeModal) closeModal.onclick = closeActivityModal;
         if (cancelBtn) cancelBtn.onclick = closeActivityModal;
         if (activityForm) activityForm.onsubmit = handleSubmitActivity;
-
+        // Close modal when clicking outside content
         if (activityModal) {
             activityModal.onclick = (e) => {
                 if (e.target.id === 'activityModal') {
@@ -63,13 +66,12 @@ if (tripOverviewLink && tripId) {
             };
         }
 
-        // Filter buttons
+         // Status filter buttons
         const filterBtns = document.querySelectorAll('.filter-btn');
         filterBtns.forEach(btn => {
             btn.onclick = () => handleFilterChange(btn.dataset.filter);
         });
-
-        // Search input
+        // Search input handling
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.oninput = handleSearch;
@@ -119,7 +121,7 @@ if (tripOverviewLink && tripId) {
 
         grid.innerHTML = filteredActivities.map(activity => createActivityCard(activity)).join('');
 
-        // Attach event listeners to rendered cards
+        // Attach click handlers to each rendered card
         filteredActivities.forEach(activity => {
             const card = document.querySelector(`[data-activity-id="${activity._id}"]`);
             if (card) {
@@ -147,7 +149,7 @@ if (tripOverviewLink && tripId) {
     function createActivityCard(activity) {
         const startDate = new Date(activity.startTime);
         const endDate = activity.endTime ? new Date(activity.endTime) : null;
-        
+        // Icon mapping based on activity type
         const typeIcons = {
             flight: 'plane',
             accommodation: 'bed',
@@ -158,7 +160,7 @@ if (tripOverviewLink && tripId) {
             entertainment: 'ticket',
             other: 'circle'
         };
-
+        // Status color mapping
         const statusColors = {
             planned: '#FFA726',
             in_progress: '#42A5F5',
@@ -249,7 +251,6 @@ if (tripOverviewLink && tripId) {
         if (modal) modal.classList.add('active');
     }
 
-    // Populate form for editing existing activity
     function editActivity(activity) {
         currentActivityId = activity._id;
         
@@ -284,10 +285,8 @@ if (tripOverviewLink && tripId) {
         currentActivityId = null;
     }
 
-    // Create or update activity via API
     async function handleSubmitActivity(e) {
         e.preventDefault();
-
         const title = document.getElementById('activityTitle').value.trim();
         const description = document.getElementById('activityDescription').value.trim();
         const type = document.getElementById('activityType').value;
