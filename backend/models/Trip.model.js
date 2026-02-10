@@ -1,9 +1,7 @@
 const mongoose = require('mongoose')
 const TRIP_STATUS = ['planning', 'booked', 'upcoming', 'ongoing', 'completed', 'cancelled']
-/**
- * Trip Schema
- * Represents a travel itinerary
- */
+//Trip Schema
+//Represents a travel itinerary
 const tripSchema = new mongoose.Schema(
   {
     // User who owns the trip
@@ -28,7 +26,7 @@ const tripSchema = new mongoose.Schema(
       maxlength: [2000, 'Description cannot exceed 2000 characters'],
       default: '',
     },
-    // Destination (city/region name)
+    // Destination
     destination: {
       type: String,
       required: [true, 'Destination is required'],
@@ -42,7 +40,7 @@ const tripSchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, 'Country cannot exceed 100 characters'],
     },
-    // Destination coordinates [longitude, latitude]
+    // Destination coordinates
     destinationCoords: {
       type: [Number],
       validate: {
@@ -70,14 +68,6 @@ const tripSchema = new mongoose.Schema(
       type: Number,
       min: [0, 'Budget cannot be negative'],
       default: 0,
-    },
-    // Currency code
-    currency: {
-      type: String,
-      default: 'INR',
-      trim: true,
-      uppercase: true,
-      maxlength: 3,
     },
     // Number of travelers
     travelers: {
@@ -113,11 +103,6 @@ const tripSchema = new mongoose.Schema(
         message: 'Each tag must be 50 characters or less'
       }
     },
-    // Public/private flag (for future sharing features)
-    isPublic: {
-      type: Boolean,
-      default: false,
-    },
   },
   {
     timestamps: true,
@@ -142,18 +127,18 @@ tripSchema.pre('save', function () {
     throw err
   }
 })
-// Virtual: Calculate trip duration in days
+// Calculate trip duration in days
 tripSchema.virtual('duration').get(function () {
   if (!this.startDate || !this.endDate) return 0
   const diffTime = Math.abs(this.endDate - this.startDate)
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
 })
-// Virtual: Check if trip is upcoming
+// Check if trip is upcoming
 tripSchema.virtual('isUpcoming').get(function () {
   const now = new Date()
   return this.startDate > now && this.status !== 'cancelled'
 })
-// Virtual: Check if trip is currently active
+// Check if trip is currently active
 tripSchema.virtual('isActive').get(function () {
   const now = new Date()
   return (
@@ -162,12 +147,12 @@ tripSchema.virtual('isActive').get(function () {
     this.status === 'ongoing'
   )
 })
-// Virtual: Check if trip is past
+// Check if trip is past
 tripSchema.virtual('isPast').get(function () {
   const now = new Date()
   return this.endDate < now || this.status === 'completed'
 })
-// Instance method: Get trip summary
+// Get trip summary
 tripSchema.methods.getSummary = function () {
   return {
     id: this._id,
@@ -187,15 +172,13 @@ tripSchema.methods.getSummary = function () {
     coverImage: this.coverImage,
   }
 }
-// Static method: Find trips by user
+//Find trips by user
 tripSchema.statics.findByUserId = function (userId) {
   return this.find({ userId }).sort('-createdAt')
 }
-// Static method: Find trips by user and status
+//Find trips by user and status
 tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
   return this.find({ userId, status }).sort('-createdAt')
 }
 
 module.exports = mongoose.model('Trip', tripSchema)
-
-
