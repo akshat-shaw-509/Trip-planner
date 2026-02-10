@@ -2,10 +2,9 @@ const tripService = require('../services/trip.service');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { ValidationError } = require('../utils/errors');
 
-// Fixed: always returns, handles falsy data properly
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true };
-  if (data !== null) response.data = data;  // allow [], 0, false
+  if (data !== null) response.data = data;  
   if (message) response.message = message;
   Object.assign(response, extra);
   return res.status(statusCode).json(response);
@@ -56,7 +55,7 @@ const deleteTrip = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, null, result?.message || 'Trip deleted successfully');
 });
 
-// Update trip status (planning / ongoing / completed / cancelled)
+// Update trip status
 // PATCH /api/trips/:tripId/status
 const updateTripStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
@@ -97,5 +96,4 @@ module.exports = {
   updateTripStatus,
   uploadBanner,
   removeBanner
-};
-
+}
