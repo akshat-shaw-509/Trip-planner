@@ -1,18 +1,10 @@
 const multer = require('multer')
 const path = require('path')
-
-/**
- * Memory storage for general uploads (processed by service layer)
- * This gives us more control and allows the service to handle folder logic
- */
 const memoryStorage = multer.memoryStorage()
 
-/**
- * File type filter for images
- */
+// File type filter for images
 const imageFileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-  
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true)
   } else {
@@ -23,9 +15,7 @@ const imageFileFilter = (req, file, cb) => {
   }
 }
 
-/**
- * File type filter for documents
- */
+//File type filter for documents
 const documentFileFilter = (req, file, cb) => {
   const allowedTypes = [
     'application/pdf',
@@ -46,9 +36,7 @@ const documentFileFilter = (req, file, cb) => {
   }
 }
 
-/**
- * General file filter (allows both images and documents)
- */
+//General file filter (allows both images and documents)
 const generalFileFilter = (req, file, cb) => {
   const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
   const allowedDocTypes = [
@@ -72,9 +60,7 @@ const generalFileFilter = (req, file, cb) => {
   }
 }
 
-/**
- * Multer instance for image uploads (banners, profile pics, etc.)
- */
+//Multer instance for image uploads (banners, profile pics, etc.)
 const uploadImage = multer({
   storage: memoryStorage,
   fileFilter: imageFileFilter,
@@ -83,9 +69,7 @@ const uploadImage = multer({
   }
 })
 
-/**
- * Multer instance for banner uploads specifically
- */
+//Multer instance for banner uploads
 const uploadBanner = multer({
   storage: memoryStorage,
   fileFilter: imageFileFilter,
@@ -94,9 +78,7 @@ const uploadBanner = multer({
   }
 })
 
-/**
- * Multer instance for document uploads
- */
+//Multer instance for document uploads
 const uploadDocument = multer({
   storage: memoryStorage,
   fileFilter: documentFileFilter,
@@ -105,9 +87,7 @@ const uploadDocument = multer({
   }
 })
 
-/**
- * Multer instance for general file uploads (mixed types)
- */
+//Multer instance for general file uploads (mixed types)
 const uploadGeneral = multer({
   storage: memoryStorage,
   fileFilter: generalFileFilter,
