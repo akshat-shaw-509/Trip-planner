@@ -18,10 +18,8 @@ const PAYMENT_METHODS = [
   'other',
 ]
 
-/**
- * Expense Schema
- * Tracks spending during a trip
- */
+//Expense Schema
+//Tracks spending during a trip
 const expenseSchema = new mongoose.Schema(
   {
     // Reference to parent trip
@@ -57,14 +55,7 @@ const expenseSchema = new mongoose.Schema(
       required: [true, 'Amount is required'],
       min: [0.01, 'Amount must be greater than 0'],
     },
-    // Currency code
-    currency: {
-      type: String,
-      default: 'INR',
-      trim: true,
-      uppercase: true,
-      maxlength: 3,
-    },
+    /
     // Expense category
     category: {
       type: String,
@@ -112,7 +103,7 @@ const expenseSchema = new mongoose.Schema(
 expenseSchema.index({ tripId: 1, date: -1 })
 expenseSchema.index({ userId: 1, category: 1 })
 expenseSchema.index({ tripId: 1, category: 1 })
-// Static method: Get total expenses for a trip
+// Get total expenses for a trip
 expenseSchema.statics.getTotalByTrip = async function(tripId) {
   const result = await this.aggregate([
     { $match: { tripId: mongoose.Types.ObjectId(tripId) } },
@@ -121,7 +112,7 @@ expenseSchema.statics.getTotalByTrip = async function(tripId) {
   return result.length > 0 ? result[0].total : 0
 }
 
-// Static method: Get expenses grouped by category
+// Get expenses grouped by category
 expenseSchema.statics.getByCategory = async function(tripId) {
   return this.aggregate([
     { $match: { tripId: mongoose.Types.ObjectId(tripId) } },
