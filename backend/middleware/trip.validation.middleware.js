@@ -1,4 +1,3 @@
-
 let { body, validationResult } = require('express-validator')
 let { TRIP_STATUS } = require('../config/constants')
 
