@@ -62,8 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('toggleMapBtn')?.addEventListener('click', toggleMap);
 document.getElementById('closeMapBtn')?.addEventListener('click', closeMap);
 
-/* ================= FILTER MODAL ================= */
-
+//Filter Modal
 document.getElementById('openFilterBtn')?.addEventListener('click', () => {
   document.getElementById('filterModal').classList.add('active');
 });
@@ -329,10 +328,7 @@ function initMap() {
     showToast('Failed to initialize map', 'error');
   }
 }
-
-// CORRECTED updateRecommendedMarkers function for places.js
-// Replace the existing function (around line 350-446) with this:
-
+//Recommendation Markers
 function updateRecommendedMarkers() {
   if (!map) {
     console.warn('Map not initialized');
@@ -376,7 +372,6 @@ function updateRecommendedMarkers() {
 
   recommendations.forEach((rec, index) => {
     try {
-      // Extract coordinates - handle multiple possible structures
       let lat, lon;
       
       if (rec.lat && rec.lon) {
@@ -401,7 +396,7 @@ function updateRecommendedMarkers() {
       const rating = rec.rating ? Number(rec.rating).toFixed(1) : 'N/A';
       const description = rec.description || '';
 
-      // Create custom icon based on category
+      // Custom icon based on category
       const markerIcon = L.divIcon({
         html: `<div style="background: #ff6b6b; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
                 <i class="fas fa-${icon}" style="font-size: 14px;"></i>
@@ -458,8 +453,6 @@ marker.on('popupopen', () => {
     );
   };
 });
-
-      
       markers.push(marker);
       bounds.push([lat, lon]);
       markersAdded++;
@@ -475,7 +468,7 @@ marker.on('popupopen', () => {
         padding: [60, 60],
         maxZoom: 13
       });
-      console.log(`✅ Added ${markersAdded} markers to map`);
+      console.log(`Added ${markersAdded} markers to map`);
     } catch (err) {
       console.error('Error fitting bounds:', err);
     }
@@ -554,7 +547,6 @@ async function searchNearbyPlaces() {
     showToast('Failed to search nearby places', 'error')
   }
 }
-
 //Display nearby search results
 function displayNearbyResults(places) {
   const modal = document.createElement('div')
