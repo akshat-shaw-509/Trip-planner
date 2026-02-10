@@ -1,6 +1,4 @@
 const { body, validationResult } = require('express-validator')
-
-// Define constants locally
 const PLACE_CATEGORIES = {
   ACCOMMODATION: 'accommodation',
   RESTAURANT: 'restaurant',
