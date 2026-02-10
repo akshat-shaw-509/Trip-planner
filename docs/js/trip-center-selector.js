@@ -216,7 +216,7 @@ function attachTripCenterListeners() {
   if (btn) {
     btn.onclick = openTripCenterModal
   } else {
-    console.warn('⚠️ Change center button not found')
+    console.warn('Change center button not found')
   }
 }
 
