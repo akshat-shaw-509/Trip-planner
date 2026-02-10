@@ -2,7 +2,6 @@ let currentTrip = null
 
 const initTripOverview = async () => {
   try {
-    // Ensure authHandler is available
     if (typeof authHandler === 'undefined') {
       console.error('authHandler not loaded')
       window.location.href = 'login.html'
@@ -65,7 +64,7 @@ const displayTripOverview = () => {
   if (!currentTrip) return
   const trip = currentTrip
   
-  // ---------- Banner ----------
+  // Banner
   const bannerImg = document.querySelector('.trip-banner img')
   if (bannerImg) {
     if (trip.coverImage) {
@@ -127,8 +126,6 @@ const loadTripStats = async () => {
     console.error('Error loading stats:', err)
   }
 }
-
-// ========== BANNER UPLOAD - SINGLE DECLARATION ==========
 const initBannerUpload = () => {
   const container = document.querySelector('.trip-banner')
   if (!container) return
@@ -202,7 +199,7 @@ const initBannerUpload = () => {
   }
 }
 
-// Instant banner preview (UX polish)
+// Instant banner preview
 const previewBanner = (file) => {
   const img = document.querySelector('.trip-banner img')
   if (!img) return
