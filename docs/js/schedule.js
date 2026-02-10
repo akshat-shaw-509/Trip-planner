@@ -90,7 +90,6 @@
     // Load trip data
     async function loadTripData() {
         try {
-            // Use whichever apiService is available
             const api = window.apiService || apiService
             const response = await api.trips.getById(tripId)
             if (!response || !response.data) {
@@ -118,10 +117,8 @@
     // Load activities
     async function loadActivities() {
         try {
-            // Use whichever apiService is available
             const api = window.apiService || apiService
             const response = await api.activities.getByTrip(tripId)
-            // Handle both response.data and direct array
             activities = response.data || response || []
             renderActivities()
         } catch (error) {
@@ -159,9 +156,7 @@
                     }
                 },
                 onDayCreate: function(daysElem, dObj, fp, dayElem) {
-                    // Flatpickr passes dayElem.dateObj which is already a Date object
                     let date = dayElem.dateObj
-                    // Validate the date
                     if (!date || isNaN(date.getTime())) {
                         return
                     }
@@ -198,7 +193,6 @@
             timeGrid.appendChild(timeSlot)
         }
     }
-
     // Render activities on timeline
     function renderActivities() {
         let timeline = document.getElementById('activitiesTimeline')
@@ -444,8 +438,6 @@
             showAlert('Today is outside the trip dates', 'info')
         }
     }
-
-    // Utility functions
     function formatTime(date) {
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
     }
@@ -527,7 +519,6 @@
 
         return segments
     }
-
     // Add CSS for toast animations
     let style = document.createElement('style')
     style.textContent = `
