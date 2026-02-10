@@ -14,19 +14,19 @@ const sendSuccess = (res, statusCode, data = null, message = null) => {
 const register = async (req, res) => {
   try {
     const result = await authService.register(req.body, req)
-    // Store refresh token securely in cookie
+    // Save refresh token in an http-only cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
-    // Remove refreshToken from response body
+    // Remove refresh token from response payload
     const { refreshToken, ...responseBody } = result
    sendSuccess(res, 201, responseBody, 'User registered successfully')
   } catch (error) {
     console.error('Registration error:', error)
-    // Validation errors (express-validator)
+    // Validation errors
     if (error.errors && Array.isArray(error.errors)) {
       return res.status(400).json({
         success: false,
@@ -87,7 +87,7 @@ const refreshToken = async (req, res) => {
       })
     }
     const result = await authService.refreshAccessToken(token)
-    // Rotate refresh token
+    // Replace old refresh token with a new one
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -151,7 +151,6 @@ const googleLogin = async (req, res) => {
       })
     }
     const result = await googleAuthService.googleLogin(idToken, accessToken)
-    // Store refresh token securely
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -181,4 +180,5 @@ module.exports = {
   getCurrentUser,
   googleLogin
 }
+
 
