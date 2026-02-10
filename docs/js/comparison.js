@@ -66,8 +66,7 @@ function initComparisonPanel() {
     }
   });
 }
-
-// Initialize on DOM ready
+// Initialize once DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initComparisonPanel);
 } else {
