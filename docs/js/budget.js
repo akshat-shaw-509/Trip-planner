@@ -120,8 +120,6 @@ function createExpenseItem(exp) {
     </div>
   `
 }
-
-// Handlers
 function initExpenseHandlers() {
   document.getElementById('addExpenseBtn').onclick = openAddExpenseModal
   document.getElementById('closeModal').onclick = closeExpenseModal
@@ -198,8 +196,6 @@ function updateSummary() {
   if (progress) progress.style.width = `${percent}%`
   if (percentText) percentText.textContent = `${percent.toFixed(1)}% of budget`
 }
-
-// Utils
 function escapeHtml(text) {
   const div = document.createElement('div')
   div.textContent = text
