@@ -3,7 +3,6 @@ let currentFilter = 'all'
 let currentSort = 'date-desc'
 const initTripsPage = async () => {
   try {
-    // Ensure authHandler exists
     if (typeof authHandler === 'undefined') {
       console.error('authHandler not loaded')
       window.location.href = './login.html'
