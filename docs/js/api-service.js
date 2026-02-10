@@ -4,7 +4,7 @@ const apiService = {
   async refreshToken() {
     try {
       const refreshToken = sessionStorage.getItem('refreshToken');
-      
+      // If there’s no refresh token, force re-login
       if (!refreshToken) {
         console.error('No refresh token available');
         this.redirectToLogin();
@@ -78,15 +78,11 @@ const apiService = {
         console.error('Method:', config.method || 'GET');
         console.error('Status:', response.status, response.statusText);
         console.error('Error Response:', errorData);
-
-        // Handle 401 Unauthorized - Token expired
+        // Handle expired or invalid access tokens
         if (response.status === 401) {
           if (errorData.message?.includes('expired') || errorData.message?.includes('Token expired')) {
-            // Try to refresh token once
             const newToken = await this.refreshToken();
-            
             if (newToken) {
-              // Retry request with new token
               config.headers['Authorization'] = `Bearer ${newToken}`;
               const retryResponse = await fetch(`${this.baseURL}${endpoint}`, config);
               
@@ -102,12 +98,10 @@ const apiService = {
           }
         }
 
-        // Handle 400 Bad Request with detailed validation errors
+        // Handle validation errors
         if (response.status === 400) {
           let errorMessage = 'Validation Error';
           let backendErrors = null;
-          
-          // Check for errors array (express-validator format)
           if (errorData.errors && Array.isArray(errorData.errors)) {
             backendErrors = errorData.errors;
             errorMessage = errorData.errors.map(err => {
@@ -116,7 +110,6 @@ const apiService = {
               return `${field}: ${message}`;
             }).join('\n');
           } 
-          // Check for error object (alternative format)
           else if (errorData.error && typeof errorData.error === 'object') {
             const errorObj = errorData.error;
             backendErrors = Object.keys(errorObj).map(key => ({
@@ -128,7 +121,6 @@ const apiService = {
               `${err.field}: ${err.message}`
             ).join('\n');
           }
-          // Simple error message
           else if (errorData.message) {
             errorMessage = errorData.message;
           }
@@ -138,12 +130,8 @@ const apiService = {
           error.errorData = errorData;
           throw error;
         }
-
-        // Other HTTP errors
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
-
-      // Success
       const data = await response.json();
       return data;
 
@@ -153,7 +141,7 @@ const apiService = {
     }
   },
 
-  // Auth endpoints
+  // Auth
   auth: {
     async register(data) {
       return await apiService.request('/auth/register', {
@@ -203,7 +191,7 @@ const apiService = {
     }
   },
 
-  // Trip endpoints
+  // Trips
   trips: {
   async getAll(filters = {}) {
     const params = new URLSearchParams(filters);
@@ -265,7 +253,7 @@ const apiService = {
 },
 
 
-  // Place endpoints
+  // Places
   places: {
     async getByTrip(tripId, filters = {}) {
       const params = new URLSearchParams(filters);
@@ -313,7 +301,7 @@ const apiService = {
     }
   },
 
-  // Preferences endpoints
+  // Preferences
   preferences: {
     async get() {
       return await apiService.request('/preferences');
@@ -347,7 +335,7 @@ const apiService = {
     }
   },
 
-  // Expense endpoints
+  // Expenses
   expenses: {
     async getByTrip(tripId) {
       return await apiService.request(`/expenses/trips/${tripId}/expenses`);
@@ -382,7 +370,7 @@ const apiService = {
     }
   },
 
-  // Activity endpoints
+  // Activities
   activities: {
     async getByTrip(tripId) {
       return await apiService.request(`/activities/trips/${tripId}/activities`);
@@ -420,7 +408,7 @@ const apiService = {
     }
   },
 
-  // Schedule endpoints
+  // Schedules
   schedules: {
     async getByTrip(tripId) {
       return await apiService.request(`/trips/${tripId}/schedules`);
@@ -447,11 +435,10 @@ const apiService = {
     }
   },
 
-  // Recommendation endpoints
+  // Recommendations
   recommendations: {
     async getForTrip(tripId, options = {}) {
       const params = new URLSearchParams();
-      
       // Add all filter parameters
       if (options.radius) params.append('radius', options.radius);
       if (options.minRating) params.append('minRating', options.minRating);
@@ -460,13 +447,7 @@ const apiService = {
       if (options.hiddenGems) params.append('hiddenGems', 'true');
       if (options.topRated) params.append('topRated', 'true');
       if (options.maxResults) params.append('limit', options.maxResults);
-      
       const query = params.toString();
-      
-      // ✅ CORRECT: Include /recommendations prefix to match backend route structure
-      // Backend: app.use('/api/recommendations', recommendationRoutes)
-      // Route: router.get('/trips/:tripId/recommendations', ...)
-      // Final URL: /api/recommendations/trips/:tripId/recommendations
       return await apiService.request(
   `/recommendations/trips/${tripId}/recommendations${query ? '?' + query : ''}`
 );
