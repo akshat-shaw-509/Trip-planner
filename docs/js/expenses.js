@@ -11,7 +11,7 @@
   let currentExpenseId = null;
 
   document.addEventListener('DOMContentLoaded', async () => {
-    // Basic auth check
+    // Auth check
     const token = sessionStorage.getItem('accessToken');
     if (!token) {
       showToast('Please log in to continue', 'error');
@@ -35,8 +35,6 @@
       showToast('Failed to load expenses', 'error');
     }
   });
-
-  // Event Binding
   function setupEventListeners() {
     // Add expense buttons
     document
@@ -59,7 +57,6 @@
     });
     document.querySelector('.btn-export')?.addEventListener('click', exportExpenses);
   }
-
   // Data
   async function loadExpenses() {
     try {
@@ -72,8 +69,6 @@
     renderExpenses();
     updateSummary();
   }
-
-  // Rendering
   function renderExpenses() {
     const list = document.getElementById('expensesList');
     const emptyState = document.querySelector('.empty-state');
@@ -153,8 +148,6 @@
       console.error('Budget fetch failed:', err);
     }
   }
-
-  // Modal
   function openAddExpenseModal() {
     currentExpenseId = null;
     document.getElementById('modalTitle').textContent = 'Add Expense';
@@ -181,8 +174,7 @@
     document.getElementById('expenseModal')?.classList.remove('active');
     currentExpenseId = null;
   }
-
-  // Save
+  // Submit Expenses
   async function handleSubmitExpense(e) {
     e.preventDefault();
     const data = {
