@@ -1,4 +1,4 @@
-// Async handler wrapper to catch errors in async route handlers
+// Wrapper to handle errors in async route handlers
 const asyncHandler = (fn) => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next))
@@ -6,10 +6,8 @@ const asyncHandler = (fn) => {
   };
 };
 
-// Error handling middleware
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', err);
-
   // Mongoose validation error
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -21,7 +19,6 @@ const errorHandler = (err, req, res, next) => {
       }))
     });
   }
-
   // Mongoose duplicate key error
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern)[0];
@@ -30,7 +27,6 @@ const errorHandler = (err, req, res, next) => {
       message: `${field} already exists`
     });
   }
-
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
@@ -45,15 +41,12 @@ const errorHandler = (err, req, res, next) => {
       message: 'Token expired'
     });
   }
-
-  // Custom errors
   if (err.statusCode) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message
     });
   }
-
   // Default error
   res.status(500).json({
     success: false,
@@ -73,6 +66,4 @@ module.exports = {
   asyncHandler,
   errorHandler,
   notFoundHandler
-};
-
-
+}
