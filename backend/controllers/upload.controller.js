@@ -1,8 +1,5 @@
 const uploadService = require('../services/upload.service')
 
-/**
- * Helper function to send success response
- */
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true }
   if (data) response.data = data
@@ -11,23 +8,16 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
   res.status(statusCode).json(response)
 }
 
-/**
- * Helper function to send error response
- */
 const sendError = (res, statusCode, message) => {
   res.status(statusCode).json({ success: false, message })
 }
 
-/**
- * Upload a single image
- * POST /api/uploads/image
- * Query params: ?folder=images (optional)
- */
+//Upload a single image
+//POST /api/uploads/image
 const uploadImage = async (req, res, next) => {
   if (!req.file) {
     return sendError(res, 400, 'No file provided')
   }
-  
   try {
     const folder = req.query.folder || 'images'
     const result = await uploadService.uploadImage(req.file, folder)
@@ -37,16 +27,12 @@ const uploadImage = async (req, res, next) => {
   }
 }
 
-/**
- * Upload a single document
- * POST /api/uploads/document
- * Query params: ?folder=documents (optional)
- */
+//Upload a single document
+//POST /api/uploads/document
 const uploadDocument = async (req, res, next) => {
   if (!req.file) {
     return sendError(res, 400, 'No file provided')
   }
-  
   try {
     const folder = req.query.folder || 'documents'
     const result = await uploadService.uploadDocument(req.file, folder)
@@ -56,11 +42,8 @@ const uploadDocument = async (req, res, next) => {
   }
 }
 
-/**
- * Upload trip banner
- * POST /api/uploads/banner/:tripId
- * Body (optional): { oldBannerUrl: "previous banner URL to delete" }
- */
+//Upload trip banner
+//POST /api/uploads/banner/:tripId
 const uploadBanner = async (req, res, next) => {
   if (!req.file) {
     return sendError(res, 400, 'No banner image provided')
@@ -73,7 +56,6 @@ const uploadBanner = async (req, res, next) => {
 
   try {
     const { oldBannerUrl } = req.body
-
     let result
     // If old banner URL is provided, replace it
     if (oldBannerUrl) {
@@ -89,30 +71,19 @@ const uploadBanner = async (req, res, next) => {
   }
 }
 
-/**
- * Upload multiple files at once
- * POST /api/uploads/multiple
- * Query params: ?folder=uploads (optional)
- */
+//Upload multiple files at once
+//POST /api/uploads/multiple
 const uploadMultiple = async (req, res, next) => {
   if (!req.files || req.files.length === 0) {
     return sendError(res, 400, 'No files provided')
   }
-  
   try {
-    const folder = req.query.folder || 'uploads'
-    
+    const folder = req.query.folder || 'uploads' 
     const uploadPromises = req.files.map(file =>
       uploadService.uploadFile(file, folder)
     )
-    
     const results = await Promise.all(uploadPromises)
-    
-    sendSuccess(
-      res,
-      200,
-      results,
-      'Files uploaded successfully',
+    sendSuccess(res,200,results,'Files uploaded successfully',
       { count: results.length }
     )
   } catch (error) {
@@ -120,18 +91,13 @@ const uploadMultiple = async (req, res, next) => {
   }
 }
 
-/**
- * Delete a file from storage
- * DELETE /api/uploads/file
- * Body: { fileUrl: "/uploads/images/filename.jpg" }
- */
+//Delete a file from storage
+//DELETE /api/uploads/file
 const deleteFile = async (req, res, next) => {
   const { fileUrl } = req.body
-  
   if (!fileUrl) {
     return sendError(res, 400, 'File URL is required')
   }
-  
   try {
     const result = await uploadService.deleteFile(fileUrl)
     sendSuccess(res, 200, null, result.message)
