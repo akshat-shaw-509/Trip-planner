@@ -1,4 +1,3 @@
-/* ====================== STATE ====================== */
 const advancedRecState = {
   options: {
     radius: 10,
@@ -14,6 +13,7 @@ const advancedRecState = {
   savedPlaces: new Set(),
   selectedForBulk: new Set()
 };
+// Shared filter state
 if (!window.filterState) {
   window.filterState = {
     activeFilters: {
@@ -27,7 +27,7 @@ if (!window.filterState) {
   };
 }
 const filterState = window.filterState;
-
+// Shared recommendations state
 if (!window.recommendationsState) {
   window.recommendationsState = {
     currentTripId: null,
@@ -39,10 +39,8 @@ if (!window.recommendationsState) {
   };
 }
 const recommendationsState = window.recommendationsState;
-
 let userPreferences = null;
-
-/* ====================== RENDER CONTROLS ====================== */
+//Advanced filters
 function renderAdvancedControls() {
   const modalContent = document.getElementById('filterModalContent');
   if (!modalContent) return;
@@ -107,7 +105,7 @@ function applyFiltersAndClose() {
 }
 
 function resetFilters() {
-  // Reset state
+  // Reset filter state to defaults
   advancedRecState.options = {
     radius: 10,
     minRating: 3.0,
@@ -127,7 +125,7 @@ function resetFilters() {
     priceLevel: null
   };
 
-  // Reset UI
+  // Reset UI selections
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.category === 'all');
   });
@@ -159,8 +157,6 @@ function resetFilters() {
 
 window.resetFilters = resetFilters;
 window.applyFiltersAndClose = applyFiltersAndClose;
-
-/* ====================== ATTACH LISTENERS ====================== */
 let listenersAttached = false;
 
 function attachAdvancedListenersOnce() {
@@ -231,9 +227,7 @@ function attachAdvancedListenersOnce() {
     });
   }
 }
-
-/* ====================== LOAD RECOMMENDATIONS ====================== */
-/* ====================== DISPLAY RECOMMENDATIONS ====================== */
+// Recommendations
 function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
@@ -328,16 +322,12 @@ function displayRecommendations() {
     updateMapWithRecommendations();
   }
 }
-
-/* ====================== UPDATED LOAD RECOMMENDATIONS ====================== */
-/* ====================== UPDATED LOAD RECOMMENDATIONS ====================== */
+// Load Recommendations
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
-
     const opts = { ...advancedRecState.options, ...options };
-    
     // Get active category filter
     const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'all';
 
@@ -362,29 +352,22 @@ async function loadRecommendations(options = {}) {
       dataType: typeof response.data,
       dataKeys: response.data ? Object.keys(response.data) : null
     });
-
-    // Handle response structure - multiple possible formats
     let places = [];
     
     if (response.success && response.data) {
-      // Format 1: { success: true, data: { places: [...], centerLocation: {...} } }
       if (Array.isArray(response.data.places)) {
         places = response.data.places;
       }
-      // Format 2: { success: true, data: [...] }
       else if (Array.isArray(response.data)) {
         places = response.data;
       }
     } 
-    // Format 3: { data: [...] }
     else if (response.data && Array.isArray(response.data)) {
       places = response.data;
     }
-    // Format 4: { places: [...] }
     else if (response.places && Array.isArray(response.places)) {
       places = response.places;
     }
-    // Format 5: Direct array
     else if (Array.isArray(response)) {
       places = response;
     }
@@ -407,17 +390,13 @@ async function loadRecommendations(options = {}) {
       console.log('First place structure:', places[0]);
       console.log('First place location:', places[0].location);
     }
-
-    // Normalize the data structure
     const normalizedPlaces = places.map(place => {
       // Handle different coordinate formats
-      let lat = 0, lon = 0;
-      
+      let lat = 0, lon = 0; 
       if (place.lat && place.lon) {
         lat = Number(place.lat);
         lon = Number(place.lon);
       } else if (place.location?.coordinates) {
-        // GeoJSON format: [longitude, latitude]
         lon = Number(place.location.coordinates[0]);
         lat = Number(place.location.coordinates[1]);
       } else if (place.location?.lat && place.location?.lon) {
@@ -464,8 +443,6 @@ async function loadRecommendations(options = {}) {
     recommendationsState.isLoading = false;
   }
 }
-
-// Make sure this is exposed globally
 window.loadRecommendations = loadRecommendations;
 
 function createRecommendationCard(rec) {
@@ -611,7 +588,7 @@ function addQualityBadges() {
   });
 }
 
-/* ====================== ADD TO TRIP ====================== */
+// Add To Trip
 async function addRecommendationToTrip(rec) {
   try {
     const lat = Number(rec.lat);
@@ -634,18 +611,14 @@ async function addRecommendationToTrip(rec) {
     };
 
     await apiService.places.create(recommendationsState.currentTripId, placeData);
-    showToast('✅ Place added to your trip!', 'success');
-
+    showToast('Place added to your trip!', 'success');
     // Remove from recommendations
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
     filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
     recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
-
     displayRecommendations();
-
     if (typeof loadPlaces === 'function') await loadPlaces();
     if (typeof updateMapWithRecommendations === 'function') updateMapWithRecommendations();
-
   } catch (err) {
     console.error('Error adding place:', err);
     showToast('Failed to add place', 'error');
@@ -653,7 +626,7 @@ async function addRecommendationToTrip(rec) {
 }
 window.addRecommendationToTrip = addRecommendationToTrip;
 
-/* ====================== DETAILS MODAL ====================== */
+// Details Modal
 function showRecommendationDetails(rec) {
   const modal = document.createElement('div');
   modal.className = 'modal active';
@@ -691,7 +664,7 @@ window.addRecommendationToTripFromModal = async function (rec) {
 
 window.showRecommendationDetails = showRecommendationDetails;
 
-/* ====================== SAVE FOR LATER ====================== */
+// Save For Later
 window.toggleSaveForLater = function (placeName, event) {
   event.stopPropagation();
   if (advancedRecState.savedPlaces.has(placeName)) {
@@ -722,7 +695,6 @@ function loadSavedPreferences() {
   }
 }
 
-/* ====================== UI HELPERS ====================== */
 function showRecommendationsLoading() {
   const container = document.getElementById('recommendationsGrid');
   if (container) {
@@ -774,13 +746,11 @@ function escapeAttr(text) {
   if (!text) return '';
   return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-
-/* ====================== INIT ====================== */
 async function initRecommendations(tripId, tripData) {
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;
 
-  renderAdvancedControls();   // ✅ ADD THIS LINE
+  renderAdvancedControls();   
   loadSavedPreferences();
   attachAdvancedListenersOnce();
   await loadRecommendations();
