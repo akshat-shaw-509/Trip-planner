@@ -1,6 +1,5 @@
 const expenseService = require('../services/expense.service');
 
-// Standardized success response
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true };
   if (data !== null) response.data = data;      // allow [], 0, false
@@ -8,15 +7,13 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
   Object.assign(response, extra);
   return res.status(statusCode).json(response);
 };
-
-// Standardized error response (for validation-style early returns)
 const sendError = (res, statusCode, message) => {
   return res.status(statusCode).json({ success: false, message });
 };
 
-// Wrap async controllers so thrown/rejected errors go to Express error middleware
+// Wrap async handlers to forward errors to Express middleware
 const asyncHandler = (fn) => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next); // common pattern [web:12]
+  Promise.resolve(fn(req, res, next)).catch(next); 
 
 // Create a new expense for a trip
 // POST /api/trips/:tripId/expenses
