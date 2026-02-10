@@ -1,6 +1,3 @@
-// Handles AI recommendations, day plans, and preference learning
-
-// ====================== STATE ======================
 let recommendationsState = {
     currentTripId: null,
     recommendations: [],
@@ -8,22 +5,13 @@ let recommendationsState = {
     userPreferences: null,
     isLoading: false
 };
-
-// ====================== INIT ======================
-/**
- * Initialize recommendations module
- */
 async function initRecommendations(tripId) {
     recommendationsState.currentTripId = tripId;
     await loadRecommendations();
     await loadDayPlans();
 }
 
-// ====================== LOAD RECOMMENDATIONS ======================
-/**
- * Load recommendations from API
- * Backend returns: { places, budgetAnalysis, message }
- */
+//Load Recommendations
 async function loadRecommendations(options = {}) {
     try {
         recommendationsState.isLoading = true;
@@ -33,10 +21,7 @@ async function loadRecommendations(options = {}) {
             recommendationsState.currentTripId,
             options
         );
-
         const responseData = res.data || {};
-
-        // Normalize backend response
         recommendationsState.recommendations = Array.isArray(responseData)
             ? responseData
             : responseData.places || [];
@@ -51,7 +36,7 @@ async function loadRecommendations(options = {}) {
     }
 }
 
-// ====================== LOAD DAY PLANS ======================
+//Load Day Plans
 async function loadDayPlans() {
     try {
         const res = await apiService.recommendations.getDayPlans(
@@ -64,7 +49,7 @@ async function loadDayPlans() {
     }
 }
 
-// ====================== USER PREFERENCES ======================
+//User Preferences
 async function loadUserPreferences() {
     try {
         const res = await apiService.preferences.get();
@@ -77,7 +62,7 @@ async function loadUserPreferences() {
     }
 }
 
-// ====================== DISPLAY RECOMMENDATIONS ======================
+//Display Recommendations 
 function displayRecommendations() {
     const container = document.getElementById('recommendationsGrid');
     if (!container) return;
@@ -105,7 +90,7 @@ function displayRecommendations() {
     });
 }
 
-// ====================== RECOMMENDATION CARD ======================
+//Recommendation Card
 function createRecommendationCard(rec) {
     const icon = getCategoryIcon(rec.category);
 
@@ -174,7 +159,7 @@ function createRecommendationCard(rec) {
     `;
 }
 
-// ====================== ADD TO TRIP (FIXED) ======================
+// Add To Trip 
 async function addRecommendationToTrip(rec) {
     try {
         const placeData = {
@@ -187,24 +172,18 @@ async function addRecommendationToTrip(rec) {
             description: rec.description || '',
             notes: `Added from recommendations. ${(rec.reasons || []).join('. ')}`
         };
-
-        // ✅ FIX: Correct API + correct tripId
         await apiService.places.create(
             recommendationsState.currentTripId,
             placeData
         );
 
         showToast('Place added to your trip!', 'success');
-
         // Track preference learning
         await trackPlaceAdded(rec.category);
-
         // Remove added recommendation from UI
         recommendationsState.recommendations =
             recommendationsState.recommendations.filter(r => r.name !== rec.name);
-
         displayRecommendations();
-
         // Reload only user-added places
         if (typeof loadPlaces === 'function') {
             await loadPlaces();
@@ -214,8 +193,7 @@ async function addRecommendationToTrip(rec) {
         showToast('Failed to add place', 'error');
     }
 }
-
-// ====================== DETAILS MODAL ======================
+//Details
 function showRecommendationDetails(rec) {
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -243,14 +221,10 @@ function showRecommendationDetails(rec) {
     `;
     document.body.appendChild(modal);
 }
-
-// Modal wrapper
 window.addRecommendationToTripFromModal = async function(rec) {
     await addRecommendationToTrip(rec);
     document.querySelector('.modal')?.remove();
 };
-
-// ====================== DAY PLANS ======================
 function displayDayPlans() {
     const container = document.getElementById('dayPlansContainer');
     if (!container) return;
@@ -285,8 +259,6 @@ function createDayPlanCard(plan) {
         </div>
     `;
 }
-
-// ====================== PREFERENCE TRACKING ======================
 async function trackPlaceAdded(category) {
     try {
         await apiService.preferences.trackSearch({
@@ -298,8 +270,6 @@ async function trackPlaceAdded(category) {
         console.warn('Preference tracking failed:', err);
     }
 }
-
-// ====================== UI STATES ======================
 function showRecommendationsLoading() {
     const container = document.getElementById('recommendationsGrid');
     if (!container) return;
@@ -322,8 +292,6 @@ function showRecommendationsError() {
         </div>
     `;
 }
-
-// ====================== HELPERS ======================
 function getCategoryIcon(category) {
     const icons = {
         restaurant: 'utensils',
