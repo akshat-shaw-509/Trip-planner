@@ -1,4 +1,3 @@
-// ===================== STATE =====================
 let recommendationsState = {
   currentTripId: null,
   tripData: null,
@@ -6,36 +5,29 @@ let recommendationsState = {
   userPreferences: null,
   isLoading: false
 };
-
-// ===================== INITIALIZATION =====================
 async function initRecommendations(tripId, tripData) { 
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;  
   
   console.log('initRecommendations called with:', { tripId, tripData });
-  
   // Initialize trip center selector with trip data
   if (typeof initTripCenterSelector === 'function' && tripData) {
     await initTripCenterSelector(tripData);
   }
-  
   await loadRecommendations();
 }
 
-// ===================== LOAD RECOMMENDATIONS =====================
+// Load Recommendations
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
-
     const res = await apiService.recommendations.getForTrip(
       recommendationsState.currentTripId,
       options
     );
 
     const responseData = res.data || {};
-
-    // Normalize backend response
     recommendationsState.recommendations = Array.isArray(responseData)
       ? responseData
       : responseData.places || [];
@@ -54,7 +46,7 @@ async function loadRecommendations(options = {}) {
   }
 }
 
-// ===================== LOAD USER PREFERENCES =====================
+//Load User Preferences
 async function loadUserPreferences() {
   try {
     const res = await apiService.preferences.get();
@@ -67,11 +59,10 @@ async function loadUserPreferences() {
   }
 }
 
-// ===================== DISPLAY RECOMMENDATIONS =====================
+// Display Recommendations
 function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
-
   const recs = recommendationsState.recommendations;
 
   if (recs.length === 0) {
@@ -86,7 +77,6 @@ function displayRecommendations() {
   }
 
   container.innerHTML = recs.map(rec => createRecommendationCard(rec)).join('');
-
   // Attach card listeners
   recs.forEach((rec, index) => {
     const card = container.children[index];
@@ -102,7 +92,7 @@ function displayRecommendations() {
   });
 }
 
-// ===================== RECOMMENDATION CARD =====================
+// Recommendation Card
 function createRecommendationCard(rec) {
   const icon = getCategoryIcon(rec.category);
 
@@ -168,7 +158,7 @@ function createRecommendationCard(rec) {
   `;
 }
 
-// ===================== ADD TO TRIP =====================
+// Add To Trip
 async function addRecommendationToTrip(rec) {
   try {
     const placeData = {
@@ -190,8 +180,6 @@ async function addRecommendationToTrip(rec) {
     showToast('Place added to your trip!', 'success');
 
     await trackPlaceAdded(rec.category);
-
-    // Refresh only added places (NOT AI again)
     if (typeof loadPlaces === 'function') {
       await loadPlaces();
     }
@@ -207,7 +195,7 @@ async function addRecommendationToTrip(rec) {
   }
 }
 
-// ===================== DETAILS MODAL =====================
+//Details Modal
 function showRecommendationDetails(rec) {
   const modal = document.createElement('div');
   modal.className = 'modal active';
@@ -236,14 +224,10 @@ function showRecommendationDetails(rec) {
 
   document.body.appendChild(modal);
 }
-
-// Modal helper
 window.addRecommendationToTripFromModal = async function(rec) {
   await addRecommendationToTrip(rec);
   document.querySelector('.modal')?.remove();
 };
-
-// ===================== PREFERENCES TRACKING =====================
 async function trackPlaceAdded(category) {
   try {
     await apiService.preferences.trackSearch({
@@ -255,8 +239,6 @@ async function trackPlaceAdded(category) {
     console.warn('Preference tracking failed:', err);
   }
 }
-
-// ===================== LOADING & ERROR UI =====================
 function showRecommendationsLoading() {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
@@ -280,7 +262,6 @@ function showRecommendationsError() {
   `;
 }
 
-// ===================== HELPERS =====================
 function getCategoryIcon(category) {
   const icons = {
     restaurant: 'utensils',
