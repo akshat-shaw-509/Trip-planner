@@ -176,8 +176,6 @@ if (document.getElementById('signupForm')) {
     }
   })
 }
-
-// UI helpers
 function togglePassword(inputId) {
   const input = document.getElementById(inputId)
   if (!input) return
@@ -192,7 +190,7 @@ function togglePassword(inputId) {
   }
 }
 
-// Google OAuth - Simplified (no caching)
+// Google OAuth
 async function loadGoogleClientId() {
   try {
     const baseURL = apiService.baseURL
