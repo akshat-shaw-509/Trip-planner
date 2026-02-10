@@ -38,8 +38,6 @@ function checkAuthentication() {
     }
     return true;
 }
-
-// Form Validation
 function validateTripData(formData) {
     const errors = [];
     // Title validation
@@ -288,6 +286,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 window.initializePlanningMap = initializePlanningMap;
-
-
-
