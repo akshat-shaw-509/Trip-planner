@@ -115,7 +115,6 @@ let validateExpense = [
         }))
       })
     }
-
     next()
   }
 ]
@@ -170,4 +169,3 @@ let validateExpenseUpdate = [
   }
 ]
 module.exports = { validateExpense, validateExpenseUpdate }
-
