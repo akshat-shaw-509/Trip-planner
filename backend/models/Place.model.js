@@ -10,10 +10,8 @@ const PLACE_CATEGORIES = [
 ]
 const VISIT_STATUS = ['planned', 'visited', 'skipped']
 
-/**
- * Place Schema
- * Represents a location/venue in a trip
- */
+//Place Schema
+//Represents a location/venue in a trip
 const placeSchema = new mongoose.Schema(
   {
     // Reference to parent trip
@@ -59,7 +57,7 @@ const placeSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Address cannot exceed 500 characters'],
     },
-    // GeoJSON location (required for map features)
+    // GeoJSON location 
     location: {
       type: {
         type: String,
@@ -143,18 +141,18 @@ placeSchema.index({ location: '2dsphere' })
 placeSchema.index({ tripId: 1, createdAt: -1 })
 placeSchema.index({ tripId: 1, visitStatus: 1 })
 placeSchema.index({ tripId: 1, category: 1 })
-// Static method: Find places by trip
+//Find places by trip
 placeSchema.statics.findByTripId = function (tripId) {
   return this.find({ tripId }).sort('-createdAt')
 }
-// Static method: Find planned places
+//Find planned places
 placeSchema.statics.findPlannedByTripId = function (tripId) {
   return this.find({
     tripId,
     visitStatus: 'planned',
   }).sort('createdAt')
 }
-// Static method: Find nearby places using geospatial query
+//Find nearby places using geospatial query
 placeSchema.statics.findNearby = function (tripId, coordinates, radiusInMeters = 5000) {
   return this.find({
     tripId,
@@ -162,14 +160,14 @@ placeSchema.statics.findNearby = function (tripId, coordinates, radiusInMeters =
       $near: {
         $geometry: {
           type: 'Point',
-          coordinates: coordinates, // [lng, lat]
+          coordinates: coordinates, 
         },
         $maxDistance: radiusInMeters,
       },
     },
   })
 }
-// Instance method: Get summary
+//Get summary
 placeSchema.methods.getSummary = function () {
   return {
     id: this._id,
@@ -184,4 +182,3 @@ placeSchema.methods.getSummary = function () {
 }
 
 module.exports = mongoose.model('Place', placeSchema)
-
