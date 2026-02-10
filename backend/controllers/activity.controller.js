@@ -1,6 +1,6 @@
 const activityService = require('../services/activity.service');
 
-// Standardized success response
+// Sends a success response
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true };
   if (data !== null) response.data = data;
@@ -9,17 +9,17 @@ const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) =
   return res.status(statusCode).json(response);
 };
 
-// Standardized error response (fallback)
+// Send a basic error response
 const sendError = (res, statusCode, message) => {
   return res.status(statusCode).json({ success: false, message });
 };
 
-// Async wrapper - ensures errors are passed to Express error middleware
+// Wrapper to catch async errors and forward them to error middleware
 const asyncHandler = (fn) => (req, res, next) => {
   return Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// Create a new activity for a trip
+// Create an activity for a trip
 // POST /api/activities/trips/:tripId/activities
 const createActivity = asyncHandler(async (req, res) => {
   const activity = await activityService.createActivity(
@@ -108,3 +108,4 @@ module.exports = {
   getActivitiesByDate,
   updateActivityStatus
 };
+
