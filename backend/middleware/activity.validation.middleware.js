@@ -18,7 +18,7 @@ const validateActivity = (req, res, next) => {
     });
   }
 
-  // End time is optional (removed required check since frontend doesn't always send it)
+  // End time is optional
   // Validate time logic only if end time is provided
   if (endTime) {
     const start = new Date(startTime);
@@ -69,8 +69,8 @@ const validateActivity = (req, res, next) => {
   next();
 };
 
-// Validate activity update
-// Only validates fields that are being updated
+// Validate fields when updating an activity
+// Only checks values that are present in the request
 const validateActivityUpdate = (req, res, next) => {
   const { title, startTime, endTime, date } = req.body;
 
@@ -149,4 +149,4 @@ const validateActivityUpdate = (req, res, next) => {
 module.exports = {
   validateActivity,
   validateActivityUpdate
-};
+}
