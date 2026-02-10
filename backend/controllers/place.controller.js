@@ -1,6 +1,5 @@
 const placeService = require('../services/place.service');
 
-// Standardized responses (fixed to always return)
 const sendSuccess = (res, statusCode, data = null, message = null, extra = {}) => {
   const response = { success: true };
   if (data !== null) response.data = data;  // allow [], 0, false
@@ -13,7 +12,6 @@ const sendError = (res, statusCode, message) => {
   return res.status(statusCode).json({ success: false, message });
 };
 
-// Async wrapper: converts rejected promises → Express error middleware
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
