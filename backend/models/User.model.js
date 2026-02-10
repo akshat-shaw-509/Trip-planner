@@ -2,10 +2,8 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const crypto = require('crypto')
 const AUTH_PROVIDERS = ['local', 'google']
-/**
- * User Schema
- * Represents a registered user
- */
+//User Schema
+//Represents a registered user
 const UserSchema = new mongoose.Schema(
   {
     // User full name
@@ -16,7 +14,7 @@ const UserSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [100, 'Name cannot exceed 100 characters'],
     },
-    // User email (unique identifier)
+    // User email
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -28,7 +26,7 @@ const UserSchema = new mongoose.Schema(
         'Please enter a valid email',
       ],
     },
-    // Hashed password (excluded from queries by default)
+    // Hashed password
     password: {
       type: String,
       required: function() {
@@ -37,7 +35,7 @@ const UserSchema = new mongoose.Schema(
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
-    // Google OAuth ID (if registered via Google)
+    // Google OAuth ID
     googleId: {
       type: String,
       unique: true,
@@ -71,7 +69,7 @@ const UserSchema = new mongoose.Schema(
 UserSchema.index({ email: 1 })
 UserSchema.index({ googleId: 1 })
 UserSchema.index({ isActive: 1 })
-// Pre-save hook: Hash password before saving
+// Hash password before saving
 UserSchema.pre('save', async function (next) {
   // Only hash if password is modified
   if (!this.isModified('password')) return next()
@@ -83,11 +81,11 @@ UserSchema.pre('save', async function (next) {
     next(error)
   }
 })
-// Instance method: Compare passwords
+//Compare passwords
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
 }
-// Instance method: Create password reset token
+//Create password reset token
 UserSchema.methods.createPasswordResetToken = function () {
   // Generate random token
   const resetToken = crypto.randomBytes(32).toString('hex') 
@@ -101,13 +99,12 @@ UserSchema.methods.createPasswordResetToken = function () {
   return resetToken // Return unhashed token to send via email
 }
 
-// Instance method: Update last login timestamp
+//Update last login timestamp
 UserSchema.methods.updateLastLogin = function () {
   this.lastLogin = new Date()
   return this.save({ validateBeforeSave: false })
 }
-
-// Static method: Find active users
+// Find active users
 UserSchema.statics.findActiveUsers = function () {
   return this.find({ isActive: true })
 }
