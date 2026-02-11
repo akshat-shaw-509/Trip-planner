@@ -1,7 +1,4 @@
-// -------------------- Models --------------------
 let User = require('../models/User.model')
-
-// -------------------- Custom Error Factories --------------------
 let {
   createNotFoundError,
   createConflictError,
@@ -9,9 +6,7 @@ let {
   createDatabaseError
 } = require('../utils/errors')
 
-/**
- * -------------------- Get User By ID --------------------
- */
+// get  user by id
 let getUserById = async (userId) => {
   if (!userId) {
     throw createValidationError('User ID is required')
@@ -31,10 +26,7 @@ let getUserById = async (userId) => {
   }
 }
 
-/**
- * -------------------- Get User By Email --------------------
- * Used internally for authentication
- */
+// get user by email 
 let getUserByEmail = async (email) => {
   if (!email) {
     throw createValidationError('Email is required')
@@ -47,9 +39,7 @@ let getUserByEmail = async (email) => {
   }
 }
 
-/**
- * -------------------- Create User --------------------
- */
+// create new user
 let createUser = async (userData) => {
   let { name, email, password } = userData
 
@@ -74,10 +64,7 @@ let createUser = async (userData) => {
   }
 }
 
-/**
- * -------------------- Update User Profile --------------------
- * Blocks password & system fields
- */
+// update user profile
 let updateUser = async (userId, updateData) => {
   if (!userId) {
     throw createValidationError('User ID is required')
