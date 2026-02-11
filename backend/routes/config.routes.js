@@ -1,20 +1,13 @@
-// routes/config.routes.js
 const express = require('express')
 const router = express.Router()
 
-/**
- * GET /api/config/geoapify-api-key
- * Returns the Geoapify API key for frontend map features
- * Public endpoint - no authentication required
- */
+// return geoapify api key so frontend map features can use it
 router.get('/geoapify-api-key', (req, res) => {
   try {
     const apiKey = process.env.GEOAPIFY_API_KEY || ''
-    
     if (!apiKey) {
       console.warn('GEOAPIFY_API_KEY not set in environment variables')
     }
-    
     res.json({
       success: true,
       data: {
