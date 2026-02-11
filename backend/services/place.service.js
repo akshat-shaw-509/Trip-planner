@@ -3,9 +3,7 @@ let Trip = require('../models/Trip.model')
 
 let { NotFoundError, ForbiddenError, BadRequestError } = require('../utils/errors')
 
-/**
- * -------------------- Ownership Checks --------------------
- */
+// make sure the trip exists and belongs to the user
 let checkTripOwnership = async (tripId, userId) => {
   let trip = await Trip.findById(tripId).lean()
 
@@ -17,10 +15,7 @@ let checkTripOwnership = async (tripId, userId) => {
   return trip
 }
 
-/**
- * -------------------- Create Place --------------------
- * Coordinates must already be provided (Geoapify / AI)
- */
+// create a new place for a trip
 let createPlace = async (tripId, placeData, userId) => {
   await checkTripOwnership(tripId, userId)
 
@@ -31,9 +26,7 @@ let createPlace = async (tripId, placeData, userId) => {
   })
 }
 
-/**
- * -------------------- Get Places by Trip --------------------
- */
+// Get Places by Trip 
 let getPlacesByTrip = async (tripId, userId, filters = {}) => {
   await checkTripOwnership(tripId, userId)
 
@@ -47,9 +40,7 @@ let getPlacesByTrip = async (tripId, userId, filters = {}) => {
     .lean()
 }
 
-/**
- * -------------------- Get Place by ID --------------------
- */
+// Get Place by ID
 let getPlaceById = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId').lean()
 
@@ -61,9 +52,7 @@ let getPlaceById = async (placeId, userId) => {
   return place
 }
 
-/**
- * -------------------- Update Place --------------------
- */
+// Update Place 
 let updatePlace = async (placeId, updateData, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
@@ -78,9 +67,7 @@ let updatePlace = async (placeId, updateData, userId) => {
   return place
 }
 
-/**
- * -------------------- Delete Place --------------------
- */
+// Delete Place 
 let deletePlace = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
@@ -93,9 +80,7 @@ let deletePlace = async (placeId, userId) => {
   return { message: 'Place deleted successfully' }
 }
 
-/**
- * -------------------- Toggle Favorite --------------------
- */
+// Toggle Favorite 
 let toggleFavorite = async (placeId, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
@@ -110,10 +95,7 @@ let toggleFavorite = async (placeId, userId) => {
   return place
 }
 
-/**
- * -------------------- Update Visit Status --------------------
- * Auto-sets visitDate when visited
- */
+// Update Visit Status 
 let updateVisitStatus = async (placeId, status, userId) => {
   let place = await Place.findById(placeId).populate('tripId')
 
@@ -132,10 +114,7 @@ let updateVisitStatus = async (placeId, status, userId) => {
   return place
 }
 
-/**
- * -------------------- Search Nearby Places --------------------
- * Planned feature – MongoDB geospatial query
- */
+// Search Nearby Places 
 let searchNearby = async (tripId, query, userId) => {
   await checkTripOwnership(tripId, userId)
 
@@ -162,10 +141,7 @@ let searchNearby = async (tripId, query, userId) => {
   }).lean()
 }
 
-/**
- * -------------------- Group Places by Category (LEAN) --------------------
- * Count only (no $$ROOT push)
- */
+// Group Places by Category 
 let getByCategory = async (tripId, userId) => {
   await checkTripOwnership(tripId, userId)
 
@@ -181,9 +157,7 @@ let getByCategory = async (tripId, userId) => {
   ])
 }
 
-/**
- * -------------------- Add AI Suggested Place --------------------
- */
+// Add AI Suggested Place 
 let addAIPlaceToTrip = async (tripId, aiPlace, userId) => {
   await checkTripOwnership(tripId, userId)
 
