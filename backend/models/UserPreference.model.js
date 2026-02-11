@@ -1,11 +1,7 @@
 const mongoose = require('mongoose')
-/**
- * UserPreference Schema
- * Stores user's personalized preferences for recommendations
- */
+// stores per-user recommendation preferences
 const userPreferenceSchema = new mongoose.Schema(
   {
-    // Reference to user (one-to-one relationship)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -14,7 +10,6 @@ const userPreferenceSchema = new mongoose.Schema(
       index: true,
     },
     // Category preference weights
-    // Higher number = stronger preference
     categoryPreferences: {
       type: Map,
       of: Number,
@@ -28,7 +23,6 @@ const userPreferenceSchema = new mongoose.Schema(
         ['other', 0],
       ]),
     },
-    // Top 3 preferred categories (pre-computed)
     topCategories: {
       type: [String],
       default: [],
@@ -64,7 +58,7 @@ const userPreferenceSchema = new mongoose.Schema(
   }
 )
 
-// Pre-save hook: Limit search history to 10 items
+// Limit search history to 10 items
 userPreferenceSchema.pre('save', function (next) {
   if (this.searchHistory && this.searchHistory.length > 10) {
     this.searchHistory = this.searchHistory.slice(-10)
@@ -72,18 +66,17 @@ userPreferenceSchema.pre('save', function (next) {
   next()
 })
 
-// Instance method: Update category preference
+// Update category preference
 userPreferenceSchema.methods.updateCategoryPreference = function (category, weight = 1) {
   const current = this.categoryPreferences.get(category) || 0
   this.categoryPreferences.set(category, current + weight)
-  
   // Recalculate top categories
   this.topCategories = this.getTopCategories()
   
   return this.save()
 }
 
-// Instance method: Get top N categories
+// Get top N categories
 userPreferenceSchema.methods.getTopCategories = function (limit = 3) {
   const entries = Array.from(this.categoryPreferences.entries())
   return entries
@@ -92,21 +85,21 @@ userPreferenceSchema.methods.getTopCategories = function (limit = 3) {
     .map(([category]) => category)
 }
 
-// Instance method: Track place addition
+// Track place addition
 userPreferenceSchema.methods.trackPlaceAdded = async function (place) {
   // Stronger weight for explicit place addition
   await this.updateCategoryPreference(place.category, 2)
   return this
 }
 
-// Instance method: Track favorite
+// Track favorite
 userPreferenceSchema.methods.trackFavorite = async function (category) {
   // Higher weight for favorite action
   await this.updateCategoryPreference(category, 3)
   return this
 }
 
-// Instance method: Add to search history
+// Add to search history
 userPreferenceSchema.methods.addSearchToHistory = function (query, category = null) {
   this.searchHistory.push({
     query,
@@ -122,7 +115,7 @@ userPreferenceSchema.methods.addSearchToHistory = function (query, category = nu
   return this.save()
 }
 
-// Static method: Get or create preferences for a user
+// Get or create preferences for a user
 userPreferenceSchema.statics.getOrCreate = async function (userId) {
   let pref = await this.findOne({ userId })
   
@@ -133,7 +126,7 @@ userPreferenceSchema.statics.getOrCreate = async function (userId) {
   return pref
 }
 
-// Static method: Reset preferences to default
+// Reset preferences to default
 userPreferenceSchema.statics.resetForUser = async function (userId) {
   await this.findOneAndUpdate(
     { userId },
@@ -158,3 +151,4 @@ userPreferenceSchema.statics.resetForUser = async function (userId) {
 }
 
 module.exports = mongoose.model('UserPreference', userPreferenceSchema)
+
