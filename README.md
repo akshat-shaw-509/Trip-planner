@@ -101,10 +101,10 @@ Trip-planner/
 │   ├── middleware/
 │   └── utils/
 │
-├── frontend/
-│   ├── pages/
+├── pages/
+│   ├── css/
 │   ├── scripts/
-|   |-- css/
+|   |-- index.html
 │   └── Svg/
 ```
 
