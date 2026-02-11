@@ -6,7 +6,6 @@ const {
   ForbiddenError
 } = require('../utils/errors')
 
-// -------------------- Constants --------------------
 const TRIP_STATUSES = [
   'planning',
   'booked',
@@ -15,9 +14,7 @@ const TRIP_STATUSES = [
   'cancelled'
 ]
 
-/**
- * -------------------- Create Trip --------------------
- */
+// Create Trip
 const createTrip = async (tripData, userId) => {
   const {
     title,
@@ -62,11 +59,7 @@ const createTrip = async (tripData, userId) => {
   })
 }
 
-/**
- * -------------------- Get Trips By User
- * Pagination + Sorting + Search (kept)
- * --------------------
- */
+// Get Trips By User
 const getTripsByUser = async (userId, filters = {}) => {
   const {
     status,
@@ -107,10 +100,7 @@ const getTripsByUser = async (userId, filters = {}) => {
   }
 }
 
-/**
- * -------------------- Get Trip By ID (OWNER ONLY)
- * --------------------
- */
+// Get Trip By ID
 const getTripById = async (tripId, userId) => {
   if (!tripId) {
     throw new ValidationError('Trip ID is required')
@@ -126,10 +116,7 @@ const getTripById = async (tripId, userId) => {
   return trip
 }
 
-/**
- * -------------------- Update Trip
- * --------------------
- */
+// Update Trip
 const updateTrip = async (tripId, updateData, userId) => {
   if (!tripId) {
     throw new ValidationError('Trip ID is required')
@@ -167,14 +154,7 @@ const updateTrip = async (tripId, updateData, userId) => {
 
   return trip
 }
-/**
- * -------------------- Update Trip
- * --------------------
- */
-/**
- * -------------------- Update Trip Status
- * --------------------
- */
+//Update Trip Status
 const updateTripStatus = async (tripId, status, userId) => {
   if (!TRIP_STATUSES.includes(status)) {
     throw new ValidationError(
@@ -195,10 +175,7 @@ const updateTripStatus = async (tripId, status, userId) => {
   return trip
 }
 
-/**
- * -------------------- Remove Trip Banner
- * --------------------
- */
+// Remove Trip Banner
 const removeBanner = async (tripId, userId) => {
   if (!tripId) {
     throw new ValidationError('Trip ID is required')
@@ -217,10 +194,7 @@ const removeBanner = async (tripId, userId) => {
   return trip
 }
 
-/**
- * -------------------- Delete Trip
- * --------------------
- */
+// Delete Trip
 const deleteTrip = async (tripId, userId) => {
   const trip = await Trip.findOneAndDelete({
     _id: tripId,
