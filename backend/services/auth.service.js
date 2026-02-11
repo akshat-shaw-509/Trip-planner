@@ -7,9 +7,7 @@ let createError = (message, statusCode) => {
   return error
 }
 
-/**
- * -------------------- Register --------------------
- */
+//Register a new user
 let register = async (userData) => {
   let { name, email, password } = userData
 
@@ -22,7 +20,7 @@ let register = async (userData) => {
     throw createError('Password must be at least 8 characters long', 400)
   }
 
-  // Password strength rules (KEPT as requested)
+  // Password strength rules
   let passwordErrors = []
   if (!/[A-Z]/.test(password)) passwordErrors.push('Password must contain at least 1 uppercase letter')
   if (!/[a-z]/.test(password)) passwordErrors.push('Password must contain at least 1 lowercase letter')
@@ -37,7 +35,7 @@ let register = async (userData) => {
     }))
     throw error
   }
-
+  // prevent duplicate emails
   let existingUser = await User.findOne({ email: email.toLowerCase() }).lean()
   if (existingUser) {
     throw createError('Email already registered', 409)
@@ -62,9 +60,7 @@ let register = async (userData) => {
   }
 }
 
-/**
- * -------------------- Login --------------------
- */
+// Login
 let login = async (email, password) => {
   if (!email || !password) {
     throw createError('Email and password are required', 400)
@@ -95,10 +91,7 @@ let login = async (email, password) => {
   }
 }
 
-/**
- * -------------------- Refresh Access Token --------------------
- * (NO DB, NO rotation)
- */
+//Generate a new access token using refresh token
 let refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) {
     throw createError('Refresh token is required', 400)
@@ -114,10 +107,7 @@ let refreshAccessToken = async (refreshToken) => {
   }
 }
 
-/**
- * -------------------- Logout --------------------
- * (Client-side token discard)
- */
+//Logout
 let logout = async () => {
   return { message: 'Logged out successfully' }
 }
