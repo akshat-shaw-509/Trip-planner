@@ -3,13 +3,7 @@ let Trip = require('../models/Trip.model')
 
 let { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors')
 
-/**
- * -------------------- Helper Functions --------------------
- */
-
-/**
- * Verify that the user owns the given trip
- */
+//Verify that the user owns the given trip
 let checkTripOwnership = async (tripId, userId) => {
   let trip = await Trip.findById(tripId).lean()
 
@@ -24,9 +18,7 @@ let checkTripOwnership = async (tripId, userId) => {
   return trip
 }
 
-/**
- * Verify that the user owns the given expense
- */
+//Verify that the user owns the given expense
 let checkExpenseOwnership = async (expenseId, userId) => {
   let expense = await Expense.findById(expenseId).lean()
 
@@ -40,14 +32,7 @@ let checkExpenseOwnership = async (expenseId, userId) => {
 
   return expense
 }
-
-/**
- * -------------------- Service Functions --------------------
- */
-
-/**
- * Create a new expense under a trip
- */
+//Create a new expense under a trip
 let createExpense = async (tripId, expenseData, userId) => {
   await checkTripOwnership(tripId, userId)
 
@@ -58,9 +43,7 @@ let createExpense = async (tripId, expenseData, userId) => {
   })
 }
 
-/**
- * Get all expenses for a trip (with optional filters)
- */
+//Get all expenses for a trip
 let getExpensesByTrip = async (tripId, userId, filters = {}) => {
   await checkTripOwnership(tripId, userId)
 
@@ -88,9 +71,7 @@ let getExpensesByTrip = async (tripId, userId, filters = {}) => {
     .lean()
 }
 
-/**
- * Get a single expense by ID
- */
+//Get a single expense by ID
 let getExpenseById = async (expenseId, userId) => {
   let expense = await Expense.findById(expenseId)
     .populate('activityId tripId')
@@ -107,9 +88,7 @@ let getExpenseById = async (expenseId, userId) => {
   return expense
 }
 
-/**
- * Update an existing expense
- */
+//Update an existing expense
 let updateExpense = async (expenseId, updateData, userId) => {
   await checkExpenseOwnership(expenseId, userId)
 
@@ -120,9 +99,7 @@ let updateExpense = async (expenseId, updateData, userId) => {
   ).populate('activityId')
 }
 
-/**
- * Delete an expense (hard delete)
- */
+//Delete an expense
 let deleteExpense = async (expenseId, userId) => {
   await checkExpenseOwnership(expenseId, userId)
 
@@ -131,9 +108,7 @@ let deleteExpense = async (expenseId, userId) => {
   return { message: 'Expense deleted successfully' }
 }
 
-/**
- * Get summarized expense data for a trip
- */
+//Get summarized expense data for a trip
 let getTripExpenseSummary = async (tripId, userId) => {
   let trip = await checkTripOwnership(tripId, userId)
 
@@ -158,9 +133,7 @@ let getTripExpenseSummary = async (tripId, userId) => {
   }
 }
 
-/**
- * Get expense statistics grouped by category
- */
+//Get expense statistics grouped by category
 let getExpensesByCategory = async (tripId, userId) => {
   await checkTripOwnership(tripId, userId)
 
