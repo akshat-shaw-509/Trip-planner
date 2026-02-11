@@ -1,7 +1,7 @@
 let Activity = require('../models/Activity.model')
 let Trip = require('../models/Trip.model')
 let { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors')
-
+// verify that the trip exists and belongs to the current user
 let checkTripOwnership = async (tripId, userId) => {
   let trip = await Trip.findById(tripId).lean()
   if (!trip) {
@@ -12,7 +12,7 @@ let checkTripOwnership = async (tripId, userId) => {
   }
   return trip
 }
-
+// make sure activity time falls inside trip duration
 let validateActivityDate = async (tripId, startTime) => {
   if (!startTime) return
   let trip = await Trip.findById(tripId)
@@ -28,7 +28,7 @@ let validateActivityDate = async (tripId, startTime) => {
     throw new BadRequestError('Activity date must be within trip dates')
   }
 }
-
+// create a new activity under a trip
 let createActivity = async (tripId, activityData, userId) => {
   await checkTripOwnership(tripId, userId)
   await validateActivityDate(tripId, activityData.startTime)
@@ -38,7 +38,7 @@ let createActivity = async (tripId, activityData, userId) => {
     userId
   })
 }
-
+// get all activities for a trip sorted by time
 let getActivitiesByTrip = async (tripId, userId) => {
   await checkTripOwnership(tripId, userId)
   return Activity.find({ tripId })
@@ -46,7 +46,7 @@ let getActivitiesByTrip = async (tripId, userId) => {
     .populate('placeId')
     .lean()
 }
-
+// get a single activity
 let getActivityById = async (activityId, userId) => {
   let activity = await Activity.findById(activityId)
     .populate('placeId tripId')
@@ -59,7 +59,7 @@ let getActivityById = async (activityId, userId) => {
   }
   return activity
 }
-
+// update activity fields
 let updateActivity = async (activityId, updateData, userId) => {
   let activity = await Activity.findById(activityId).lean()
   if (!activity) {
@@ -75,7 +75,7 @@ let updateActivity = async (activityId, updateData, userId) => {
     { new: true, runValidators: true }
   ).populate('placeId tripId')
 }
-
+// update only status field
 let updateActivityStatus = async (activityId, status, userId) => {
   let activity = await Activity.findById(activityId).lean()
   if (!activity) {
@@ -90,7 +90,7 @@ let updateActivityStatus = async (activityId, status, userId) => {
     { new: true }
   ).populate('placeId tripId')
 }
-
+// delete an activity
 let deleteActivity = async (activityId, userId) => {
   let activity = await Activity.findById(activityId)
   if (!activity) {
@@ -102,7 +102,7 @@ let deleteActivity = async (activityId, userId) => {
   await Activity.deleteOne({ _id: activityId })
   return { message: 'Activity deleted successfully' }
 }
-
+// get activities for a specific day
 let getActivitiesByDate = async (tripId, date, userId) => {
   await checkTripOwnership(tripId, userId)
   let startOfDay = new Date(date)
