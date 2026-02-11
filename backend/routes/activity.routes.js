@@ -1,4 +1,3 @@
-// ✅ activity.routes.js — FIXED
 const express = require('express');
 const router = express.Router();
 const activityController = require('../controllers/activity.controller');
@@ -8,10 +7,9 @@ const {
   validateActivityUpdate 
 } = require('../middleware/activity.validation.middleware');
 
-// Apply authentication to all routes
 router.use(authenticate);
 
-// Create activity - validateActivity is middleware, createActivity is the final handler
+// Create a new activity
 router.post(
   '/trips/:tripId/activities',
   validateActivity,
