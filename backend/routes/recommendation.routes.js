@@ -1,10 +1,8 @@
-// routes/recommendation.routes.js
 let express = require('express');
 let router = express.Router();
 let recommendationController = require('../controllers/recommendation.controller');
 let { authenticate } = require('../middleware/auth.middleware');
 
-// All routes require authentication
 router.use(authenticate);
 router.get('/:tripId', recommendationController.getRecommendations);
 
