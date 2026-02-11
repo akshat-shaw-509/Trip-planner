@@ -5,6 +5,7 @@ let { authenticate } = require('../middleware/auth.middleware')
 let { validatePlaceUpdate } = require('../middleware/place.validation.middleware')
 
 let geocodeLocation
+// try loading geoapify service; if it fails we just skip the geocode route
 try {
   const geoapifyService = require('../services/geoapify.service')
   geocodeLocation = geoapifyService.geocodeLocation
@@ -14,7 +15,7 @@ try {
   console.error('Geocoding endpoint will not be available')
 }
 
-// Geocode endpoint — no auth needed
+// geocode route
 if (geocodeLocation) {
   router.post('/geocode', async (req, res) => {
     try {
@@ -58,7 +59,6 @@ if (geocodeLocation) {
 // All other routes require authentication
 router.use(authenticate)
 
-// Single-place routes — mounted at /api/places in app.js
 router.get('/:placeId', placeController.getPlaceById)
 router.put('/:placeId', validatePlaceUpdate, placeController.updatePlace)
 router.delete('/:placeId', placeController.deletePlace)
