@@ -7,12 +7,8 @@ let {
   validateExpenseUpdate 
 } = require('../middleware/expense.validation.middleware')
 
-// All routes require authentication
 router.use(authenticate)
-
-// IMPORTANT: These routes expect to be mounted at /api/expenses
-// So /api/expenses/trips/:tripId/expenses becomes the full path
-
+// routes are mounted at /api/expenses
 router.post(
   '/trips/:tripId/expenses',
   validateExpense,
@@ -24,7 +20,7 @@ router.post(
     }
   }
 )
-
+//create a new expense under a trip
 router.get(
   '/trips/:tripId/expenses',
   async (req, res, next) => {
@@ -35,7 +31,7 @@ router.get(
     }
   }
 )
-
+//get total summary for a trip
 router.get(
   '/trips/:tripId/expenses/summary',
   async (req, res, next) => {
@@ -46,7 +42,7 @@ router.get(
     }
   }
 )
-
+// group expenses by category
 router.get(
   '/trips/:tripId/expenses/by-category',
   async (req, res, next) => {
@@ -57,7 +53,7 @@ router.get(
     }
   }
 )
-
+// get a single expense
 router.get(
   '/:expenseId',
   async (req, res, next) => {
@@ -68,7 +64,7 @@ router.get(
     }
   }
 )
-
+// update an expense
 router.put(
   '/:expenseId',
   validateExpenseUpdate,
@@ -80,7 +76,7 @@ router.put(
     }
   }
 )
-
+// delete an expense
 router.delete(
   '/:expenseId',
   async (req, res, next) => {
