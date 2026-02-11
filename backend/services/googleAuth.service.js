@@ -1,26 +1,17 @@
 // Google OAuth client for verifying ID tokens
 let { OAuth2Client } = require('google-auth-library')
-
-// User model
 let User = require('../models/User.model')
-
-// JWT helper (access token only)
 let { generateAccessToken } = require('../utils/jwt')
-
-// Initialize Google OAuth client
+// create oauth client using env client id
 let client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-
-/**
- * -------------------- Google Login Service --------------------
- * Supports login via Google ID Token only
- */
+// login or register using google id token
 let googleLogin = async (idToken) => {
   try {
     if (!idToken) {
       throw new Error('Google ID token is required')
     }
 
-    // Verify Google ID token
+   // verify token with google
     let ticket
     try {
       ticket = await client.verifyIdToken({
@@ -75,4 +66,3 @@ let googleLogin = async (idToken) => {
 }
 
 module.exports = { googleLogin }
-
