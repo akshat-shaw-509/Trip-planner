@@ -30,7 +30,7 @@ let paginateArray = (array, page = 1, pageSize = 20) => {
   }
 }
 
-// Calculate distance between two coordinates (Haversine formula)
+// Calculate distance between two coordinates
 let calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth's radius in km
   let toRad=x=>x*Math.PI/180
