@@ -1,4 +1,3 @@
-
 let bcrypt = require('bcryptjs')
 let getSaltRounds=()=>{
     let rounds=parseInt(process.env.BCRYPT_SALT_ROUNDS)
