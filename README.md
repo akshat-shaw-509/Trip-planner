@@ -101,7 +101,7 @@ Trip-planner/
 │   ├── middleware/
 │   └── utils/
 │
-├── pages/
+├── docs/
 │   ├── css/
 │   ├── scripts/
 |   |-- index.html
