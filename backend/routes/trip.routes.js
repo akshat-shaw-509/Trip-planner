@@ -8,31 +8,26 @@ const { validateTrip, validateTripUpdate } = require('../middleware/trip.validat
 const { validatePlace } = require('../middleware/place.validation.middleware')
 const { uploadBanner } = require('../middleware/upload.middleware')
 
-console.log('AUTHENTICATE TYPE:', typeof authenticate)
-
-// All routes require authentication
 router.use(authenticate)
-
-// Trip collection routes
+// create a trip
 router.post('/', validateTrip, tripController.createTrip)
+// get all trips for logged in user
 router.get('/', tripController.getUserTrips)
 
-// Place routes scoped to a trip – MUST come before /:tripId
-// In Express 5, /:tripId is greedy and will swallow /places if it comes first
+// place routes inside a trip
+// keep these above /:tripId so they don't get matched incorrectly
 router.get('/:tripId/places/nearby', placeController.searchNearbyPlaces)
 router.get('/:tripId/places', placeController.getPlacesByTrip)
 router.post('/:tripId/places', validatePlace, placeController.createPlace)
-
-// ✅ RECOMMENDATIONS ROUTE - Add this!
-// GET /api/trips/:tripId/recommendations
+// fetch recommendations for a trip
 router.get('/:tripId/recommendations', recommendationController.getRecommendations)
 
-// Banner routes – also before bare /:tripId
+// banner upload/remove
 router.post('/:tripId/banner', uploadBanner.single('image'), tripController.uploadBanner)
 router.delete('/:tripId/banner', tripController.removeBanner)
+// update trip status only
 router.patch('/:tripId/status', tripController.updateTripStatus)
 
-// Trip single-resource routes – these MUST be last
 router.get('/:tripId', tripController.getTripById)
 router.put('/:tripId', validateTripUpdate, tripController.updateTrip)
 router.delete('/:tripId', tripController.deleteTrip)
