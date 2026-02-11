@@ -1,13 +1,8 @@
 const groqService = require('./groq.service')
 const geoapifyService = require('./geoapify.service')
-
-// Shared distance helper (single source of truth)
 const { calculateDistance } = require('../utils/helpers')
 
-/**
- * Main recommendation service with enhanced filtering
- * Fetches AI recommendations for a trip with comprehensive options
- */
+// Main recommendation service
 const getRecommendations = async (tripId, options = {}) => {
   const Trip = require('../models/Trip.model')
 
@@ -17,9 +12,7 @@ if (!trip) {
 }
 
   try {
-    /**
-     * STEP 1: Resolve trip center coordinates
-     */
+    // determine trip center coordinates
     let centerLocation
 
     if (trip.destinationCoords?.length === 2) {
@@ -43,9 +36,7 @@ if (!trip) {
       centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
     }
 
-    /**
-     * STEP 2: Load user preferences
-     */
+    // load user preferences if available
     let userPreferences = null
     try {
       const prefs = await UserPreference.findOne({ userId: trip.userId })
@@ -60,51 +51,36 @@ if (!trip) {
       console.log('Could not load user preferences:', err.message)
     }
 
-    /**
-     * STEP 3: Parse and prepare recommendation options
-     */
+   // build recommendation options
     const recommendationOptions = {
-      // Base trip context
       budget: trip.budget,
       duration: trip.duration,
       peopleCount: trip.travelers,
       currency: trip.currency || 'INR',
       centerLocation,
-
-      // Filtering options from query params
       minRating: parseFloat(options.minRating) || userPreferences?.ratingThreshold || 3.5,
       maxRadius: parseFloat(options.radius) || 10, // km
       
-      // Sorting
       sortBy: options.sortBy === 'score'
         ? 'bestMatch'
         : options.sortBy || 'bestMatch',
       
-      // Quick filters
       showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
       topRatedOnly: options.topRated === 'true' || options.topRated === true,
-      
-      // Price range
       priceRange: options.minPrice || options.maxPrice ? {
         min: parseInt(options.minPrice) || 1,
         max: parseInt(options.maxPrice) || 5
       } : null,
-
-      // User preferences
       userPreferences
     }
 
-    /**
-     * STEP 4: Determine categories
-     */
+    //  determine which categories to fetch
     const categories =
       options.category && options.category !== 'all'
         ? [options.category]
         : ['restaurant', 'attraction', 'accommodation']
 
-    /**
-     * STEP 5: Fetch AI recommendations with enhanced options
-     */
+   // get AI recommendations
     let allPlaces = []
     for (const category of categories) {
       const aiResult = await groqService.getAIRecommendations(
@@ -128,9 +104,7 @@ if (!trip) {
       }
     }
 
-    /**
-     * STEP 6: Remove duplicates and normalize categories
-     */
+    // remove duplicates and normalize categories
     allPlaces = Object.values(
       allPlaces.reduce((acc, place) => {
         const key = place.name.toLowerCase()
@@ -150,9 +124,7 @@ if (!trip) {
         .replace('attractions', 'attraction')
     }))
 
-    /**
-     * STEP 7: Apply final sorting if needed
-     */
+  // final sorting
     if (options.sortBy === 'rating') {
       allPlaces.sort((a, b) => b.rating - a.rating)
     } else if (options.sortBy === 'distance') {
@@ -162,13 +134,9 @@ if (!trip) {
         return distA - distB
       })
     }
-    // bestMatch is already sorted by groqService
-
-    /**
-     * STEP 8: Category Bucketing (BALANCE RESULTS)
-     */
+    
     const TARGET_TOTAL = options.limit || 20
-
+// category balancing
     const BUCKETS = {
       attraction: 7,
       restaurant: 7,
@@ -180,8 +148,6 @@ if (!trip) {
 
     for (const [category, limit] of Object.entries(BUCKETS)) {
       let candidates = allPlaces.filter(p => p.category === category)
-
-      // ✅ APPLY TOP RATED HERE (FIX)
       if (recommendationOptions.topRatedOnly) {
         candidates = candidates.filter(p => (p.rating || 0) >= 4.5)
       }
