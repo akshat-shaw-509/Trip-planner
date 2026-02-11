@@ -4,9 +4,7 @@ let GEOAPIFY_API_KEY = process.env.GEOAPIFY_API_KEY
 let BASE_URL = 'https://api.geoapify.com/v2/places'
 let GEOCODE_URL = 'https://api.geoapify.com/v1/geocode/search'
 
-/**
- * -------------------- Geocoding --------------------
- */
+//Geocode a location string into coordinates
 let geocodeLocation = async (locationString) => {
   try {
     if (!GEOAPIFY_API_KEY) return null
@@ -39,10 +37,7 @@ let geocodeLocation = async (locationString) => {
   }
 }
 
-/**
- * -------------------- Category Mapping --------------------
- * SIMPLIFIED (no excessive granularity)
- */
+//Category Mapping
 let mapCategoriesToGeoapify = (categories) => {
   let mapping = {
     restaurant: [
@@ -77,10 +72,7 @@ let mapCategoriesToGeoapify = (categories) => {
 
   return [...new Set(out)]
 }
-
-/**
- * Infer internal category
- */
+//infer internal category from geoapify categories
 let inferCategoryFromGeoapify = (categories) => {
   if (!Array.isArray(categories)) return 'other'
 
@@ -101,9 +93,7 @@ let inferCategoryFromGeoapify = (categories) => {
   return 'other'
 }
 
-/**
- * -------------------- Rating & Pricing Heuristics --------------------
- */
+//simple rating heuristic when real rating is missing
 let generateEstimatedRating = (props) => {
   let rating = 3.5
 
@@ -117,10 +107,9 @@ let generateEstimatedRating = (props) => {
 
   return Math.min(5, Math.max(3.0, rating))
 }
-
+//guess price level if not provided
 let inferPriceLevel = (props) => {
   if (props.price_level) return props.price_level
-
   let categories = props.categories || []
 
   if (categories.some(c => c.includes('luxury'))) return 4
@@ -128,7 +117,7 @@ let inferPriceLevel = (props) => {
 
   return 2
 }
-
+// build address string
 let formatAddress = (props) => {
   return [
     props.housenumber,
@@ -139,9 +128,6 @@ let formatAddress = (props) => {
   ].filter(Boolean).join(', ') || props.formatted || ''
 }
 
-/**
- * -------------------- Normalization --------------------
- */
 let normalizeGeoapifyPlace = (feature) => {
   let props = feature.properties || {}
   let coords = feature.geometry?.coordinates || [0, 0]
@@ -169,9 +155,7 @@ let normalizeGeoapifyPlace = (feature) => {
   }
 }
 
-/**
- * -------------------- Place Search --------------------
- */
+//search nearby places using geoapify
 let searchPlaces = async (params) => {
   try {
     let { lat, lon, radius = 5000, categories = null, limit = 20, filters = {} } = params
@@ -215,9 +199,7 @@ let searchPlaces = async (params) => {
   }
 }
 
-/**
- * -------------------- Text Search --------------------
- */
+//text-based search
 let searchByText = async (query, location = null, limit = 10) => {
   try {
     if (!GEOAPIFY_API_KEY) return []
@@ -246,9 +228,7 @@ let searchByText = async (query, location = null, limit = 10) => {
   }
 }
 
-/**
- * -------------------- Place Details --------------------
- */
+//get full details for a place
 let getPlaceDetails = async (placeId) => {
   try {
     if (!GEOAPIFY_API_KEY) return null
