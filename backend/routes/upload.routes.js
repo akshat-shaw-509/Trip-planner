@@ -8,40 +8,21 @@ const {
   uploadGeneral: uploadGeneralMiddleware
 } = require('../middleware/upload.middleware')
 
-// Note: If you have authentication middleware, import and add it like:
-// const { authenticate } = require('../middleware/auth.middleware')
-// Then use: authenticate, uploadBannerMiddleware.single('file'), uploadController.uploadBanner
-
-/**
- * Image uploads
- * POST /api/uploads/image
- * Multipart field name: "file"
- * Optional query: ?folder=images
- */
+// image upload
 router.post(
   '/image',
   uploadImageMiddleware.single('file'),
   uploadController.uploadImage
 )
 
-/**
- * Document uploads
- * POST /api/uploads/document
- * Multipart field name: "file"
- * Optional query: ?folder=documents
- */
+// document upload
 router.post(
   '/document',
   uploadDocumentMiddleware.single('file'),
   uploadController.uploadDocument
 )
 
-/**
- * Banner upload for trips
- * POST /api/uploads/banner/:tripId
- * Multipart field name: "banner" or "file"
- * Optional body: { oldBannerUrl: "..." }
- */
+// upload banner for a specific trip
 router.post(
   '/banner/:tripId',
   uploadBannerMiddleware.single('banner'),
@@ -55,24 +36,14 @@ router.post(
   uploadController.uploadBanner
 )
 
-/**
- * Multiple file uploads
- * POST /api/uploads/multiple
- * Multipart field name: "files"
- * Max files: 5
- * Optional query: ?folder=uploads
- */
+// upload multiple files (max 5)
 router.post(
   '/multiple',
   uploadGeneralMiddleware.array('files', 5),
   uploadController.uploadMultiple
 )
 
-/**
- * Delete a file
- * DELETE /api/uploads/file
- * Body: { fileUrl: "/uploads/images/filename.jpg" }
- */
+// delete a previously uploaded file
 router.delete('/file', uploadController.deleteFile)
 
 module.exports = router
