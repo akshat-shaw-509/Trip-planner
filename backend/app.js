@@ -14,28 +14,14 @@ const activityRoutes = require('./routes/activity.routes')
 const expenseRoutes = require('./routes/expense.routes')
 const uploadRoutes = require('./routes/upload.routes')
 const recommendationRoutes = require('./routes/recommendation.routes')
-
-// Error middleware
 const { errorHandler, notFoundHandler } = require('./middleware/error.middleware')
 
 const app = express()
 
-/* =========================
-   1. Trust proxy
-*/
 app.set('trust proxy', 1)
-
-/* =========================
-   2. Security (Helmet)
-   → simplified, no custom overrides
-*/
 app.use(helmet())
 
-/* =========================
-   3. CORS
-   → simplified, predictable
-   → allows requests with no origin (Postman, curl)
-*/
+//CORS
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
   : [
@@ -49,7 +35,7 @@ const allowedOrigins = process.env.CORS_ORIGIN
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) return callback(null, true) // ✅ keep no-origin allowed
+      if (!origin) return callback(null, true) 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true)
       }
@@ -61,9 +47,7 @@ app.use(
   })
 )
 
-/* =========================
-   4. Rate limiting
-*/
+// Rate limiting
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -71,17 +55,12 @@ app.use(
   })
 )
 
-/* =========================
-   5. Body & cookies
-*/
+// Cookies
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
-app.use(cookieParser()) // ✅ explicitly kept
+app.use(cookieParser()) 
 
-/* =========================
-   6. Static uploads
-   → moved to infra-level responsibility
-*/
+//Uploads
 app.use(
   '/uploads',
   express.static(path.join(__dirname, '../uploads'), {
@@ -92,16 +71,12 @@ app.use(
   })
 )
 
-/* =========================
-   7. Logging
-*/
+//Logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
 }
 
-/* =========================
-   8. API Routes (consistent mounting)
-*/
+// API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/trips', tripRoutes)
 app.use('/api/places', placeRoutes)
@@ -137,11 +112,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   })
 })
-
-
-/* =========================
-   9. Error handling
-*/
+// Error handling
 app.use(notFoundHandler)
 app.use(errorHandler)
 
