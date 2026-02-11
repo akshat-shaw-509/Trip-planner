@@ -6,16 +6,12 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free'
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
-/**
- * -------------------- Dynamic Prompt Builder --------------------
- * Builds AI prompt based ONLY on what user actually selected
- */
 const POPULAR_LANDMARK_KEYWORDS = [
   'mahal', 'palace', 'fort', 'temple', 'mosque',
   'church', 'cathedral', 'monument', 'memorial',
   'museum', 'heritage', 'historic', 'tower', 'gate'
 ]
-
+// check if a place should be treated as must-visit
 const isMustVisit = (place) => {
   if (!place?.name) return false
   const name = place.name.toLowerCase()
@@ -24,7 +20,7 @@ const isMustVisit = (place) => {
     POPULAR_LANDMARK_KEYWORDS.some(k => name.includes(k))
   )
 }
-
+// build prompt based on filters actually selected
 const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   const {
     budget,
@@ -40,14 +36,10 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
     userPreferences
   } = tripContext
 
-  // Start with base instruction
   let promptSections = []
-
-  // Opening
   promptSections.push(`You are a knowledgeable local travel expert for ${destination}.`)
   promptSections.push(`\nGenerate exactly 35 ${category} recommendations in ${destination}.`)
 
-  // ========== TRIP CONTEXT (only if provided) ==========
   const tripContextItems = []
   if (budget) tripContextItems.push(`- Budget: ${budget} ${currency}`)
   if (duration) tripContextItems.push(`- Trip duration: ${duration} days`)
@@ -55,11 +47,10 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   if (maxRadius) tripContextItems.push(`- Search area: Within ${maxRadius} km of city center`)
 
   if (tripContextItems.length > 0) {
-    promptSections.push(`\n📍 TRIP DETAILS:`)
+    promptSections.push(`\n TRIP DETAILS:`)
     promptSections.push(tripContextItems.join('\n'))
   }
 
-  // ========== QUALITY FILTERS (only if user set them) ==========
   const qualityFilters = []
   
   if (minRating && minRating > 0) {
@@ -67,22 +58,22 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   }
   
   if (topRatedOnly) {
-    qualityFilters.push(`- ⭐ ONLY include top-rated places (4.5+ rating, highly acclaimed)`)
+    qualityFilters.push(`- ONLY include top-rated places (4.5+ rating, highly acclaimed)`)
   }
   
   if (showHiddenGems) {
-    qualityFilters.push(`- 💎 PRIORITIZE hidden gems, local favorites, and off-the-beaten-path spots`)
+    qualityFilters.push(`- PRIORITIZE hidden gems, local favorites, and off-the-beaten-path spots`)
     qualityFilters.push(`- Avoid overly touristy or mainstream places`)
   }
 
   if (qualityFilters.length > 0) {
-    promptSections.push(`\n🎯 QUALITY REQUIREMENTS:`)
+    promptSections.push(`\nQUALITY REQUIREMENTS:`)
     promptSections.push(qualityFilters.join('\n'))
   }
 
   // ========== PRICE RANGE (only if specified) ==========
   if (priceRange && (priceRange.min || priceRange.max)) {
-    promptSections.push(`\n💰 PRICE CONSTRAINTS:`)
+    promptSections.push(`\nPRICE CONSTRAINTS:`)
     if (priceRange.min && priceRange.max) {
       promptSections.push(`- Only include places with price level ${priceRange.min} to ${priceRange.max}`)
     } else if (priceRange.min) {
@@ -95,14 +86,14 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
 
   // ========== USER PREFERENCES (only if available) ==========
   if (userPreferences && userPreferences.topCategories?.length > 0) {
-    promptSections.push(`\n👤 USER PREFERENCES:`)
+    promptSections.push(`\nUSER PREFERENCES:`)
     promptSections.push(`- This user frequently enjoys: ${userPreferences.topCategories.join(', ')}`)
     promptSections.push(`- Tailor recommendations to match these interests`)
   }
 
   // ========== SORTING INSTRUCTIONS (only if not default) ==========
   if (sortBy && sortBy !== 'bestMatch') {
-    promptSections.push(`\n🔀 SORTING PRIORITY:`)
+    promptSections.push(`\nSORTING PRIORITY:`)
     if (sortBy === 'rating') {
       promptSections.push(`- Prioritize the HIGHEST-RATED places first`)
       promptSections.push(`- List in descending order by rating`)
@@ -112,29 +103,19 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
     }
   }
 
-  // ========== OUTPUT FORMAT ==========
-  promptSections.push(`\n📋 FOR EACH PLACE, PROVIDE:`)
+  promptSections.push(`\n FOR EACH PLACE, PROVIDE:`)
   const outputFields = [
     '- NAME: Official name of the place',
     '- DESCRIPTION: Brief 2-3 sentence description highlighting what makes it special'
   ]
 
-  // Rating field (adjust min based on filters)
   const minRatingValue = minRating || 0
   outputFields.push(`- RATING: Realistic rating between ${minRatingValue} and 5.0`)
-  
-  // Price field
   outputFields.push(`- PRICE: Price level (1-5)`)
-  
-  // Location field
   outputFields.push(`- LOCATION: Specific neighborhood or area name in ${destination}`)
-
-  // Conditional fields based on filters
   if (showHiddenGems) {
     outputFields.push(`- HIDDEN_GEM: true/false (is this a lesser-known local favorite?)`)
   }
-
-  // Category-specific fields
   if (category === 'restaurant') {
     outputFields.push(`- CUISINE: Type of cuisine (e.g., Italian, French, Japanese)`)
   } else if (category === 'attraction') {
@@ -142,11 +123,8 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   } else if (category === 'accommodation') {
     outputFields.push(`- AMENITIES: Key amenities (comma-separated, e.g., WiFi, Pool, Spa)`)
   }
-
   promptSections.push(outputFields.join('\n'))
-
-  // ========== CRITICAL INSTRUCTIONS ==========
-  promptSections.push(`\n⚠️ IMPORTANT RULES:`)
+  promptSections.push(`\nIMPORTANT RULES:`)
   const criticalRules = []
 
   if (minRating && minRating > 0) {
@@ -156,8 +134,6 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
  if (maxRadius) {
   criticalRules.push(`- Prefer places within ${maxRadius} km, but include famous landmarks even if slightly farther`)
 }
-
-
   criticalRules.push(`- Provide SPECIFIC neighborhood/area names for accurate location finding`)
   criticalRules.push(`- Ensure variety in locations and price levels`)
 
@@ -171,19 +147,14 @@ const buildDynamicPrompt = (category, destination, tripContext = {}) => {
   }
 
   promptSections.push(criticalRules.join('\n'))
-
-  // ========== FORMAT ==========
   promptSections.push(`\nSeparate each place with "---"`)
   promptSections.push(`Start immediately with the first recommendation.`)
 
   return promptSections.join('\n')
 }
 
-/**
- * -------------------- AI Recommendations --------------------
- */
+// AI Recommendations
 const getAIRecommendations = async (category, destination, tripContext = {}) => {
-    // 🔧 Normalize invalid sortBy coming from frontend
   if (tripContext.sortBy === 'score') {
     tripContext.sortBy = 'bestMatch'
   }
@@ -192,15 +163,8 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     throw new Error('OPENROUTER_API_KEY missing')
   }
 
-  // Build dynamic prompt based on user's actual selections
+  // Build prompt based on user's actual selections
   const prompt = buildDynamicPrompt(category, destination, tripContext)
-
-  // Log the prompt for debugging
-  console.log('='.repeat(60))
-  console.log('AI PROMPT GENERATED:')
-  console.log('='.repeat(60))
-  console.log(prompt)
-  console.log('='.repeat(60))
 
   try {
     const response = await axios.post(
@@ -230,41 +194,21 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
     if (!aiText) {
       return { places: [], message: 'AI returned no content' }
     }
-    console.log('================ RAW AI RESPONSE ================')
-console.log(aiText)
-console.log('=================================================')
-    console.log('AI Response received, parsing...')
 
     const parsedPlaces = parseAIResponse(aiText, category, tripContext)
-    console.log(
-  '[DEBUG] Parsed AI places:',
-  parsedPlaces.length,
-  parsedPlaces.map(p => p.name)
-)
     if (!parsedPlaces.length) {
       console.warn('No places parsed from AI response')
       return { places: [], message: 'Could not parse AI response' }
     }
-
-    console.log(`Parsed ${parsedPlaces.length} places, geocoding...`)
 
     const geocodedPlaces = await geocodePlaces(
   parsedPlaces,
   destination,
   tripContext.centerLocation
 )
-    console.log(
-  '[DEBUG] Geocoded places:',
-  geocodedPlaces.length,
-  geocodedPlaces.map(p => p.location?.coordinates)
-)
-
-    console.log(`Geocoded ${geocodedPlaces.length} places, applying filters...`)
 
     // Apply post-processing filters
     let filteredPlaces = applyFilters(geocodedPlaces, tripContext)
-
-    console.log(`${filteredPlaces.length} places after filtering, ranking...`)
 
     const rankedPlaces = scoreAndRankPlaces(
       filteredPlaces,
@@ -296,9 +240,6 @@ console.log('=================================================')
   }
 }
 
-/**
- * -------------------- Enhanced AI Response Parser --------------------
- */
 const parseAIResponse = (text, category, tripContext = {}) => {
   const sections = text.split('---').filter(Boolean)
 
@@ -322,7 +263,7 @@ const parseAIResponse = (text, category, tripContext = {}) => {
         addressHint: get(/LOCATION:\s*(.+)/i) || ''
       }
 
-      // Parse hidden gem flag (only if requested)
+      // Parse hidden gem flag 
       if (tripContext.showHiddenGems) {
         const hiddenGemMatch = get(/HIDDEN_GEM:\s*(true|false)/i)
         if (hiddenGemMatch) {
@@ -351,9 +292,7 @@ const parseAIResponse = (text, category, tripContext = {}) => {
     .filter(Boolean)
 }
 
-/**
- * -------------------- Apply Filters --------------------
- */
+// Apply Filters 
 const applyFilters = (places, tripContext = {}) => {
   const {
     minRating = 0,
@@ -389,8 +328,7 @@ const applyFilters = (places, tripContext = {}) => {
       }
     }
 
-    // Distance filter (if location available)
-    // Distance filter (SOFT for must-visit)
+    // Distance filter
 if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
   const dist = calculateDistance(
     centerLocation.lat,
@@ -398,8 +336,6 @@ if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
     place.location.coordinates[1],
     place.location.coordinates[0]
   )
-
-  // Only hard-filter NON must-visit places
   if (!isMustVisit(place) && dist > maxRadius) {
     return false
   }
@@ -419,9 +355,6 @@ if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
   return filtered
 }
 
-/**
- * -------------------- Geocoding --------------------
- */
 const geocodePlaces = async (places, destination, centerLocation) => {
   const results = []
 
@@ -440,7 +373,6 @@ const geocodePlaces = async (places, destination, centerLocation) => {
           }
         })
       } else {
-        // ✅ FALLBACK — DO NOT DROP PLACE
         results.push({
           ...p,
           address: p.addressHint || destination,
@@ -455,7 +387,6 @@ const geocodePlaces = async (places, destination, centerLocation) => {
         })
       }
     } catch (err) {
-      // ✅ STILL DO NOT DROP
       results.push({
         ...p,
         address: p.addressHint || destination,
@@ -475,9 +406,7 @@ const geocodePlaces = async (places, destination, centerLocation) => {
 }
 
 
-/**
- * -------------------- Enhanced Scoring & Ranking --------------------
- */
+// Scoring & Ranking
 const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
   const {
     sortBy = 'bestMatch',
@@ -488,11 +417,9 @@ const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
 
   const scoredPlaces = places.map(place => {
     let score = 0
-
-    // Base rating (rating ≠ popularity)
+    // Base rating 
 score += (place.rating || 4) * 1.5
-
-// Must-Visit boost (Airbnb logic)
+// Must-Visit boost 
 if (isMustVisit(place)) {
   score += 30
   place.badges = ['Must Visit']
@@ -510,13 +437,12 @@ if (centerLocation && place.location?.coordinates) {
   place.distanceFromCenter = dist
 
   if (isMustVisit(place)) {
-    score += Math.max(0, 25 - dist * 0.4) // VERY soft penalty
+    score += Math.max(0, 25 - dist * 0.4) 
   } else {
     score += Math.max(0, 20 - dist * 1.2) // normal places
   }
 }
 
-// Hidden gem logic stays
 if (showHiddenGems && place.isHiddenGem) {
   score += 5
 }
@@ -548,7 +474,7 @@ regular.sort((a, b) => b.recommendationScore - a.recommendationScore)
 
 let merged = [...mustVisit, ...regular]
 
-// Optional override sorting
+// override sorting
 if (sortBy === 'rating') {
   return merged.sort((a, b) => b.rating - a.rating)
 }
@@ -561,7 +487,6 @@ if (sortBy === 'distance') {
   })
 }
 
-// Default: bestMatch
 return merged
 }
 
