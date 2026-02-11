@@ -7,7 +7,7 @@ const startServer = async () => {
     await connectDB()
 
     const server = app.listen(config.port, () => {
-      console.log(`🚀 Planora API running on port ${config.port} (${config.env})`)
+      console.log(`Planora API running on port ${config.port} (${config.env})`)
     })
 
     // Graceful shutdown
