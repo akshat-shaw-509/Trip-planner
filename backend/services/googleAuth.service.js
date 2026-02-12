@@ -3,8 +3,10 @@ let { OAuth2Client } = require('google-auth-library')
 let User = require('../models/User.model')
 let { generateAccessToken, generateRefreshToken } = require('../utils/jwt')
 let crypto = require('crypto')
+
 // create oauth client using env client id
 let client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
 // login or register using google id token
 let googleLogin = async (idToken) => {
   try {
@@ -12,7 +14,7 @@ let googleLogin = async (idToken) => {
       throw new Error('Google ID token is required')
     }
 
-   // verify token with google
+    // verify token with google
     let ticket
     try {
       ticket = await client.verifyIdToken({
@@ -20,9 +22,9 @@ let googleLogin = async (idToken) => {
         audience: process.env.GOOGLE_CLIENT_ID
       })
     } catch (err) {
-  console.error('Token verification error:', err.message)
-  throw new Error('Invalid Google ID token')
-}
+      console.error('Token verification error:', err.message)
+      throw new Error('Invalid Google ID token')
+    }
 
     let payload = ticket.getPayload()
     let { sub, email, name, email_verified } = payload
@@ -36,35 +38,42 @@ let googleLogin = async (idToken) => {
       $or: [{ googleId: sub }, { email }]
     })
 
-   if (!user) {
-  const randomPassword = crypto.randomBytes(32).toString('hex')
-  user = await User.create({
-    name,
-    email,
-    googleId: sub,
-    authProvider: 'google',
-    password: randomPassword
-  })
-}
- else {
-  if (!user.googleId) {
-    user.googleId = sub
-    user.authProvider = 'google'   
-    await user.save()
-  }
-}
+    // Create new user if not found
+    if (!user) {
+      // NEW USER: Create with Google auth
+      // CRITICAL: Create object with ALL required fields including authProvider BEFORE creating user
+      const newUserData = {
+        name,
+        email,
+        googleId: sub,
+        authProvider: 'google',  // THIS MUST BE SET FIRST
+        password: crypto.randomBytes(32).toString('hex')  // Random password for OAuth users
+      }
+      
+      user = await User.create(newUserData)
+    } else {
+      // Existing user - link Google account if not already linked
+      if (!user.googleId) {
+        user.googleId = sub
+        user.authProvider = 'google'
+        await user.save()
+      }
+    }
+
+    // Generate both access and refresh tokens
     let accessToken = generateAccessToken(user._id.toString())
     let refreshToken = generateRefreshToken(user._id.toString())
-   return {
-  user: {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    authProvider: user.authProvider
-  },
-  accessToken,
-  refreshToken
-}
+
+    return {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        authProvider: user.authProvider
+      },
+      accessToken,
+      refreshToken  
+    }
   } catch (error) {
     console.error('Google auth error:', error.message)
     throw new Error(error.message || 'Google authentication failed')
