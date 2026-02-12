@@ -95,7 +95,7 @@ UserSchema.index({ isActive: 1 })
 
 // Hash password before saving
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next()
+if (!this.password || !this.isModified('password')) return next()
   try {
     this.password = await bcrypt.hash(this.password, 10)
     next()
@@ -133,6 +133,7 @@ UserSchema.statics.findActiveUsers = function () {
 }
 
 module.exports = mongoose.model('User', UserSchema)
+
 
 
 
