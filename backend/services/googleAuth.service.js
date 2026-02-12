@@ -1,7 +1,8 @@
 // Google OAuth client for verifying ID tokens
 let { OAuth2Client } = require('google-auth-library')
 let User = require('../models/User.model')
-let { generateAccessToken } = require('../utils/jwt')
+let { generateAccessToken, generateRefreshToken } = require('../utils/jwt')
+let crypto = require('crypto')
 // create oauth client using env client id
 let client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 // login or register using google id token
@@ -36,33 +37,33 @@ let googleLogin = async (idToken) => {
 
     // Create new user if not found
     if (!user) {
-  // NEW USER: Create with Google auth
   user = await User.create({
     name,
     email,
     googleId: sub,
-    authProvider: 'google'
+    authProvider: 'google',
+    // random password so schema validation passes
+    password: crypto.randomBytes(32).toString('hex')
   })
-} else {
+}
+ else {
   if (!user.googleId) {
     user.googleId = sub
     user.authProvider = 'google'   
     await user.save()
   }
 }
-
-
-    // Generate access token
     let accessToken = generateAccessToken(user._id.toString())
-
-    return {
+    let refreshToken = generateRefreshToken(user._id.toString())
+   return {
   user: {
     _id: user._id,
     name: user.name,
     email: user.email,
-    authProvider: user.authProvider   
+    authProvider: user.authProvider
   },
-  accessToken
+  accessToken,
+  refreshToken
 }
   } catch (error) {
     console.error('Google auth error:', error.message)
