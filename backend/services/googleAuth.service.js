@@ -42,8 +42,6 @@ let googleLogin = async (idToken) => {
     email,
     googleId: sub,
     authProvider: 'google',
-    // random password so schema validation passes
-    password: crypto.randomBytes(32).toString('hex')
   })
 }
  else {
