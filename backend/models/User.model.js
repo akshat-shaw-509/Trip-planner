@@ -42,14 +42,28 @@ const UserSchema = new mongoose.Schema(
       sparse: true, // Allows multiple null values
     },
     // Authentication provider
-    authProvider: {
-      type: String,
-      enum: {
-        values: AUTH_PROVIDERS,
-        message: '{VALUE} is not a valid auth provider',
-      },
-      default: 'local',
-    },
+authProvider: {
+  type: String,
+  enum: {
+    values: AUTH_PROVIDERS,
+    message: '{VALUE} is not a valid auth provider',
+  },
+  default: 'local',
+},
+
+// Account status
+isActive: {
+  type: Boolean,
+  default: true,
+},
+
+// Password reset fields
+passwordResetToken: String,
+passwordResetExpires: Date,
+
+// Login tracking
+lastLogin: Date,
+
   },
   {
     timestamps: true,
@@ -68,19 +82,21 @@ const UserSchema = new mongoose.Schema(
 // Indexes
 UserSchema.index({ email: 1 })
 UserSchema.index({ googleId: 1 })
+UserSchema.index({ email: 1, googleId: 1 })   
+UserSchema.index({ authProvider: 1 })
 UserSchema.index({ isActive: 1 })
+
 // Hash password before saving
 UserSchema.pre('save', async function (next) {
-  // Only hash if password is modified
   if (!this.isModified('password')) return next()
   try {
-    // Hash password with 12 salt rounds
-    this.password = await bcrypt.hash(this.password, 12)
+    this.password = await bcrypt.hash(this.password, 10)
     next()
   } catch (error) {
     next(error)
   }
 })
+
 //Compare passwords
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
@@ -110,3 +126,4 @@ UserSchema.statics.findActiveUsers = function () {
 }
 
 module.exports = mongoose.model('User', UserSchema)
+
