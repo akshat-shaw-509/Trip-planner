@@ -20,8 +20,9 @@ let googleLogin = async (idToken) => {
         audience: process.env.GOOGLE_CLIENT_ID
       })
     } catch (err) {
-      throw new Error('Invalid Google ID token')
-    }
+  console.error('Token verification error:', err.message)
+  throw new Error('Invalid Google ID token')
+}
 
     let payload = ticket.getPayload()
     let { sub, email, name, email_verified } = payload
@@ -35,13 +36,14 @@ let googleLogin = async (idToken) => {
       $or: [{ googleId: sub }, { email }]
     })
 
-    // Create new user if not found
-    if (!user) {
+   if (!user) {
+  const randomPassword = crypto.randomBytes(32).toString('hex')
   user = await User.create({
     name,
     email,
     googleId: sub,
     authProvider: 'google',
+    password: randomPassword
   })
 }
  else {
