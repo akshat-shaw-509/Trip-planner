@@ -27,14 +27,20 @@ const UserSchema = new mongoose.Schema(
       ],
     },
     // Hashed password
-    password: {
-      type: String,
-      required: function() {
-        return this.authProvider === 'local'
-      },
-      minlength: [8, 'Password must be at least 8 characters'],
-      select: false,
+password: {
+  type: String,
+  required: function () {
+    return this.authProvider === 'local'
+  },
+  validate: {
+    validator: function (value) {
+      if (!value) return true
+      return value.length >= 8
     },
+    message: 'Password must be at least 8 characters'
+  },
+  select: false,
+},
     // Google OAuth ID
     googleId: {
       type: String,
@@ -126,4 +132,5 @@ UserSchema.statics.findActiveUsers = function () {
 }
 
 module.exports = mongoose.model('User', UserSchema)
+
 
