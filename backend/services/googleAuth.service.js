@@ -36,29 +36,34 @@ let googleLogin = async (idToken) => {
 
     // Create new user if not found
     if (!user) {
-      user = await User.create({
-        name,
-        email,
-        googleId: sub
-      })
-    }
-    // Link Google account to existing user
-    else if (!user.googleId) {
-      user.googleId = sub
-      await user.save()
-    }
+  // NEW USER: Create with Google auth
+  user = await User.create({
+    name,
+    email,
+    googleId: sub,
+    authProvider: 'google'
+  })
+} else {
+  if (!user.googleId) {
+    user.googleId = sub
+    user.authProvider = 'google'   
+    await user.save()
+  }
+}
+
 
     // Generate access token
     let accessToken = generateAccessToken(user._id.toString())
 
     return {
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email
-      },
-      accessToken
-    }
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    authProvider: user.authProvider   
+  },
+  accessToken
+}
   } catch (error) {
     console.error('Google auth error:', error.message)
     throw new Error(error.message || 'Google authentication failed')
