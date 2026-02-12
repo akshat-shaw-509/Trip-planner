@@ -19,7 +19,13 @@ const { errorHandler, notFoundHandler } = require('./middleware/error.middleware
 const app = express()
 
 app.set('trust proxy', 1)
-app.use(helmet())
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+)
 
 //CORS
 const allowedOrigins = process.env.CORS_ORIGIN
@@ -42,7 +48,7 @@ app.use(
       return callback(new Error('CORS not allowed'))
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   })
 )
