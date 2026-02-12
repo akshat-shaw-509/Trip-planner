@@ -34,7 +34,8 @@ password: {
   },
   validate: {
     validator: function (value) {
-      if (!value) return true
+      if (this.authProvider === 'google') return true
+      if (!value) return false
       return value.length >= 8
     },
     message: 'Password must be at least 8 characters'
@@ -132,5 +133,6 @@ UserSchema.statics.findActiveUsers = function () {
 }
 
 module.exports = mongoose.model('User', UserSchema)
+
 
 
