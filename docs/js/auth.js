@@ -193,12 +193,21 @@ function togglePassword(inputId) {
 // Google OAuth
 async function loadGoogleClientId() {
   try {
+    // Check if already cached in sessionStorage
+    const cachedClientId = sessionStorage.getItem('GOOGLE_CLIENT_ID')
+    if (cachedClientId) {
+      window.GOOGLE_CLIENT_ID = cachedClientId
+      initializeGoogleSignIn()
+      return
+    }
+
     const baseURL = apiService.baseURL
     const response = await fetch(`${baseURL}/auth/google-client-id`)
     const data = await response.json()
     
     if (data.success && data.clientId) {
       window.GOOGLE_CLIENT_ID = data.clientId
+      sessionStorage.setItem('GOOGLE_CLIENT_ID', data.clientId)
       initializeGoogleSignIn()
     } else {
       console.error('Failed to load Google Client ID')
@@ -207,7 +216,6 @@ async function loadGoogleClientId() {
     console.error('Error loading Google Client ID:', error)
   }
 }
-
 async function handleGoogleLogin(response) {
   try {
     if (!response?.credential) {
