@@ -55,7 +55,6 @@ const expenseSchema = new mongoose.Schema(
       required: [true, 'Amount is required'],
       min: [0.01, 'Amount must be greater than 0'],
     },
-    /
     // Expense category
     category: {
       type: String,
@@ -128,3 +127,4 @@ expenseSchema.statics.getByCategory = async function(tripId) {
 }
 
 module.exports = mongoose.model('Expense', expenseSchema)
+
