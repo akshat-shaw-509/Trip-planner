@@ -1,10 +1,3 @@
-/* ==============================================
-   BUDGET PAGE - COMPLETE FIXED STYLES
-   ============================================== */
-
-/* ==============================================
-   GLOBAL RESET & BASE STYLES
-   ============================================== */
 * {
     margin: 0;
     padding: 0;
@@ -441,16 +434,29 @@ body {
     margin-bottom: 24px;
 }
 
-.empty-state .btn-add-expense {
+/* CHANGED: Empty state button styling */
+.empty-state .btn-add-expense,
+.empty-state button {
     background: #2563eb;
     color: white;
     border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
 }
 
-.empty-state .btn-add-expense:hover {
+.empty-state .btn-add-expense:hover,
+.empty-state button:hover {
     background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
-
 /* ==============================================
    ANALYTICS SIDEBAR
    ============================================== */
@@ -893,3 +899,4 @@ body {
         padding: 20px;
     }
 }
+
