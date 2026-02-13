@@ -31,8 +31,17 @@ class ForbiddenError extends AppError {
   }
 }
 
+class BadRequestError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'BadRequestError'
+    this.statusCode = 400
+  }
+}
+
 module.exports = {
   AppError,
+  BadRequestError,
   ValidationError,
   NotFoundError,
   UnauthorizedError,
