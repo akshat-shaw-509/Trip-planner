@@ -9,7 +9,7 @@ const ACTIVITY_TYPES = [
   'entertainment',
   'other',
 ]
-const ACTIVITY_STATUS = ['in_progress', 'completed', 'cancelled']
+const ACTIVITY_STATUS = ['planned', 'in_progress', 'completed', 'cancelled']
 
 const activitySchema = new mongoose.Schema(
   {
@@ -125,3 +125,4 @@ activitySchema.pre('save', function () {
 })
 
 module.exports = mongoose.model('Activity', activitySchema)
+
