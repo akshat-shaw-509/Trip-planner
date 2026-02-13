@@ -6,13 +6,12 @@ const {
   ForbiddenError
 } = require('../utils/errors')
 
-const TRIP_STATUSES = [
-  'planning',
-  'booked',
-  'ongoing',
-  'completed',
-  'cancelled'
-]
+const tripStatuses = {
+    upcoming: 'upcoming',
+    ongoing: 'ongoing',
+    completed: 'completed',
+    cancelled: 'cancelled'
+};
 
 // Create Trip
 const createTrip = async (tripData, userId) => {
@@ -156,9 +155,9 @@ const updateTrip = async (tripId, updateData, userId) => {
 }
 //Update Trip Status
 const updateTripStatus = async (tripId, status, userId) => {
-  if (!TRIP_STATUSES.includes(status)) {
+  if (!Object.values(tripStatuses).includes(status)) {
     throw new ValidationError(
-      `Status must be one of: ${TRIP_STATUSES.join(', ')}`
+      `Status must be one of: ${Object.values(tripStatuses).join(', ')}`
     )
   }
 
@@ -174,6 +173,7 @@ const updateTripStatus = async (tripId, status, userId) => {
 
   return trip
 }
+
 
 // Remove Trip Banner
 const removeBanner = async (tripId, userId) => {
@@ -215,5 +215,6 @@ module.exports = {
   getTripById,
   deleteTrip,
   updateTripStatus,
-  removeBanner
+  removeBanner,
+  tripStatuses
 }
