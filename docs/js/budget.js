@@ -79,7 +79,13 @@ function displayExpenses() {
   const emptyState = document.querySelector('.expenses-section .empty-state')
   if (filtered.length === 0) {
     listEl.innerHTML = ''
-    if (emptyState) emptyState.style.display = 'flex'
+    if (emptyState) {
+      emptyState.style.display = 'flex'
+      const emptyStateBtn = emptyState.querySelector('button')
+      if (emptyStateBtn) {
+        emptyStateBtn.onclick = openAddExpenseModal
+      }
+    }
     return
   }
   if (emptyState) emptyState.style.display = 'none'
@@ -121,23 +127,34 @@ function createExpenseItem(exp) {
   `
 }
 function initExpenseHandlers() {
-  document.getElementById('addExpenseBtn').onclick = openAddExpenseModal
+  document.querySelectorAll('.btn-add-expense, .empty-state button').forEach(btn => {
+  btn.onclick = openAddExpenseModal
+})
   document.getElementById('closeModal').onclick = closeExpenseModal
   document.getElementById('cancelBtn').onclick = closeExpenseModal
   document.getElementById('expenseForm').onsubmit = handleExpenseSubmit
   document.getElementById('categoryFilter').onchange = displayExpenses
   document.getElementById('sortFilter').onchange = displayExpenses
+  document.getElementById('expenseModal').onclick = (e) => {
+    if (e.target.id === 'expenseModal') {
+      closeExpenseModal()
+    }
+}
 }
 
 function openAddExpenseModal() {
   currentExpenseId = null
-  document.getElementById('modalTitle').textContent = 'Add Expense'
+  document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Add Expense'
   document.getElementById('expenseForm').reset()
+  const today = new Date().toISOString().split('T')[0]
+  document.getElementById('expenseDate').value = today
+  
   document.getElementById('expenseModal').style.display = 'block'
+  document.body.style.overflow = 'hidden'
 }
-
 function closeExpenseModal() {
   document.getElementById('expenseModal').style.display = 'none'
+  document.body.style.overflow = ''
 }
 
 async function handleExpenseSubmit(e) {
