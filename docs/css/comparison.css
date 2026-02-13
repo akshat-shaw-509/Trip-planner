@@ -1,5 +1,29 @@
+/* ==============================================
+   COMPARISON PANEL - FIXED STYLES
+   ============================================== */
+
+/* ==============================================
+   OVERLAY
+   ============================================== */
+.comparison-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+.comparison-overlay.active {
+  display: block;
+}
+
+/* ==============================================
+   COMPARISON PANEL
+   ============================================== */
 .comparison-panel {
-  display: none !important;
+  display: none;
   position: fixed;
   top: 0;
   right: -900px;
@@ -19,41 +43,113 @@
 
 .comparison-panel.active {
   right: 0;
-  display: flex !important;
+  display: flex;
 }
 
-/* Hide conflicting elements */
-.comparison-sticky-box,
-.compare-places-box,
-.comparison-float {
-  display: none !important;
-}
-
+/* ==============================================
+   PANEL HEADER
+   ============================================== */
 .comparison-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32px 40px;
+  padding: 28px 32px;
   border-bottom: 2px solid #f3f4f6;
   background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+  flex-shrink: 0;
 }
 
+.comparison-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comparison-header h3 i {
+  color: #2563eb;
+  font-size: 28px;
+}
+
+.comparison-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.comparison-close {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: #fee2e2;
+  color: #ef4444;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.comparison-close:hover {
+  background: #fecaca;
+  transform: scale(1.05);
+}
+
+/* ==============================================
+   PANEL BODY
+   ============================================== */
 .comparison-body {
   flex: 1;
   overflow-y: auto;
-  padding: 32px 40px;
+  padding: 32px;
   background: #fafbfc;
 }
 
+.comparison-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comparison-body::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.comparison-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.comparison-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==============================================
+   COMPARISON GRID
+   ============================================== */
 .comparison-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); 
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   align-items: start;
   width: 100%;
 }
 
-/* Single item centering fallback */
+/* Single item centering */
 .comparison-grid:has(.comparison-item:only-child) {
   grid-template-columns: 1fr;
   max-width: 500px;
@@ -66,14 +162,17 @@
   }
 }
 
+/* ==============================================
+   COMPARISON ITEM CARD
+   ============================================== */
 .comparison-item {
   background: white;
   border-radius: 18px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
               0 1px 2px rgba(0, 0, 0, 0.08);
-  border: 2px solid transparent;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 2px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
   overflow: hidden;
   height: fit-content;
@@ -85,40 +184,140 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0066cc, #0052a3);
+  height: 4px;
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
   opacity: 0;
   transition: opacity 0.3s;
 }
 
-/* Comparison cards */
+.comparison-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #2563eb;
+}
+
+.comparison-item:hover::before {
+  opacity: 1;
+}
+
+/* ==============================================
+   ITEM HEADER
+   ============================================== */
+.comparison-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.comparison-item-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+  margin: 0 0 8px 0;
+  flex: 1;
+}
+
+.comparison-item-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.comparison-item-category i {
+  font-size: 14px;
+}
+
 .comparison-remove {
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   border: 2px solid #fecaca;
   color: #ef4444;
   cursor: pointer;
-  padding: 10px;
   border-radius: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  width: 40px;
-  height: 40px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-size: 16px;
+}
+
+.comparison-remove:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* ==============================================
+   STATS SECTION
+   ============================================== */
+.comparison-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .comparison-stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
-  border-radius: 10px;
+  border-radius: 12px;
   border-left: 4px solid #e5e7eb;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
 
+.comparison-stat:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.comparison-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.comparison-stat-label i {
+  color: #9ca3af;
+  font-size: 16px;
+}
+
+.comparison-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.comparison-stat-value.highlight {
+  color: #10b981;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 2px solid #6ee7b7;
+}
+
+/* ==============================================
+   ACTIONS SECTION
+   ============================================== */
 .comparison-actions {
   display: flex;
   flex-direction: column;
@@ -128,25 +327,135 @@
   border-top: 2px solid #f8fafc;
 }
 
+.comparison-btn-add,
+.comparison-btn-details {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+}
+
+.comparison-btn-add {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+}
+
+.comparison-btn-add:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.comparison-btn-details {
+  background: white;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.comparison-btn-details:hover {
+  background: #f9fafb;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+/* ==============================================
+   PANEL FOOTER
+   ============================================== */
 .comparison-footer {
-  padding: 28px 40px;
+  padding: 24px 32px;
   border-top: 2px solid #f3f4f6;
   background: white;
   display: flex;
   gap: 16px;
+  flex-shrink: 0;
 }
 
-/* Floating compare button */
+.comparison-clear-all,
+.comparison-add-all {
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+}
+
+.comparison-clear-all {
+  background: white;
+  color: #ef4444;
+  border: 2px solid #fecaca;
+}
+
+.comparison-clear-all:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  transform: translateY(-2px);
+}
+
+.comparison-add-all {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.comparison-add-all:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* ==============================================
+   EMPTY STATE
+   ============================================== */
+.comparison-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.comparison-empty i {
+  font-size: 80px;
+  color: #cbd5e1;
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.comparison-empty p {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0;
+}
+
+/* ==============================================
+   FLOATING COMPARE BUTTON
+   ============================================== */
 .floating-compare-btn {
   position: fixed;
   bottom: 32px;
   right: 32px;
   z-index: 999;
-  display: none; 
+  display: none;
   align-items: center;
   gap: 14px;
   
-  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
   border-radius: 50px;
@@ -157,14 +466,60 @@
   
   cursor: pointer;
   
-  box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4),
-              0 4px 12px rgba(0, 102, 204, 0.3);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4),
+              0 4px 12px rgba(16, 185, 129, 0.3);
   
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
 }
 
-/* Mobile responsive */
+.floating-compare-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.5),
+              0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.floating-compare-btn:active {
+  transform: translateY(-2px);
+}
+
+.floating-compare-text {
+  font-weight: 700;
+}
+
+.floating-compare-count {
+  background: white;
+  color: #10b981;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* Bounce animation */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.floating-compare-btn.bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ==============================================
+   RESPONSIVE DESIGN
+   ============================================== */
 @media (max-width: 900px) {
   .comparison-panel {
     width: 100vw;
@@ -176,9 +531,67 @@
   .comparison-grid {
     grid-template-columns: 1fr;
   }
+
+  .comparison-header {
+    padding: 20px 24px;
+  }
+
+  .comparison-header h3 {
+    font-size: 20px;
+  }
+
+  .comparison-body {
+    padding: 24px;
+  }
+
+  .comparison-footer {
+    padding: 20px 24px;
+    flex-direction: column;
+  }
+
+  .comparison-clear-all,
+  .comparison-add-all {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
+  .comparison-header {
+    padding: 16px 20px;
+  }
+
+  .comparison-header h3 {
+    font-size: 18px;
+  }
+
+  .comparison-count {
+    min-width: 28px;
+    height: 28px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+
+  .comparison-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .comparison-body {
+    padding: 20px;
+  }
+
+  .comparison-item {
+    padding: 20px;
+  }
+
+  .comparison-item-name {
+    font-size: 18px;
+  }
+
+  .comparison-footer {
+    padding: 16px 20px;
+  }
+
   .floating-compare-btn {
     bottom: 16px;
     right: 16px;
@@ -186,7 +599,45 @@
     gap: 0;
     width: 60px;
     height: 60px;
-    border-radius: 50%; 
+    border-radius: 50%;
     justify-content: center;
   }
+
+  .floating-compare-text {
+    display: none;
+  }
+
+  .floating-compare-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ==============================================
+   ACCESSIBILITY
+   ============================================== */
+.comparison-close:focus,
+.comparison-remove:focus,
+.comparison-btn-add:focus,
+.comparison-btn-details:focus,
+.comparison-clear-all:focus,
+.comparison-add-all:focus,
+.floating-compare-btn:focus {
+  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+}
+
+/* Hide conflicting elements */
+.comparison-sticky-box,
+.compare-places-box,
+.comparison-float {
+  display: none !important;
 }
