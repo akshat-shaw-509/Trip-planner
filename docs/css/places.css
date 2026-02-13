@@ -1,3 +1,7 @@
+/* ==============================================
+   PLACES PAGE - FIXED STYLES
+   ============================================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -12,6 +16,9 @@ body {
     line-height: 1.6;
 }
 
+/* ==============================================
+   BREADCRUMB
+   ============================================== */
 .breadcrumb {
     padding: 20px 40px;
     background: white;
@@ -19,8 +26,8 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    max-width: 1600px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     font-size: 14px;
 }
 
@@ -30,6 +37,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: color 0.2s;
 }
 
 .breadcrumb a:hover {
@@ -43,14 +51,18 @@ body {
 
 .breadcrumb span {
     color: #4b5563;
+    font-weight: 500;
 }
 
+/* ==============================================
+   PAGE HEADER
+   ============================================== */
 .page-header {
     background: white;
     padding: 40px;
     border-bottom: 1px solid #e5e7eb;
-    max-width: 1600px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
 }
 
 .page-header h1 {
@@ -59,6 +71,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin: 0;
 }
 
 .page-header p {
@@ -66,103 +79,237 @@ body {
     margin-top: 8px;
 }
 
-/* Trip center selector */
-.trip-center-container {
-    background: linear-gradient(
-        135deg,
-        #2563eb,
-        #1d4ed8
-    );
-    border-radius: 20px;
-    padding: 32px;
-    margin: 32px auto;
-    max-width: 1600px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+/* ==============================================
+   MAP VIEW SECTION
+   ============================================== */
+.map-view-section {
+    padding: 40px;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
-.trip-center-header {
+.map-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.trip-center-title {
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: white;
-    opacity: 0.9;
+.map-header h3 {
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-/* Button used to update the trip's reference location */
-.btn-change-location {
-    padding: 10px 20px;
-    border-radius: 50px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
+#toggleMapBtn {
+    background: #2563eb;
     color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
 }
 
-.btn-change-location:hover {
-    background: rgba(255, 255, 255, 0.3);
+#toggleMapBtn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
 }
 
-/* Recommendations section */
-.recommendations-section {
+.btn-close-map {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close-map:hover {
+    background: #dc2626;
+}
+
+#map {
+    width: 100%;
+    height: 500px;
+    border-radius: 16px;
+    border: 2px solid #e5e7eb;
+    display: none;
+    margin-top: 20px;
+}
+
+/* ==============================================
+   MY PLACES SECTION
+   ============================================== */
+.my-places-section {
     padding: 40px;
-    max-width: 1600px;
+    max-width: 100%;
     margin: 0 auto;
 }
 
 .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.section-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-header p {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0;
 }
 
 .header-actions {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 20px;
 }
 
-/* Shared pill-style buttons for filters */
-.btn-filter,
-.btn-compare,
+/* ==============================================
+   BUTTONS
+   ============================================== */
+.btn-search-nearby,
 .btn-add-place,
-.btn-search-nearby {
-    padding: 12px 20px;
+.btn-compare,
+.btn-filter {
+    padding: 12px 24px;
     border-radius: 50px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
 }
 
-/* Places & recommendations grid */
-.places-grid,
-.recommendations-grid {
+.btn-search-nearby,
+.btn-add-place {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-search-nearby:hover,
+.btn-add-place:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-compare {
+    background: #10b981;
+    color: white;
+    position: relative;
+}
+
+.btn-compare:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.compare-count {
+    background: white;
+    color: #10b981;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+
+.btn-filter {
+    background: white;
+    color: #374151;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-filter:hover {
+    background: #f9fafb;
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+/* ==============================================
+   FILTER SECTION
+   ============================================== */
+.filter-section {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.filter-btn.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+/* ==============================================
+   PLACES GRID
+   ============================================== */
+.places-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
-    margin-top: 24px;
+    margin-bottom: 40px;
 }
 
-/* Place card */
 .place-card {
     background: white;
     border: 1.5px solid #e5e7eb;
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
+    transition: all 0.2s ease;
     position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .place-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     border-color: #2563eb;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .place-card-header {
@@ -173,7 +320,209 @@ body {
     border-bottom: 1px solid #e5e7eb;
 }
 
-/* Modal overlay */
+.place-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.place-card.restaurant .place-avatar {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #f59e0b;
+}
+
+.place-card.attraction .place-avatar {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #3b82f6;
+}
+
+.place-card.accommodation .place-avatar {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    color: #ec4899;
+}
+
+.place-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.place-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.place-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.place-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-toggle-favorite {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    background: white;
+    color: #9ca3af;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-toggle-favorite:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.btn-toggle-favorite.favorited {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+.place-description {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.place-visit-status {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 10px;
+}
+
+.place-visit-status label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.visit-status-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.visit-status-select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.place-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-delete-place {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+    flex: 1;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-small {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.btn-add-schedule {
+    flex: 1;
+}
+
+.btn-delete-place {
+    background: #fee2e2;
+    color: #ef4444;
+    padding: 8px 14px;
+}
+
+.btn-delete-place:hover {
+    background: #fecaca;
+}
+
+/* ==============================================
+   EMPTY STATE
+   ============================================== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 15px;
+    color: #6b7280;
+}
+
+/* ==============================================
+   MODAL
+   ============================================== */
 .modal {
     position: fixed;
     inset: 0;
@@ -183,6 +532,7 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 10000;
+    padding: 20px;
 }
 
 .modal-content {
@@ -192,26 +542,216 @@ body {
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+.modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ==============================================
+   RECOMMENDATIONS SECTION
+   ============================================== */
+.recommendations-section {
+    padding: 40px;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #f5f5f5;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+/* ==============================================
+   RESPONSIVE DESIGN
+   ============================================== */
 @media (max-width: 768px) {
     .page-header,
     .recommendations-section,
+    .my-places-section,
+    .map-view-section,
     .breadcrumb {
         padding: 20px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .btn-search-nearby,
+    .btn-add-place,
+    .btn-compare,
+    .btn-filter {
+        width: 100%;
+        justify-content: center;
     }
 
     .places-grid,
     .recommendations-grid {
         grid-template-columns: 1fr;
     }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-section {
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .filter-btn {
+        white-space: nowrap;
+    }
 }
 
-*:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.4);
-    outline-offset: 2px;
+@media (max-width: 480px) {
+    .breadcrumb {
+        padding: 15px;
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .page-header {
+        padding: 20px 15px;
+    }
+
+    .page-header h1 {
+        font-size: 20px;
+        gap: 8px;
+    }
+
+    .my-places-section,
+    .map-view-section,
+    .recommendations-section {
+        padding: 20px 15px;
+    }
+
+    .place-card {
+        padding: 20px;
+    }
+
+    .place-avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+
+    .modal {
+        padding: 12px;
+    }
 }
 
+/* ==============================================
+   ANIMATIONS
+   ============================================== */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -223,7 +763,11 @@ body {
     }
 }
 
-.place-card,
-.recommendation-card {
+.place-card {
     animation: fadeIn 0.3s ease-out;
+}
+
+*:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
 }
