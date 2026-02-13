@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const TRIP_STATUS = ['planning', 'booked', 'upcoming', 'ongoing', 'completed', 'cancelled']
+const TRIP_STATUS = ['upcoming', 'ongoing', 'completed', 'cancelled']
 //Trip Schema
 //Represents a travel itinerary
 const tripSchema = new mongoose.Schema(
@@ -77,15 +77,13 @@ const tripSchema = new mongoose.Schema(
     },
     // Current trip status
     status: {
-      type: String,
-      enum: {
-        values: TRIP_STATUS,
-        message: '{VALUE} is not a valid trip status',
-      },
-      default: 'planning',
-      lowercase: true,
-      index: true,
-    },
+  type: String,
+  enum: TRIP_STATUS,
+  default: 'upcoming',
+  lowercase: true,
+  index: true,
+  required: true,
+},
     // Cover/banner image URL
     coverImage: {
       type: String,
@@ -120,12 +118,11 @@ tripSchema.index({ userId: 1, createdAt: -1 })
 tripSchema.index({ userId: 1, status: 1 })
 tripSchema.index({ userId: 1, startDate: 1 })
 // Pre-save validation hook
-tripSchema.pre('save', function () {
+tripSchema.pre('save', function (next) {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    const err = new Error('End date must be after start date')
-    err.name = 'ValidationError'
-    throw err
+    return next(new Error('End date must be after start date'))
   }
+  next()
 })
 // Calculate trip duration in days
 tripSchema.virtual('duration').get(function () {
@@ -168,7 +165,6 @@ tripSchema.methods.getSummary = function () {
     status: this.status,
     travelers: this.travelers,
     budget: this.budget,
-    currency: this.currency,
     coverImage: this.coverImage,
   }
 }
@@ -181,4 +177,4 @@ tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
   return this.find({ userId, status }).sort('-createdAt')
 }
 
-module.exports = mongoose.model('Trip', tripSchema)
+module.exports = mongoose.model('Trip', tripSchema);
