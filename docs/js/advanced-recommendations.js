@@ -10,9 +10,9 @@ const advancedRecState = {
     topRatedOnly: false,
     nearbyOnly: false
   },
-  savedPlaces: new Set(),
   selectedForBulk: new Set()
 };
+
 // Shared filter state
 if (!window.filterState) {
   window.filterState = {
@@ -27,6 +27,7 @@ if (!window.filterState) {
   };
 }
 const filterState = window.filterState;
+
 // Shared recommendations state
 if (!window.recommendationsState) {
   window.recommendationsState = {
@@ -39,7 +40,9 @@ if (!window.recommendationsState) {
   };
 }
 const recommendationsState = window.recommendationsState;
+
 let userPreferences = null;
+
 //Advanced filters
 function renderAdvancedControls() {
   const modalContent = document.getElementById('filterModalContent');
@@ -105,7 +108,6 @@ function applyFiltersAndClose() {
 }
 
 function resetFilters() {
-  // Reset filter state to defaults
   advancedRecState.options = {
     radius: 10,
     minRating: 3.0,
@@ -125,7 +127,6 @@ function resetFilters() {
     priceLevel: null
   };
 
-  // Reset UI selections
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.category === 'all');
   });
@@ -157,13 +158,13 @@ function resetFilters() {
 
 window.resetFilters = resetFilters;
 window.applyFiltersAndClose = applyFiltersAndClose;
+
 let listenersAttached = false;
 
 function attachAdvancedListenersOnce() {
   if (listenersAttached) return;
   listenersAttached = true;
 
-  // Category buttons
   document.addEventListener('click', (e) => {
     const catBtn = e.target.closest('.category-btn');
     if (catBtn) {
@@ -174,7 +175,6 @@ function attachAdvancedListenersOnce() {
       applyQuickFilters();
     }
 
-    // Sort buttons
     const sortBtn = e.target.closest('.sort-btn');
     if (sortBtn) {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -183,7 +183,6 @@ function attachAdvancedListenersOnce() {
       applySorting();
     }
 
-    // Quick filter buttons
     const quickBtn = e.target.closest('.quick-filter-btn');
     if (quickBtn) {
       quickBtn.classList.toggle('active');
@@ -199,7 +198,6 @@ function attachAdvancedListenersOnce() {
     }
   });
 
-  // Rating slider
   const ratingSlider = document.getElementById('ratingSlider');
   if (ratingSlider) {
     ratingSlider.addEventListener('input', (e) => {
@@ -213,7 +211,6 @@ function attachAdvancedListenersOnce() {
     });
   }
 
-  // Radius slider
   const radiusSlider = document.getElementById('radiusSlider');
   if (radiusSlider) {
     radiusSlider.addEventListener('input', (e) => {
@@ -227,6 +224,7 @@ function attachAdvancedListenersOnce() {
     });
   }
 }
+
 // Recommendations
 function displayRecommendations() {
   const container = document.getElementById('recommendationsGrid');
@@ -317,18 +315,17 @@ function displayRecommendations() {
   recommendationsState.isLoading = false;
   addQualityBadges();
   
-  // Update map with new recommendations
   if (typeof updateMapWithRecommendations === 'function') {
     updateMapWithRecommendations();
   }
 }
+
 // Load Recommendations
 async function loadRecommendations(options = {}) {
   try {
     recommendationsState.isLoading = true;
     showRecommendationsLoading();
     const opts = { ...advancedRecState.options, ...options };
-    // Get active category filter
     const activeCategory = document.querySelector('.category-btn.active')?.dataset.category || 'all';
 
     const response = await apiService.recommendations.getForTrip(
@@ -345,13 +342,7 @@ async function loadRecommendations(options = {}) {
     );
 
     console.log('API Response:', response);
-    console.log('Response structure:', {
-      hasSuccess: 'success' in response,
-      hasData: 'data' in response,
-      hasPlaces: 'places' in response,
-      dataType: typeof response.data,
-      dataKeys: response.data ? Object.keys(response.data) : null
-    });
+
     let places = [];
     
     if (response.success && response.data) {
@@ -372,9 +363,6 @@ async function loadRecommendations(options = {}) {
       places = response;
     }
 
-    console.log('Extracted places:', places);
-    console.log('Number of places:', places.length);
-
     if (!Array.isArray(places) || places.length === 0) {
       console.warn('No places found in response');
       filterState.allRecommendations = [];
@@ -385,13 +373,7 @@ async function loadRecommendations(options = {}) {
       return;
     }
 
-    // Log first place structure
-    if (places.length > 0) {
-      console.log('First place structure:', places[0]);
-      console.log('First place location:', places[0].location);
-    }
     const normalizedPlaces = places.map(place => {
-      // Handle different coordinate formats
       let lat = 0, lon = 0; 
       if (place.lat && place.lon) {
         lat = Number(place.lat);
@@ -419,9 +401,6 @@ async function loadRecommendations(options = {}) {
       };
     });
 
-    console.log('Normalized places:', normalizedPlaces.length);
-    console.log('First normalized place:', normalizedPlaces[0]);
-
     filterState.allRecommendations = normalizedPlaces;
     filterState.filteredResults = [...normalizedPlaces];
     recommendationsState.recommendations = normalizedPlaces;
@@ -430,89 +409,17 @@ async function loadRecommendations(options = {}) {
 
     recommendationsState.isLoading = false;
 
-    // Update the map after loading
     if (typeof window.updateMapWithRecommendations === 'function') {
-      console.log('Calling updateMapWithRecommendations');
       window.updateMapWithRecommendations();
     }
 
   } catch (err) {
     console.error('Error loading recommendations:', err);
-    console.error('Error stack:', err.stack);
     showRecommendationsError();
     recommendationsState.isLoading = false;
   }
 }
 window.loadRecommendations = loadRecommendations;
-
-function createRecommendationCard(rec) {
-  const icon = getCategoryIcon(rec.category);
-  const distance = rec.distanceFromCenter ? `${rec.distanceFromCenter.toFixed(1)} km away` : '';
-  const priceLevel = rec.priceLevel ? '$'.repeat(rec.priceLevel) : '';
-
-  return `
-    <div class="recommendation-card" data-rec-name="${escapeAttr(rec.name)}">
-      <!-- Compare Checkbox -->
-      <div class="rec-card-compare-checkbox">
-        <i class="fas fa-check" style="display: none;"></i>
-      </div>
-
-      <!-- Card Header -->
-      <div class="rec-card-header">
-        <div class="rec-card-icon">
-          <i class="fas fa-${icon}"></i>
-        </div>
-        <div class="rec-card-category">${escapeHtml(rec.category)}</div>
-      </div>
-
-      <!-- Card Body -->
-      <div class="rec-card-body">
-        <h4 class="rec-card-title">${escapeHtml(rec.name)}</h4>
-        
-        <div class="rec-card-meta">
-          ${rec.rating ? `
-            <span class="rec-rating">
-              <i class="fas fa-star"></i>
-              ${rec.rating.toFixed(1)}
-            </span>
-          ` : ''}
-          
-          ${distance ? `
-            <span class="rec-distance">
-              <i class="fas fa-map-marker-alt"></i>
-              ${distance}
-            </span>
-          ` : ''}
-          
-          ${priceLevel ? `
-            <span class="rec-price">
-              ${priceLevel}
-            </span>
-          ` : ''}
-        </div>
-
-        ${rec.description ? `
-          <p class="rec-card-description">${escapeHtml(rec.description.substring(0, 120))}${rec.description.length > 120 ? '...' : ''}</p>
-        ` : ''}
-
-        ${rec.recommendationScore ? `
-          <div class="rec-ai-score">
-            <i class="fas fa-robot"></i>
-            <span>AI Score: ${rec.recommendationScore.toFixed(1)}/10</span>
-          </div>
-        ` : ''}
-      </div>
-
-      <!-- Card Actions -->
-      <div class="rec-card-actions">
-        <button class="btn-add-to-trip">
-          <i class="fas fa-plus"></i>
-          Add to Trip
-        </button>
-      </div>
-    </div>
-  `;
-}
 
 function applySorting() {
   const sortBy = advancedRecState.options.sortBy;
@@ -534,24 +441,20 @@ function applyQuickFilters() {
   let filtered = [...filterState.allRecommendations];
   const opts = advancedRecState.options;
 
-  // Category filter
   if (filterState.activeFilters.categories.length > 0) {
     filtered = filtered.filter(r => 
       filterState.activeFilters.categories.includes(r.category?.toLowerCase())
     );
   }
 
-  // Rating filter
   if (opts.minRating > 0) {
     filtered = filtered.filter(r => (r.rating || 0) >= opts.minRating);
   }
 
-  // Hidden gems
   if (opts.showHiddenGems) {
     filtered = filtered.filter(r => (r.rating || 0) >= 4.0 && (r.distanceFromCenter || 0) > 3);
   }
 
-  // Top rated
   if (opts.topRatedOnly) {
     filtered = filtered.filter(r => (r.rating || 0) >= 4.5);
   }
@@ -567,7 +470,7 @@ function addQualityBadges() {
     const rec = filterState.filteredResults[index];
     if (!rec) return;
 
-    card.querySelectorAll('.quality-badge, .save-for-later').forEach(b => b.remove());
+    card.querySelectorAll('.quality-badge').forEach(b => b.remove());
 
     let badge = null;
     if ((rec.rating || 0) >= 4.7) {
@@ -577,14 +480,6 @@ function addQualityBadges() {
     }
 
     if (badge) card.insertAdjacentHTML('afterbegin', badge);
-
-    const isSaved = advancedRecState.savedPlaces.has(rec.name);
-    const saveBtn = `
-      <div class="save-for-later ${isSaved ? 'saved' : ''}" onclick="toggleSaveForLater('${escapeAttr(rec.name)}', event)">
-        <i class="fas fa-heart"></i>
-      </div>
-    `;
-    card.insertAdjacentHTML('afterbegin', saveBtn);
   });
 }
 
@@ -612,11 +507,12 @@ async function addRecommendationToTrip(rec) {
 
     await apiService.places.create(recommendationsState.currentTripId, placeData);
     showToast('Place added to your trip!', 'success');
-    // Remove from recommendations
+    
     filterState.allRecommendations = filterState.allRecommendations.filter(r => r.name !== rec.name);
     filterState.filteredResults = filterState.filteredResults.filter(r => r.name !== rec.name);
     recommendationsState.recommendations = recommendationsState.recommendations.filter(r => r.name !== rec.name);
     displayRecommendations();
+    
     if (typeof loadPlaces === 'function') await loadPlaces();
     if (typeof updateMapWithRecommendations === 'function') updateMapWithRecommendations();
   } catch (err) {
@@ -663,37 +559,6 @@ window.addRecommendationToTripFromModal = async function (rec) {
 };
 
 window.showRecommendationDetails = showRecommendationDetails;
-
-// Save For Later
-window.toggleSaveForLater = function (placeName, event) {
-  event.stopPropagation();
-  if (advancedRecState.savedPlaces.has(placeName)) {
-    advancedRecState.savedPlaces.delete(placeName);
-    showToast('Removed from saved', 'info');
-  } else {
-    advancedRecState.savedPlaces.add(placeName);
-    showToast('Saved for later!', 'success');
-  }
-  saveSavedPreferences();
-  addQualityBadges();
-};
-
-function saveSavedPreferences() {
-  try {
-    sessionStorage.setItem('savedPlaces', JSON.stringify(Array.from(advancedRecState.savedPlaces)));
-  } catch (err) {
-    console.error('Error saving preferences:', err);
-  }
-}
-
-function loadSavedPreferences() {
-  try {
-    const saved = sessionStorage.getItem('savedPlaces');
-    if (saved) advancedRecState.savedPlaces = new Set(JSON.parse(saved));
-  } catch (err) {
-    console.error('Error loading preferences:', err);
-  }
-}
 
 function showRecommendationsLoading() {
   const container = document.getElementById('recommendationsGrid');
@@ -746,12 +611,12 @@ function escapeAttr(text) {
   if (!text) return '';
   return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
 async function initRecommendations(tripId, tripData) {
   recommendationsState.currentTripId = tripId;
   recommendationsState.tripData = tripData;
 
   renderAdvancedControls();   
-  loadSavedPreferences();
   attachAdvancedListenersOnce();
   await loadRecommendations();
 }
