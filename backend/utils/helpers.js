@@ -1,35 +1,5 @@
 let crypto = require('crypto')
 
-// Generate random string
-let generateRandomString = (length = 32) => {
-  return crypto.randomBytes(length).toString('hex')
-}
-
-// Hash string using SHA256
-let hashString = (str) => {
-  return crypto.createHash('sha256').update(str).digest('hex')
-}
-
-// Sleep/delay function
-let sleep = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-// Paginate array
-let paginateArray = (array, page = 1, pageSize = 20) => {
-  let startIndex = (page - 1) * pageSize
-  let endIndex = startIndex + pageSize
-  return {
-    data: array.slice(startIndex, endIndex),
-    page:parseInt(page),
-    pageSize:parseInt(pageSize),
-    totalItems: array.length,
-    totalPages: Math.ceil(array.length / pageSize),
-    hasNext: endIndex < array.length,
-    hasPrev: page > 1,
-  }
-}
-
 // Calculate distance between two coordinates
 let calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth's radius in km
@@ -57,35 +27,8 @@ let sanitizeUser=(user)=>{
     return sanitized
 }
 
-// Pick keys from object
-let pick = (obj, keys) => {
-  let result = {};
-  keys.forEach(key => {
-    if (key in obj) {
-      result[key] = obj[key]
-    }
-  })
-  return result
-}
-
-// Convert to slug
-let slugify = (str) => {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
 module.exports = {
-  generateRandomString,
-  hashString,
-  sleep,
-  paginateArray,
   calculateDistance,
   daysBetween,
   sanitizeUser,
-  pick,
-  slugify,
 }
