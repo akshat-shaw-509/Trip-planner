@@ -1,12 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const uploadController = require('../controllers/upload.controller')
-const { 
-  uploadImage: uploadImageMiddleware, 
-  uploadBanner: uploadBannerMiddleware,
-  uploadDocument: uploadDocumentMiddleware,
-  uploadGeneral: uploadGeneralMiddleware
-} = require('../middleware/upload.middleware')
+const uploadBanner = require('../middleware/upload')
 
 // image upload
 router.post(
