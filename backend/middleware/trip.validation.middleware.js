@@ -4,8 +4,8 @@ let { TRIP_STATUS } = require('../config/constants')
 let handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
-    return next({
-      statusCode: 400,
+    return res.status(400).json({
+      success: false,
       message: 'Validation failed',
       errors: errors.array().map(({ path, msg }) => ({
         field: path,
@@ -13,9 +13,8 @@ let handleValidationErrors = (req, res, next) => {
       }))
     })
   }
-  return next()
+  next() 
 }
-
 
 //Date Range Validator 
 let validateDateRange = () => [
@@ -123,3 +122,4 @@ let validateTripUpdate = [
   handleValidationErrors,
 ]
 module.exports = { validateTrip, validateTripUpdate }
+
