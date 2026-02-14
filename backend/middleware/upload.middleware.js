@@ -69,15 +69,6 @@ const uploadImage = multer({
   }
 })
 
-//Multer instance for banner uploads
-const uploadBanner = multer({
-  storage: memoryStorage,
-  fileFilter: imageFileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
-})
-
 //Multer instance for document uploads
 const uploadDocument = multer({
   storage: memoryStorage,
@@ -98,7 +89,7 @@ const uploadGeneral = multer({
 
 module.exports = {
   uploadImage,
-  uploadBanner,
   uploadDocument,
   uploadGeneral
 }
+
