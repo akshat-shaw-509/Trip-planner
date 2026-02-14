@@ -36,21 +36,6 @@ if (!trip) {
       centerLocation = { lat: geocoded.lat, lon: geocoded.lon }
     }
 
-    // load user preferences if available
-    let userPreferences = null
-    try {
-      const prefs = await UserPreference.findOne({ userId: trip.userId })
-      if (prefs) {
-        userPreferences = {
-          topCategories: prefs.topCategories || [],
-          categoryWeights: prefs.categoryPreferences,
-          ratingThreshold: prefs.ratingThreshold || 3.5
-        }
-      }
-    } catch (err) {
-      console.log('Could not load user preferences:', err.message)
-    }
-
    // build recommendation options
     const recommendationOptions = {
       budget: trip.budget,
@@ -58,20 +43,19 @@ if (!trip) {
       peopleCount: trip.travelers,
       currency: trip.currency || 'INR',
       centerLocation,
-      minRating: parseFloat(options.minRating) || userPreferences?.ratingThreshold || 3.5,
+      minRating: parseFloat(options.minRating) || 3.5,
       maxRadius: parseFloat(options.radius) || 10, // km
       
       sortBy: options.sortBy === 'score'
         ? 'bestMatch'
         : options.sortBy || 'bestMatch',
       
-      showHiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
+      hiddenGems: options.hiddenGems === 'true' || options.hiddenGems === true,
       topRatedOnly: options.topRated === 'true' || options.topRated === true,
       priceRange: options.minPrice || options.maxPrice ? {
         min: parseInt(options.minPrice) || 1,
         max: parseInt(options.maxPrice) || 5
-      } : null,
-      userPreferences
+      } : null
     }
 
     //  determine which categories to fetch
@@ -94,8 +78,32 @@ if (!trip) {
     }
     
     console.log('[DEBUG] Total places collected so far:', allPlaces.length)
-    
-    if (allPlaces.length === 0) {
+    // Sort before filterin
+if (recommendationOptions.sortBy === 'rating') {
+  allPlaces = allPlaces.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+}
+    let radiusFilteredPlaces = allPlaces.filter(place => {
+  if (centerLocation && place.location?.coordinates?.length === 2) {
+    const dist = calculateDistance(
+      centerLocation.lat,
+      centerLocation.lon,
+      place.location.coordinates[1],
+      place.location.coordinates[0]
+    )
+    place.distanceFromCenter = dist
+    return dist <= recommendationOptions.maxRadius
+  }
+  return true
+})
+if (recommendationOptions.sortBy === 'distance') {
+  radiusFilteredPlaces.sort((a, b) => {
+    const distA = a.distanceFromCenter || Infinity
+    const distB = b.distanceFromCenter || Infinity
+    return distA - distB
+  })
+}
+
+    if (radiusFilteredPlaces.length === 0) {
       return {
         places: [],
         centerLocation,
@@ -103,51 +111,19 @@ if (!trip) {
         appliedFilters: recommendationOptions
       }
     }
-
-    // remove duplicates and normalize categories
-    allPlaces = Object.values(
-      allPlaces.reduce((acc, place) => {
-        const key = place.name.toLowerCase()
-        acc[key] = acc[key] || place
-        return acc
-      }, {})
-    )
-    
-    allPlaces = allPlaces.map(p => ({
-      ...p,
-      category: String(p.category || '')
-        .toLowerCase()
-        .replace('hotels', 'accommodation')
-        .replace('hotel', 'accommodation')
-        .replace('lodging', 'accommodation')
-        .replace('restaurants', 'restaurant')
-        .replace('attractions', 'attraction')
-    }))
-
-  // final sorting
-    if (options.sortBy === 'rating') {
-      allPlaces.sort((a, b) => b.rating - a.rating)
-    } else if (options.sortBy === 'distance') {
-      allPlaces.sort((a, b) => {
-        const distA = a.distanceFromCenter || Infinity
-        const distB = b.distanceFromCenter || Infinity
-        return distA - distB
-      })
-    }
-    
-    const TARGET_TOTAL = options.limit || 20
+    const TARGET_TOTAL = parseInt(options.limit) || 20
 // category balancing
     const BUCKETS = {
-      attraction: 7,
-      restaurant: 7,
-      accommodation: 6
-    }
+  attraction: Math.ceil(TARGET_TOTAL * 0.35),
+  restaurant: Math.ceil(TARGET_TOTAL * 0.35),
+  accommodation: Math.ceil(TARGET_TOTAL * 0.30)
+}
 
     const bucketed = []
     const usedNames = new Set()
 
     for (const [category, limit] of Object.entries(BUCKETS)) {
-      let candidates = allPlaces.filter(p => p.category === category)
+      let candidates = radiusFilteredPlaces.filter(p => p.category === category)
       if (recommendationOptions.topRatedOnly) {
         candidates = candidates.filter(p => (p.rating || 0) >= 4.5)
       }
@@ -164,39 +140,23 @@ if (!trip) {
       }
     }
     
-    const leftovers = allPlaces
-      .filter(p => !usedNames.has(p.name))
-      .filter(p => !recommendationOptions.topRatedOnly || (p.rating || 0) >= 4.5)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-
-    while (bucketed.length < TARGET_TOTAL && leftovers.length) {
-      const next = leftovers.shift()
-      if (!usedNames.has(next.name)) {
-        usedNames.add(next.name)
-        bucketed.push(next)
-      }
-    }
-    
-    bucketed.sort((a, b) => {
-      if ((b.rating || 0) !== (a.rating || 0)) {
-        return (b.rating || 0) - (a.rating || 0)
-      }
-      return (b.recommendationScore || 0) - (a.recommendationScore || 0)
-    })
+    if (bucketed.length < TARGET_TOTAL) {
+  const remaining = radiusFilteredPlaces.filter(p => !usedNames.has(p.name))
+  const needed = TARGET_TOTAL - bucketed.length
+  const fillIn = remaining.slice(0, needed)
+  bucketed.push(...fillIn)
+}
 
     return {
       places: bucketed,
       centerLocation,
-      message: `Found ${bucketed.length} balanced recommendations`,
-      appliedFilters: {
-        category: options.category || 'all',
-        minRating: recommendationOptions.minRating,
-        maxRadius: recommendationOptions.maxRadius,
-        sortBy: recommendationOptions.sortBy,
-        hiddenGems: recommendationOptions.showHiddenGems,
-        topRatedOnly: recommendationOptions.topRatedOnly,
-        priceRange: recommendationOptions.priceRange
-      }
+     message: `Successfully retrieved ${bucketed.length} recommendations`,
+appliedFilters: {
+  minRating: recommendationOptions.minRating,
+  maxRadius: recommendationOptions.maxRadius,
+  sortBy: recommendationOptions.sortBy,
+  topRatedOnly: recommendationOptions.topRatedOnly
+}
     }
 
   } catch (error) {
