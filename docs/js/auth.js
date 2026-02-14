@@ -201,7 +201,12 @@ async function loadGoogleClientId() {
       return
     }
 
-    const baseURL = apiService.baseURL
+     if (typeof apiService === 'undefined' || !apiService) {
+      console.error('apiService is not loaded')
+      showToast('Unable to load sign-in service', 'error')
+      return
+    }
+    const baseURL = apiService?.baseURL || window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api'
     const response = await fetch(`${baseURL}/auth/google-client-id`)
     const data = await response.json()
     
@@ -222,8 +227,7 @@ async function handleGoogleLogin(response) {
       showToast('Google login failed', 'error')
       return
     }
-
-    const baseURL = apiService.baseURL
+    const baseURL = apiService?.baseURL || window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api'
     showToast('Signing in with Google...', 'info')
 
     const res = await fetch(`${baseURL}/auth/google`, {
