@@ -1,10 +1,6 @@
 // Wrapper to handle errors in async route handlers
-const asyncHandler = (fn) => {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next))
-      .catch(next);
-  };
-};
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', err);
@@ -67,3 +63,4 @@ module.exports = {
   errorHandler,
   notFoundHandler
 }
+
