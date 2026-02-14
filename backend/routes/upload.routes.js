@@ -29,13 +29,6 @@ router.post(
   uploadController.uploadBanner
 )
 
-// Alternative route accepting "file" field name
-router.post(
-  '/trip-banner/:tripId',
-  uploadBannerMiddleware.single('file'),
-  uploadController.uploadBanner
-)
-
 // upload multiple files (max 5)
 router.post(
   '/multiple',
