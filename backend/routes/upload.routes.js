@@ -1,7 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const uploadController = require('../controllers/upload.controller')
-const uploadBanner = require('../middleware/upload')
+const { 
+  uploadImage: uploadImageMiddleware, 
+  uploadBanner: uploadBannerMiddleware,
+  uploadDocument: uploadDocumentMiddleware,
+  uploadGeneral: uploadGeneralMiddleware
+} = require('../middleware/upload.middleware')
 
 // image upload
 router.post(
@@ -21,6 +26,13 @@ router.post(
 router.post(
   '/banner/:tripId',
   uploadBannerMiddleware.single('banner'),
+  uploadController.uploadBanner
+)
+
+// Alternative route accepting "file" field name
+router.post(
+  '/trip-banner/:tripId',
+  uploadBannerMiddleware.single('file'),
   uploadController.uploadBanner
 )
 
