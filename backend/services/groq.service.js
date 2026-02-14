@@ -329,6 +329,7 @@ const applyFilters = (places, tripContext = {}) => {
     }
 
     // Distance filter
+// STRICT distance filter - NO EXCEPTIONS
 if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
   const dist = calculateDistance(
     centerLocation.lat,
@@ -336,7 +337,12 @@ if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
     place.location.coordinates[1],
     place.location.coordinates[0]
   )
-  if (!isMustVisit(place) && dist > maxRadius) {
+
+  // store distance
+  place.distanceFromCenter = dist
+
+  if (dist > maxRadius) {
+    console.log(`Filtered out ${place.name}: distance ${dist.toFixed(2)}km > ${maxRadius}km`)
     return false
   }
 }
@@ -345,13 +351,14 @@ if (centerLocation && place.location?.coordinates && maxRadius < Infinity) {
 
   // If showing hidden gems, boost those in the results
   if (showHiddenGems) {
-    filtered = filtered.sort((a, b) => {
-      if (a.isHiddenGem && !b.isHiddenGem) return -1
-      if (!a.isHiddenGem && b.isHiddenGem) return 1
-      return 0
-    })
-  }
-
+  filtered = filtered.sort((a, b) => {
+    const aIsHidden = a.isHiddenGem === true
+    const bIsHidden = b.isHiddenGem === true
+    if (aIsHidden && !bIsHidden) return -1
+    if (!aIsHidden && bIsHidden) return 1
+    return (b.rating || 0) - (a.rating || 0)
+  })
+}
   return filtered
 }
 
@@ -408,89 +415,51 @@ const geocodePlaces = async (places, destination, centerLocation) => {
 
 // Scoring & Ranking
 const scoreAndRankPlaces = (places, centerLocation, tripContext = {}) => {
-  const {
-    sortBy = 'bestMatch',
-    userPreferences = null,
-    showHiddenGems = false,
-    topRatedOnly = false
-  } = tripContext
+  const { sortBy = 'bestMatch' } = tripContext
 
-  const scoredPlaces = places.map(place => {
+  const scoredPlaces = places.map(p => {
     let score = 0
-    // Base rating 
-score += (place.rating || 4) * 1.5
-// Must-Visit boost 
-if (isMustVisit(place)) {
-  score += 30
-  place.badges = ['Must Visit']
-}
 
-// Soft distance rule
-if (centerLocation && place.location?.coordinates) {
-  const dist = calculateDistance(
-    centerLocation.lat,
-    centerLocation.lon,
-    place.location.coordinates[1],
-    place.location.coordinates[0]
-  )
+    // Rating component (40%)
+    score += (p.rating || 3) * 40 / 5
 
-  place.distanceFromCenter = dist
+    // Distance component (30%)
+    if (centerLocation && p.distanceFromCenter !== undefined) {
+      const maxDist = tripContext.maxRadius || 10
+      const distScore = Math.max(0, (maxDist - p.distanceFromCenter) / maxDist) * 30
+      score += distScore
+    } else {
+      score += 15
+    }
 
-  if (isMustVisit(place)) {
-    score += Math.max(0, 25 - dist * 0.4) 
-  } else {
-    score += Math.max(0, 20 - dist * 1.2) // normal places
+    // Popularity / Must visit (30%)
+    score += isMustVisit(p) ? 30 : (p.popularity || 0) * 30
+
+    p.recommendationScore = score
+    return p
+  })
+
+  if (sortBy === 'bestMatch') {
+    return scoredPlaces.sort((a, b) => b.recommendationScore - a.recommendationScore)
   }
-}
 
-if (showHiddenGems && place.isHiddenGem) {
-  score += 5
-}
-    // Top rated bonus (3 points)
-    if (topRatedOnly && place.rating >= 4.5) {
-      score += 3
-    }
+  if (sortBy === 'rating') {
+    return scoredPlaces.sort((a, b) => b.rating - a.rating)
+  }
 
-    // User preference bonus (0-10 points)
-    if (userPreferences?.categoryWeights) {
-      const categoryWeight = userPreferences.categoryWeights.get(place.category) || 0
-      score += Math.min(10, categoryWeight / 2) // Normalize to 0-10
-    }
+  if (sortBy === 'distance') {
+    return scoredPlaces.sort((a, b) => {
+      const da = a.distanceFromCenter ?? Infinity
+      const db = b.distanceFromCenter ?? Infinity
+      return da - db
+    })
+  }
 
-    place.recommendationScore = Math.round(score * 10) / 10
-    return place
-  })
-
-  const mustVisit = []
-const regular = []
-
-for (const p of scoredPlaces) {
-  if (isMustVisit(p)) mustVisit.push(p)
-  else regular.push(p)
-}
-
-mustVisit.sort((a, b) => b.recommendationScore - a.recommendationScore)
-regular.sort((a, b) => b.recommendationScore - a.recommendationScore)
-
-let merged = [...mustVisit, ...regular]
-
-// override sorting
-if (sortBy === 'rating') {
-  return merged.sort((a, b) => b.rating - a.rating)
-}
-
-if (sortBy === 'distance') {
-  return merged.sort((a, b) => {
-    const da = a.distanceFromCenter ?? Infinity
-    const db = b.distanceFromCenter ?? Infinity
-    return da - db
-  })
-}
-
-return merged
+  return scoredPlaces
 }
 
 module.exports = {
   getAIRecommendations,
-  scoreAndRankPlaces
+  scoreAndRankPlaces,
+  applyFilters
 }
