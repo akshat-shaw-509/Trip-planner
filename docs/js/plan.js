@@ -198,9 +198,13 @@ async function updateMapLocation(destination) {
             `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=1&apiKey=${apiKey}`
         );
 
-        if (!response.ok) {
-            throw new Error(`Geocoding failed: ${response.status}`);
-        }
+       if (!response.ok) {
+    console.error(`Geocoding failed: ${response.status}`);
+    if (response.status === 401) {
+        console.warn('Geocoding API key may be invalid or expired');
+    }
+    return; 
+}
 
         const data = await response.json();
 
