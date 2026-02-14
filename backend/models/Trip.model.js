@@ -120,7 +120,8 @@ tripSchema.index({ userId: 1, startDate: 1 })
 // Pre-save validation hook
 tripSchema.pre('save', function (next) {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
-    return next(new Error('End date must be after start date'))
+    const error = new Error('End date must be after start date')
+    return next(error)
   }
   next()
 })
@@ -178,3 +179,4 @@ tripSchema.statics.findByUserIdAndStatus = function (userId, status) {
 }
 
 module.exports = mongoose.model('Trip', tripSchema);
+
