@@ -136,10 +136,10 @@ Create a `.env` file in the backend root:
 ```
 PORT=5000
 MONGO_URI=your_mongodb_connection
-JWT_SECRET=your_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GEOAPIFY_API_KEY=your_geoapify_key
-OPENROUTER_API_KEY=your_openrouter_key
+JWT_SECRET=secret
+GOOGLE_CLIENT_ID=google_client_id
+GEOAPIFY_API_KEY=geoapify_key
+OPENROUTER_API_KEY=openrouter_key
 NODE_ENV=development
 ```
 
@@ -232,7 +232,6 @@ Hosted via GitHub Pages.
 ## Author
 
 Akshat Shaw
-GitHub: https://github.com/akshat-shaw-509
 
 ---
 
