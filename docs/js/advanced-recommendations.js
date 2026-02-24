@@ -345,7 +345,10 @@ async function loadRecommendations(options = {}) {
 
     let places = [];
     
-    if (response.success && response.data) {
+    if (response.success && response.data && Array.isArray(response.data.places)) {
+      places = response.data.places;
+    }
+    else if (response.success && response.data) {
       if (Array.isArray(response.data.places)) {
         places = response.data.places;
       }
@@ -353,8 +356,8 @@ async function loadRecommendations(options = {}) {
         places = response.data;
       }
     } 
-    else if (response.data && Array.isArray(response.data)) {
-      places = response.data;
+    else if (response.data && Array.isArray(response.data.places)) {
+      places = response.data.places;
     }
     else if (response.places && Array.isArray(response.places)) {
       places = response.places;
@@ -365,6 +368,7 @@ async function loadRecommendations(options = {}) {
 
     if (!Array.isArray(places) || places.length === 0) {
       console.warn('No places found in response');
+      console.debug('Full response object:', response); 
       filterState.allRecommendations = [];
       filterState.filteredResults = [];
       recommendationsState.recommendations = [];
