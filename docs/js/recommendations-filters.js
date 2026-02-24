@@ -27,10 +27,20 @@ async function loadRecommendations(options = {}) {
       options
     );
 
-    const responseData = res.data || {};
-    recommendationsState.recommendations = Array.isArray(responseData)
-      ? responseData
-      : responseData.places || [];
+    let recommendationsData = [];
+    if (res.success && res.data) {
+      if (Array.isArray(res.data.places)) {
+        recommendationsData = res.data.places;
+      }
+      else if (Array.isArray(res.data)) {
+        recommendationsData = res.data;
+      }
+    }
+    else if (Array.isArray(res.data)) {
+      recommendationsData = res.data;
+    }
+
+    recommendationsState.recommendations = recommendationsData;
 
     console.log(
       'Loaded recommendations:',
@@ -45,7 +55,6 @@ async function loadRecommendations(options = {}) {
     recommendationsState.isLoading = false;
   }
 }
-
 //Load User Preferences
 async function loadUserPreferences() {
   try {
