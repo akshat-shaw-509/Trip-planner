@@ -63,7 +63,8 @@ if (!trip) {
       options.category && options.category !== 'all'
         ? [options.category]
         : ['restaurant', 'attraction', 'accommodation']
-
+    
+let allPlaces = []
    // get AI recommendations
     for (const category of categories) {
   console.log(`[DEBUG] Fetching ${category} recommendations...`);
