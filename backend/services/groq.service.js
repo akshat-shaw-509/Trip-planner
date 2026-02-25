@@ -189,7 +189,7 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
         timeout: 30000
       }
     )
-
+   console.log('[DEBUG] Raw AI response:', JSON.stringify(response.data).substring(0, 500))
     const aiText = response.data?.choices?.[0]?.message?.content
     if (!aiText) {
       return { places: [], message: 'AI returned no content' }
