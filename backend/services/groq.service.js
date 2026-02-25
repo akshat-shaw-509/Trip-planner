@@ -241,18 +241,23 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
 }
 
 const parseAIResponse = (text, category, tripContext = {}) => {
-  const sections = text.split('---').filter(Boolean)
+  const sections = text.split('---').filter(Boolean);
+  
+  console.log(`[DEBUG] Parsing response for ${category}:`, {
+    totalSections: sections.length,
+    textLength: text.length,
+    firstSection: sections[0]?.substring(0, 200)
+  });
 
   return sections
     .map(section => {
-      const get = (r) => section.match(r)?.[1]?.trim()
-
-      const name =
-  get(/NAME:\s*(.+)/i) ||
-  get(/^\s*\d+\.\s*(.+)/m) ||
-  get(/^-\s*(.+)/m)
-      if (!name) return null
-
+      const get = (r) => section.match(r)?.[1]?.trim();
+      const name = get(/NAME:\s*(.+)/i) || get(/^\s*\d+\.\s*(.+)/m) || get(/^-\s*(.+)/m);
+      
+      if (!name) {
+        console.warn('[DEBUG] Could not parse name from section:', section.substring(0, 100));
+        return null;
+      }
       const place = {
         source: 'groq_ai',
         category,
