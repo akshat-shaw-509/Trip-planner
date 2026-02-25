@@ -182,10 +182,12 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
         max_tokens: 2500
       },
       {
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
+       headers: {
+  Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+  'Content-Type': 'application/json',
+  'HTTP-Referer': 'https://akshat-shaw-509.github.io/Trip-planner/',
+  'X-Title': 'Planora Trip Planner'
+},
         timeout: 30000
       }
     )
