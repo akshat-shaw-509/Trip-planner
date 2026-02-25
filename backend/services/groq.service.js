@@ -165,7 +165,7 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
 
   // Build prompt based on user's actual selections
   const prompt = buildDynamicPrompt(category, destination, tripContext)
-
+  console.log('[DEBUG] Using model:', MODEL)
   try {
     const response = await axios.post(
       OPENROUTER_URL,
