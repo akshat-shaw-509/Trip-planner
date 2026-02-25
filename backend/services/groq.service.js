@@ -240,6 +240,10 @@ console.log(`[DEBUG] After geocoding:`, {
     }
   } catch (error) {
     console.error('AI recommendation error:', error.message)
+  console.error('[DEBUG] Full error response:', JSON.stringify(error.response?.data))
+  console.error('[DEBUG] Request URL:', OPENROUTER_URL)
+  console.error('[DEBUG] API Key exists:', !!OPENROUTER_API_KEY)
+  console.error('[DEBUG] API Key prefix:', OPENROUTER_API_KEY?.substring(0, 15))
     return {
       places: [],
       message: `AI Error: ${error.message}`
