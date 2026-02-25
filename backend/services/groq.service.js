@@ -205,8 +205,13 @@ const getAIRecommendations = async (category, destination, tripContext = {}) => 
   parsedPlaces,
   destination,
   tripContext.centerLocation
-)
+);
 
+console.log(`[DEBUG] After geocoding:`, {
+  input: parsedPlaces.length,
+  output: geocodedPlaces.length,
+  failedCount: parsedPlaces.length - geocodedPlaces.length
+});
     // Apply post-processing filters
     let filteredPlaces = applyFilters(geocodedPlaces, tripContext)
 
