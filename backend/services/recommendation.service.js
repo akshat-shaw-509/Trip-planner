@@ -65,18 +65,22 @@ if (!trip) {
         : ['restaurant', 'attraction', 'accommodation']
 
    // get AI recommendations
-    let allPlaces = []
     for (const category of categories) {
-      const aiResult = await groqService.getAIRecommendations(
-        category,
-        trip.destination,
-        recommendationOptions
-      )
-      if (aiResult?.places?.length) {
-        allPlaces.push(...aiResult.places)
-      }
-    }
-    
+  console.log(`[DEBUG] Fetching ${category} recommendations...`);
+  const aiResult = await groqService.getAIRecommendations(
+    category,
+    trip.destination,
+    recommendationOptions
+  );
+  console.log(`[DEBUG] AI Result for ${category}:`, {
+    placesCount: aiResult?.places?.length,
+    message: aiResult?.message,
+    placeSample: aiResult?.places?.[0]
+  });
+  if (aiResult?.places?.length) {
+    allPlaces.push(...aiResult.places);
+  }
+}
     console.log('[DEBUG] Total places collected so far:', allPlaces.length)
     // Sort before filterin
 if (recommendationOptions.sortBy === 'rating') {
