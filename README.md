@@ -4,6 +4,8 @@ Planora is a full-stack AI-powered trip planning platform that helps users organ
 It combines structured planning tools with intelligent recommendations to create a smooth travel planning experience.
 
 ---
+# LIVE DEMO
+https://akshat-shaw-509.github.io/Trip-planner/
 
 ## Overview
 
